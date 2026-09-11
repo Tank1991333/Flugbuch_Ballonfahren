@@ -1,68 +1,49 @@
-// ------------------------
+// ======================
 // Kartenlayer
-// ------------------------
+// ======================
 
 const osm = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   {
-    attribution: '© OpenStreetMap'
+    attribution: "© OpenStreetMap"
   }
 );
 
 const satellite = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   {
-    attribution: '© Esri'
+    attribution: "© Esri"
   }
 );
 
-// Ortsnamen / Beschriftungen
-const labels = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  {
-    opacity: 0.35
-  }
-);
-
-// Satellit + Beschriftungen
-const satelliteLabels = L.layerGroup([
-  satellite,
-  labels
-]);
-
-// ------------------------
+// ======================
 // Karte erstellen
-// ------------------------
+// ======================
 
-const map = L.map('map', {
+const map = L.map("map", {
   center: [47.285, 15.98],
   zoom: 10,
   layers: [osm]
 });
 
-// Umschalter oben rechts
+L.control.layers(
+  {
+    "🗺 Standard": osm,
+    "🛰 Satellit": satellite
+  }
+).addTo(map);
 
-L.control.layers({
-
-  "🗺 Standard": osm,
-
-  "🛰 Satellit": satellite,
-
-  "🛰 Satellit + Orte": satelliteLabels
-
-}).addTo(map);
-
-// ------------------------
+// ======================
 // Marker
-// ------------------------
+// ======================
 
 let startMarker = null;
 let landeMarker = null;
 let routeLine = null;
 
-// ------------------------
+// ======================
 // Startmarker
-// ------------------------
+// ======================
 
 function setStartMarker(lat, lng) {
 
@@ -70,19 +51,32 @@ function setStartMarker(lat, lng) {
     map.removeLayer(startMarker);
   }
 
-  startMarker = L.marker([lat, lng])
+  const startIcon = L.icon({
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+  });
+
+  startMarker = L.marker(
+    [lat, lng],
+    {
+      icon: startIcon
+    }
+  )
     .addTo(map)
     .bindPopup("🎈 Startpunkt");
 
   map.setView([lat, lng], 13);
 
   zeichneRoute();
-
 }
 
-// ------------------------
-// LandeMarker
-// ------------------------
+// ======================
+// Landemarker
+// ======================
 
 function setLandingMarker(lat, lng) {
 
@@ -90,17 +84,30 @@ function setLandingMarker(lat, lng) {
     map.removeLayer(landeMarker);
   }
 
-  landeMarker = L.marker([lat, lng])
+  const landingIcon = L.icon({
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+  });
+
+  landeMarker = L.marker(
+    [lat, lng],
+    {
+      icon: landingIcon
+    }
+  )
     .addTo(map)
     .bindPopup("🏁 Landung");
 
   zeichneRoute();
-
 }
 
-// ------------------------
-// Route zeichnen
-// ------------------------
+// ======================
+// Route ziehen
+// ======================
 
 function zeichneRoute() {
 
@@ -124,8 +131,9 @@ function zeichneRoute() {
       [ende.lat, ende.lng]
     ],
     {
-      color: '#005eff',
-      weight: 4
+      color: "#005eff",
+      weight: 5,
+      opacity: 0.8
     }
   ).addTo(map);
 
@@ -138,28 +146,27 @@ function zeichneRoute() {
 
 }
 
-// ------------------------
-// Entfernung berechnen
-// ------------------------
+// ======================
+// Strecke in km
+// ======================
 
-function entfernungKm() {
+function berechneStrecke() {
 
-  if (!startMarker || !landeMarker) {
+  if (
+    !startMarker ||
+    !landeMarker
+  ) {
     return 0;
   }
 
-  const start =
-    startMarker.getLatLng();
-
-  const ende =
-    landeMarker.getLatLng();
-
   const meter =
     map.distance(
-      start,
-      ende
+      startMarker.getLatLng(),
+      landeMarker.getLatLng()
     );
 
-  return (meter / 1000).toFixed(1);
+  return (
+    meter / 1000
+  ).toFixed(1);
 
 }
