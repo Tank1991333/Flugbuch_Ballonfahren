@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Flugbuch Ballonfahren</title>
+<title>🎈 Flugbuch Ballonfahren</title>
 
 <style>
+
 body{
-    font-family: Arial,sans-serif;
-    max-width:900px;
+    font-family:Arial, sans-serif;
+    max-width:1000px;
     margin:auto;
     padding:20px;
     background:#f4f4f4;
@@ -18,41 +19,55 @@ body{
 .card{
     background:white;
     padding:20px;
-    border-radius:10px;
+    border-radius:12px;
     margin-bottom:20px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+h1{
+    text-align:center;
 }
 
 input,
 textarea{
     width:100%;
     padding:10px;
-    margin-bottom:15px;
+    margin-top:5px;
+    margin-bottom:10px;
+    box-sizing:border-box;
 }
 
 button{
     background:#0066cc;
     color:white;
     border:none;
-    padding:12px;
-    border-radius:5px;
+    padding:12px 20px;
+    border-radius:6px;
     cursor:pointer;
 }
 
-.flug{
-    background:white;
-    padding:15px;
-    border-radius:10px;
-    margin-top:10px;
+button:hover{
+    background:#004fa3;
 }
+
+.flug{
+    background:#f9f9f9;
+    padding:15px;
+    margin-top:10px;
+    border-radius:10px;
+}
+
 </style>
 
 </head>
+
 <body>
 
 <h1>🎈 Flugbuch Ballonfahren</h1>
 
 <div class="card">
-<h2>Statistik</h2>
+
+<h2>📊 Statistik</h2>
 
 <p id="anzahlFluege">
 Gesamtflüge: 0
@@ -66,7 +81,29 @@ Gesamtlandungen: 0
 
 <div class="card">
 
-<h2>Neuer Flug</h2>
+<h2>📍 GPS Tracking</h2>
+
+<p id="position">
+Position nicht verfügbar
+</p>
+
+<p id="hoehe">
+Höhe: -
+</p>
+
+<p id="genauigkeit">
+Genauigkeit: -
+</p>
+
+<button onclick="starteGPS()">
+GPS starten
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>📝 Neuer Flug</h2>
 
 <label>Pilot</label>
 <input type="text" id="pilot">
@@ -89,7 +126,7 @@ Gesamtlandungen: 0
 <label>Landeort</label>
 <input type="text" id="landeort">
 
-<label>Landungen</label>
+<label>Anzahl Landungen</label>
 <input type="number" id="landungen">
 
 <label>Bemerkung</label>
@@ -102,8 +139,11 @@ Flug speichern
 </div>
 
 <div class="card">
-<h2>Gespeicherte Flüge</h2>
+
+<h2>📖 Gespeicherte Flüge</h2>
+
 <div id="flugliste"></div>
+
 </div>
 
 <script>
@@ -113,7 +153,85 @@ JSON.parse(localStorage.getItem("fluege")) || [];
 
 anzeigen();
 
+function starteGPS(){
+
+if(!navigator.geolocation){
+alert("GPS wird nicht unterstützt");
+return;
+}
+
+navigator.geolocation.watchPosition(
+zeigePosition,
+gpsFehler,
+{
+enableHighAccuracy:true
+}
+);
+
+}
+
+function zeigePosition(position){
+
+let breite =
+position.coords.latitude.toFixed(6);
+
+let laenge =
+position.coords.longitude.toFixed(6);
+
+let hoehe =
+position.coords.altitude;
+
+let genauigkeit =
+Math.round(position.coords.accuracy);
+
+let mapsLink =
+`https://maps.google.com/?q=${breite},${laenge}`;
+
+document.getElementById("position").innerHTML =
+`
+📍 ${breite}, ${laenge}<br>
+<a href="${mapsLink}" target="_blank">
+Karte öffnen
+</a>
+`;
+
+document.getElementById("hoehe").innerHTML =
+"🎈 Höhe: " +
+(hoehe ? Math.round(hoehe) : "-") +
+" m";
+
+document.getElementById("genauigkeit").innerHTML =
+"🎯 Genauigkeit: " +
+genauigkeit +
+" m";
+
+}
+
+function gpsFehler(error){
+
+alert(
+"GPS Fehler: " +
+error.message
+);
+
+}
+
 function flugSpeichern(){
+
+let startZeit =
+new Date(
+"2000-01-01T" +
+document.getElementById("start").value
+);
+
+let landeZeit =
+new Date(
+"2000-01-01T" +
+document.getElementById("landung").value
+);
+
+let dauer =
+(Math.abs(landeZeit - startZeit) / 1000 / 60);
 
 let flug = {
 
@@ -142,20 +260,15 @@ landungen:
 document.getElementById("landungen").value,
 
 bemerkung:
-document.getElementById("bemerkung").value
+document.getElementById("bemerkung").value,
+
+gps:
+document.getElementById("position").innerText,
+
+dauer:
+Math.round(dauer) + " Minuten"
+
 };
-
-let startZeit =
-new Date("2000-01-01T" + flug.start);
-
-let landeZeit =
-new Date("2000-01-01T" + flug.landung);
-
-let dauer =
-(landeZeit - startZeit) / 1000 / 60;
-
-flug.dauer =
-Math.round(dauer) + " Minuten";
 
 fluege.push(flug);
 
@@ -179,45 +292,50 @@ landungenSumme +=
 Number(flug.landungen || 0);
 
 html += `
+
 <div class="flug">
 
-<b>${flug.datum}</b><br><br>
+<b>${flug.datum}</b>
+
+<hr>
 
 Pilot: ${flug.pilot}<br>
 Ballon: ${flug.ballon}<br>
 
-${flug.startort}
-➜
-${flug.landeort}<br>
+Startort: ${flug.startort}<br>
+Landeort: ${flug.landeort}<br>
 
-Start: ${flug.start}<br>
+Startzeit: ${flug.start}<br>
+Landezeit: ${flug.landung}<br>
 
-Landung: ${flug.landung}<br>
-
-Dauer: ${flug.dauer}<br>
+Flugdauer: ${flug.dauer}<br>
 
 Landungen: ${flug.landungen}<br>
 
-Bemerkung: ${flug.bemerkung}<br><br>
+GPS:<br>
+${flug.gps}<br><br>
+
+Bemerkung:<br>
+${flug.bemerkung}<br><br>
 
 <button onclick="loeschen(${index})">
-Löschen
+🗑 Löschen
 </button>
 
 </div>
+
 `;
+
 });
 
-document.getElementById("flugliste")
-.innerHTML = html;
+document.getElementById("flugliste").innerHTML = html;
 
-document.getElementById("anzahlFluege")
-.innerText =
+document.getElementById("anzahlFluege").innerText =
 "Gesamtflüge: " + fluege.length;
 
-document.getElementById("gesamtLandungen")
-.innerText =
+document.getElementById("gesamtLandungen").innerText =
 "Gesamtlandungen: " + landungenSumme;
+
 }
 
 function loeschen(index){
@@ -230,6 +348,7 @@ JSON.stringify(fluege)
 );
 
 anzeigen();
+
 }
 
 </script>
