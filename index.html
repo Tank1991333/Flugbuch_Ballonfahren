@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>🎈 Ballonflugbuch</title>
 
-https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
 <link
 rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/distesheet"
 href="style.css"
 />
-``
 
 </head>
 
@@ -47,9 +49,13 @@ href="style.css"
 
 <h2>🌤 Wetter</h2>
 
-<p id="temperature">Temperatur: --</p>
+<p id="temperature">
+Temperatur: --
+</p>
 
-<p id="wind">Wind: --</p>
+<p id="wind">
+Wind: --
+</p>
 
 </section>
 
@@ -58,11 +64,9 @@ href="style.css"
 <h2>👨‍✈️ Pilot & Ballon</h2>
 
 <label>Pilot</label>
-
 <input id="pilot">
 
 <label>Kennzeichen</label>
-
 <input id="ballon">
 
 </section>
@@ -71,19 +75,25 @@ href="style.css"
 
 <h2>📍 Tracking</h2>
 
-<button onclick="flugStarten()" class="start">
+<button
+onclick="flugStarten()"
+class="start">
 
 ▶ Fahrt starten
 
 </button>
 
-<button onclick="flugBeenden()" class="stop">
+<button
+onclick="flugBeenden()"
+class="stop">
 
 ■ Fahrt beenden
 
 </button>
 
-<p id="status">Kein Flug aktiv</p>
+<p id="status">
+Kein Flug aktiv
+</p>
 
 </section>
 
@@ -101,13 +111,19 @@ href="style.css"
 
 <label>Landungen</label>
 
-<input id="landungen" type="number" value="1" min="1">
+<input
+id="landungen"
+type="number"
+value="1"
+min="1">
 
 <label>Bemerkungen</label>
 
 <textarea id="bemerkung"></textarea>
 
-<button onclick="flugSpeichern()" class="save">
+<button
+onclick="flugSpeichern()"
+class="save">
 
 Flug speichern
 
@@ -123,10 +139,12 @@ Flug speichern
 
 </section>
 
-<script src="https://unpkg.com/leaflet@1.9.4/jsscript>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="map.js"></script>
+
 <script src="weather.js"></script>
+
 <script src="app.js"></script>
 
 </body>
