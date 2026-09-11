@@ -112,7 +112,7 @@ Wetterbewertung wird geladen ...
 
 </section>
 
-<!-- Pilot -->
+<!-- Pilot / Ballon -->
 
 <section class="card">
 
@@ -165,7 +165,9 @@ onclick="flugBeenden()">
 </div>
 
 <p id="status">
+
 Kein Flug aktiv
+
 </p>
 
 </section>
@@ -174,7 +176,7 @@ Kein Flug aktiv
 
 <section class="card">
 
-<h2>🗺 Karte</h2>
+<h2>🗺 Flugkarte</h2>
 
 <div id="map"></div>
 
@@ -185,10 +187,6 @@ Kein Flug aktiv
 <section class="card">
 
 <h2>📈 Höhenprofil</h2>
-
-<p>
-Das Höhenprofil wird aus den aufgezeichneten GPS-Daten erzeugt.
-</p>
 
 <canvas
 id="heightChart"
@@ -217,7 +215,7 @@ min="1">
 <textarea
 id="bemerkung"
 rows="4"
-placeholder="Notizen zum Flug">
+placeholder="Bemerkungen zum Flug">
 
 </textarea>
 
@@ -249,7 +247,7 @@ Flug speichern
 
 <!-- Chart.js -->
 
-<script src="sdelivr.net/npm/chart.jsscript>
+https://cdn.jsdelivr.net/npm/chart.jsscript>
 
 <!-- Eigene Dateien -->
 
@@ -259,10 +257,5 @@ Flug speichern
 
 <script src="app.js"></script>
 
-map.jsscript>
-<script src="weather.js"></script>
-app.jsscript>
-
 </body>
-
 </html>
