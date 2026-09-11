@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>🎈 Ballonflugbuch</title>
+<title>🎈 Ballonflugbuch Professional</title>
 
 <link
 rel="stylesheet"
@@ -22,9 +23,20 @@ href="style.css"
 <body>
 
 <header class="hero">
-<h1>🎈 Ballonflugbuch</h1>
-<p>Digitales Flugbuch für Heißluftballonfahrer</p>
+
+<div class="hero-overlay">
+
+<h1>🎈 Ballonflugbuch Professional</h1>
+
+<p>
+Digitales Flugbuch für Heißluftballonfahrer
+</p>
+
+</div>
+
 </header>
+
+<!-- Dashboard -->
 
 <section class="dashboard">
 
@@ -34,68 +46,131 @@ href="style.css"
 </div>
 
 <div class="stat">
+<h3 id="countMinutes">0h</h3>
+<p>Flugzeit</p>
+</div>
+
+<div class="stat">
 <h3 id="countLandings">0</h3>
 <p>Landungen</p>
 </div>
 
 <div class="stat">
-<h3 id="countMinutes">0h</h3>
-<p>Flugzeit</p>
+<h3 id="countKm">0</h3>
+<p>Kilometer</p>
 </div>
 
 </section>
+
+<!-- Wetter -->
 
 <section class="card weather">
 
 <h2>🌤 Wetter</h2>
 
-<p id="temperature">
-Temperatur: --
-</p>
+<div class="weather-grid">
 
-<p id="wind">
-Wind: --
+<div>
+<p id="temperature">
+🌡 Temperatur: --
 </p>
+</div>
+
+<div>
+<p id="wind">
+💨 Wind: --
+</p>
+</div>
+
+<div>
+<p id="windDirection">
+🧭 Windrichtung: --
+</p>
+</div>
+
+<div>
+<p id="sunrise">
+🌅 Sonnenaufgang: --
+</p>
+</div>
+
+<div>
+<p id="sunset">
+🌇 Sonnenuntergang: --
+</p>
+</div>
+
+</div>
+
+<div
+id="weatherRating"
+class="weather-rating">
+
+Wetterbewertung wird geladen ...
+
+</div>
 
 </section>
+
+<!-- Pilot -->
 
 <section class="card">
 
 <h2>👨‍✈️ Pilot & Ballon</h2>
 
 <label>Pilot</label>
-<input id="pilot">
 
-<label>Kennzeichen</label>
-<input id="ballon">
+<input
+id="pilot"
+placeholder="Pilot eingeben">
+
+<label>Ballon Kennzeichen</label>
+
+<input
+id="ballon"
+placeholder="z.B. OE-BAL">
+
+<label>Ballontyp</label>
+
+<input
+id="ballontyp"
+placeholder="z.B. Kubicek BB45">
 
 </section>
+
+<!-- Tracking -->
 
 <section class="card">
 
 <h2>📍 Tracking</h2>
 
+<div class="button-group">
+
 <button
-onclick="flugStarten()"
-class="start">
+class="start"
+onclick="flugStarten()">
 
 ▶ Fahrt starten
 
 </button>
 
 <button
-onclick="flugBeenden()"
-class="stop">
+class="stop"
+onclick="flugBeenden()">
 
 ■ Fahrt beenden
 
 </button>
+
+</div>
 
 <p id="status">
 Kein Flug aktiv
 </p>
 
 </section>
+
+<!-- Karte -->
 
 <section class="card">
 
@@ -104,6 +179,26 @@ Kein Flug aktiv
 <div id="map"></div>
 
 </section>
+
+<!-- Höhenprofil -->
+
+<section class="card">
+
+<h2>📈 Höhenprofil</h2>
+
+<p>
+Das Höhenprofil wird aus den aufgezeichneten GPS-Daten erzeugt.
+</p>
+
+<canvas
+id="heightChart"
+height="120">
+
+</canvas>
+
+</section>
+
+<!-- Flugdaten -->
 
 <section class="card">
 
@@ -119,11 +214,16 @@ min="1">
 
 <label>Bemerkungen</label>
 
-<textarea id="bemerkung"></textarea>
+<textarea
+id="bemerkung"
+rows="4"
+placeholder="Notizen zum Flug">
+
+</textarea>
 
 <button
-onclick="flugSpeichern()"
-class="save">
+class="save"
+onclick="flugSpeichern()">
 
 Flug speichern
 
@@ -131,15 +231,27 @@ Flug speichern
 
 </section>
 
+<!-- Flugbuch -->
+
 <section class="card">
 
 <h2>📒 Flugbuch</h2>
 
-<div id="flugliste"></div>
+<div id="flugliste">
+
+</div>
 
 </section>
 
+<!-- Leaflet -->
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Chart.js -->
+
+<script src="sdelivr.net/npm/chart.jsscript>
+
+<!-- Eigene Dateien -->
 
 <script src="map.js"></script>
 
@@ -148,4 +260,5 @@ Flug speichern
 <script src="app.js"></script>
 
 </body>
+
 </html>
