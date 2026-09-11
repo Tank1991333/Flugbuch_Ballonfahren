@@ -1,178 +1,120 @@
-"use client";
+async function ladeWetter() {
 
-import { useEffect, useState } from "react";
-
-export default function Weather() {
-
-  const [weather, setWeather] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState(null);
-
-  useEffect(() => {
+    const wetterContainer =
+    document.getElementById("weather");
 
     if (!navigator.geolocation) {
-      setLoading(false);
-      return;
+
+        wetterContainer.innerHTML =
+        "GPS nicht verfügbar";
+
+        return;
     }
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
 
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+        async function(position) {
 
-        setLocation({
-          lat,
-          lon
-        });
+            const lat =
+            position.coords.latitude;
 
-        try {
+            const lon =
+            position.coords.longitude;
 
-          const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset&timezone=auto`
-          );
+            try {
 
-          const data = await response.json();
+                const response =
+                await fetch(
 
-          setWeather(data);
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset&timezone=auto`
 
-        } catch (error) {
+                );
 
-          console.error(error);
+                const data =
+                await response.json();
+
+                let ampel = "🟢";
+
+                if (
+                    data.current.wind_speed_10m > 10
+                ) {
+                    ampel = "🟡";
+                }
+
+                if (
+                    data.current.wind_speed_10m > 20
+                ) {
+                    ampel = "🔴";
+                }
+
+                wetterContainer.innerHTML = `
+
+                <div class="card">
+
+                    <h2>
+                    🌤 Wetter Ballonfahren
+                    </h2>
+
+                    <p>
+                    ${ampel}
+                    </p>
+
+                    <p>
+                    🌡 Temperatur:
+                    ${data.current.temperature_2m} °C
+                    </p>
+
+                    <p>
+                    💧 Luftfeuchtigkeit:
+                    ${data.current.relative_humidity_2m} %
+                    </p>
+
+                    <p>
+                    🌬 Wind:
+                    ${data.current.wind_speed_10m} km/h
+                    </p>
+
+                    <p>
+                    🧭 Windrichtung:
+                    ${data.current.wind_direction_10m}°
+                    </p>
+
+                    <p>
+                    📈 Luftdruck:
+                    ${data.current.surface_pressure} hPa
+                    </p>
+
+                    <p>
+                    🌅 Sonnenaufgang:
+                    ${new Date(
+                        data.daily.sunrise[0]
+                    ).toLocaleTimeString("de-DE")}
+                    </p>
+
+                    <p>
+                    🌇 Sonnenuntergang:
+                    ${new Date(
+                        data.daily.sunset[0]
+                    ).toLocaleTimeString("de-DE")}
+                    </p>
+
+                </div>
+
+                `;
+
+            } catch(error) {
+
+                console.log(error);
+
+                wetterContainer.innerHTML =
+                "Wetterdaten konnten nicht geladen werden.";
+
+            }
 
         }
 
-        setLoading(false);
-
-      },
-      (error) => {
-
-        console.error(error);
-
-        setLoading(false);
-
-      }
     );
 
-  }, []);
-
-  function flugAmpel() {
-
-    if (!weather) return "⚪ Unbekannt";
-
-    const wind =
-      weather.current.wind_speed_10m;
-
-    if (wind <= 10)
-      return "🟢 Gut geeignet";
-
-    if (wind <= 20)
-      return "🟡 Vorsicht";
-
-    return "🔴 Nicht empfohlen";
-  }
-
-  if (loading) {
-    return (
-      <div className="card">
-        Wetterdaten werden geladen...
-      </div>
-    );
-  }
-
-  if (!weather) {
-    return (
-      <div className="card">
-        Wetterdaten konnten nicht geladen werden.
-      </div>
-    );
-  }
-
-  return (
-
-    <div className="card">
-
-      <h1>🌤 Wetter Ballonfahren</h1>
-
-      <h2>Ballon-Ampel</h2>
-
-      <p
-        style={{
-          fontSize: "22px",
-          fontWeight: "bold"
-        }}
-      >
-        {flugAmpel()}
-      </p>
-
-      <hr />
-
-      <h2>Standort</h2>
-
-      <p>
-        Breite: {location?.lat.toFixed(5)}
-      </p>
-
-      <p>
-        Länge: {location?.lon.toFixed(5)}
-      </p>
-
-      <hr />
-
-      <h2>Aktuelles Wetter</h2>
-
-      <p>
-        🌡 Temperatur:
-        {" "}
-        {weather.current.temperature_2m} °C
-      </p>
-
-      <p>
-        💧 Luftfeuchtigkeit:
-        {" "}
-        {weather.current.relative_humidity_2m} %
-      </p>
-
-      <p>
-        🌬 Wind:
-        {" "}
-        {weather.current.wind_speed_10m} km/h
-      </p>
-
-      <p>
-        🧭 Windrichtung:
-        {" "}
-        {weather.current.wind_direction_10m}°
-      </p>
-
-      <p>
-        📈 Luftdruck:
-        {" "}
-        {weather.current.surface_pressure} hPa
-      </p>
-
-      <hr />
-
-      <h2>Sonne</h2>
-
-      <p>
-        🌅 Sonnenaufgang:
-        {" "}
-        {new Date(
-          weather.daily.sunrise[0]
-        ).toLocaleTimeString("de-DE")}
-      </p>
-
-      <p>
-        🌇 Sonnenuntergang:
-        {" "}
-        {new Date(
-          weather.daily.sunset[0]
-        ).toLocaleTimeString("de-DE")}
-      </p>
-
-    </div>
-
-  );
 }
-`
+
+ladeWetter();
