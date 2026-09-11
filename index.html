@@ -4,252 +4,146 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>🎈 Ballonflugbuch Professional</title>
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+🎈 Flugbuch Ballonfahren
+</title>
 
 <link
 rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-
-<link
-rel="stylesheet"
-href="style.css"
-/>
+href="https://unpkg.com/le.css
 
 </head>
 
 <body>
 
-<header class="hero">
+<h1>🎈 Flugbuch Ballonfahren</h1>
 
-<div class="hero-overlay">
+<div class="card">
 
-<h1>🎈 Ballonflugbuch Professional</h1>
+<h2>Status</h2>
+
+<p id="status">
+Kein Flug aktiv
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>📊 Statistik</h2>
 
 <p>
-Digitales Flugbuch für Heißluftballonfahrer
+Gesamtflüge:
+<span id="countFlights">0</span>
+</p>
+
+<p>
+Gesamtlandungen:
+<span id="countLandings">0</span>
+</p>
+
+<p>
+Gesamtflugzeit:
+<span id="countMinutes">0h 0m</span>
 </p>
 
 </div>
 
-</header>
+<div id="weather"></div>
 
-<!-- Dashboard -->
-
-<section class="dashboard">
-
-<div class="stat">
-<h3 id="countFlights">0</h3>
-<p>Flüge</p>
-</div>
-
-<div class="stat">
-<h3 id="countMinutes">0h</h3>
-<p>Flugzeit</p>
-</div>
-
-<div class="stat">
-<h3 id="countLandings">0</h3>
-<p>Landungen</p>
-</div>
-
-<div class="stat">
-<h3 id="countKm">0</h3>
-<p>Kilometer</p>
-</div>
-
-</section>
-
-<!-- Wetter -->
-
-<section class="card weather">
-
-<h2>🌤 Wetter</h2>
-
-<div class="weather-grid">
-
-<div>
-<p id="temperature">
-🌡 Temperatur: --
-</p>
-</div>
-
-<div>
-<p id="wind">
-💨 Wind: --
-</p>
-</div>
-
-<div>
-<p id="windDirection">
-🧭 Windrichtung: --
-</p>
-</div>
-
-<div>
-<p id="sunrise">
-🌅 Sonnenaufgang: --
-</p>
-</div>
-
-<div>
-<p id="sunset">
-🌇 Sonnenuntergang: --
-</p>
-</div>
-
-</div>
-
-<div
-id="weatherRating"
-class="weather-rating">
-
-Wetterbewertung wird geladen ...
-
-</div>
-
-</section>
-
-<!-- Pilot / Ballon -->
-
-<section class="card">
+<div class="card">
 
 <h2>👨‍✈️ Pilot & Ballon</h2>
 
 <label>Pilot</label>
 
 <input
+type="text"
 id="pilot"
-placeholder="Pilot eingeben">
+placeholder="Pilot eingeben"
+/>
 
 <label>Ballon Kennzeichen</label>
 
 <input
+type="text"
 id="ballon"
-placeholder="z.B. OE-BAL">
+placeholder="z.B. OE-XYZ"
+/>
 
-<label>Ballontyp</label>
+</div>
 
-<input
-id="ballontyp"
-placeholder="z.B. Kubicek BB45">
+<div class="card">
 
-</section>
+<h2>🚀 Flugsteuerung</h2>
 
-<!-- Tracking -->
-
-<section class="card">
-
-<h2>📍 Tracking</h2>
-
-<div class="button-group">
-
-<button
-class="start"
-onclick="flugStarten()">
-
-▶ Fahrt starten
-
+<button onclick="flugStarten()">
+Flug starten
 </button>
 
-<button
-class="stop"
-onclick="flugBeenden()">
+<button onclick="flugBeenden()">
+Flug beenden
+</button>
 
-■ Fahrt beenden
-
+<button onclick="flugSpeichern()">
+Flug speichern
 </button>
 
 </div>
 
-<p id="status">
+<div class="card">
 
-Kein Flug aktiv
+<h2>📝 Flugdetails</h2>
 
-</p>
+<label>Landungen</label>
 
-</section>
+<input
+type="number"
+id="landungen"
+value="1"
+/>
 
-<!-- Karte -->
+<label>Bemerkung</label>
 
-<section class="card">
+<textarea
+id="bemerkung"
+rows="4"
+placeholder="Notizen zum Flug..."
+></textarea>
+
+</div>
+
+<div class="card">
 
 <h2>🗺 Flugkarte</h2>
 
 <div id="map"></div>
 
-</section>
+<br>
 
-<!-- Höhenprofil -->
-
-<section class="card">
-
-<h2>📈 Höhenprofil</h2>
-
-<canvas
-id="heightChart"
-height="120">
-
-</canvas>
-
-</section>
-
-<!-- Flugdaten -->
-
-<section class="card">
-
-<h2>📝 Flugdaten</h2>
-
-<label>Landungen</label>
-
-<input
-id="landungen"
-type="number"
-value="1"
-min="1">
-
-<label>Bemerkungen</label>
-
-<textarea
-id="bemerkung"
-rows="4"
-placeholder="Bemerkungen zum Flug">
-
-</textarea>
-
-<button
-class="save"
-onclick="flugSpeichern()">
-
-Flug speichern
-
+<button onclick="aktuellePosition()">
+📍 Aktuelle Position
 </button>
 
-</section>
-
-<!-- Flugbuch -->
-
-<section class="card">
-
-<h2>📒 Flugbuch</h2>
-
-<div id="flugliste">
+<button onclick="routeLoeschen()">
+🗑 Route löschen
+</button>
 
 </div>
 
-</section>
+<div class="card">
 
-<!-- Leaflet -->
+<h2>📖 Flugbuch</h2>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="flugliste"></div>
 
-<!-- Chart.js -->
+</div>
 
-https://cdn.jsdelivr.net/npm/chart.jsscript>
-
-<!-- Eigene Dateien -->
+https://unpkg.com/leaflet/dist/leaflet.jsscript>
 
 <script src="map.js"></script>
 
@@ -258,4 +152,5 @@ https://cdn.jsdelivr.net/npm/chart.jsscript>
 <script src="app.js"></script>
 
 </body>
+
 </html>
