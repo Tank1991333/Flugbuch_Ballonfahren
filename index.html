@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
 
 <meta charset="UTF-8">
@@ -8,7 +9,7 @@
 <title>🎈 Ballonflugbuch Professional</title>
 
 <link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet" href="style.css">
 
@@ -22,9 +23,7 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <h1>🎈 Ballonflugbuch Professional</h1>
 
-<p>
-Digitales Flugbuch für Heißluftballonfahrten
-</p>
+<p>Digitales Flugbuch für Heißluftballonfahrten</p>
 
 </div>
 
@@ -61,43 +60,29 @@ Digitales Flugbuch für Heißluftballonfahrten
 <div class="weather-grid">
 
 <div>
-<p id="temperature">
-🌡 Temperatur: --
-</p>
+<p id="temperature">🌡 Temperatur: --</p>
 </div>
 
 <div>
-<p id="wind">
-💨 Wind: --
-</p>
+<p id="wind">💨 Wind: --</p>
 </div>
 
 <div>
-<p id="windDirection">
-🧭 Windrichtung: --
-</p>
+<p id="windDirection">🧭 Windrichtung: --</p>
 </div>
 
 <div>
-<p id="sunrise">
-🌅 Sonnenaufgang: --
-</p>
+<p id="sunrise">🌅 Sonnenaufgang: --</p>
 </div>
 
 <div>
-<p id="sunset">
-🌇 Sonnenuntergang: --
-</p>
+<p id="sunset">🌇 Sonnenuntergang: --</p>
 </div>
 
 </div>
 
-<div
-id="weatherRating"
-class="weather-rating">
-
+<div id="weatherRating" class="weather-rating">
 Wetterdaten werden geladen ...
-
 </div>
 
 </section>
@@ -107,18 +92,21 @@ Wetterdaten werden geladen ...
 <h2>👨‍✈️ Pilot & Ballon</h2>
 
 <label for="pilot">Pilot</label>
+
 <input
 id="pilot"
 type="text"
 placeholder="Pilot eingeben">
 
 <label for="ballon">Ballon Kennzeichen</label>
+
 <input
 id="ballon"
 type="text"
 placeholder="z.B. OE-BAL">
 
 <label for="ballontyp">Ballontyp</label>
+
 <input
 id="ballontyp"
 type="text"
@@ -171,7 +159,6 @@ Kein Flug aktiv
 <canvas
 id="heightChart"
 height="120">
-
 </canvas>
 
 </section>
@@ -198,7 +185,6 @@ Bemerkungen
 id="bemerkung"
 rows="4"
 placeholder="Bemerkungen zum Flug">
-
 </textarea>
 
 <button
@@ -215,15 +201,19 @@ onclick="flugSpeichern()">
 
 <h2>📒 Flugbuch</h2>
 
-<div id="flugliste">
-
-</div>
+<div id="flugliste"></div>
 
 </section>
 
+<!-- Leaflet -->
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://net/npm/chart.jsscript>
+<!-- Chart.js -->
+
+https://cdn.jsdelivr.net/npm/chart.jsscript>
+
+<!-- Eigene Dateien -->
 
 <script src="map.js"></script>
 
