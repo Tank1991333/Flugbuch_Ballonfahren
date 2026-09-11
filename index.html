@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
 
 <meta charset="UTF-8">
@@ -8,8 +7,7 @@
 
 <title>🎈 Ballonflugbuch Professional</title>
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet" href="style.css">
 
@@ -82,7 +80,7 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </div>
 
 <div id="weatherRating" class="weather-rating">
-Wetterdaten werden geladen ...
+Wetterdaten werden geladen...
 </div>
 
 </section>
@@ -123,17 +121,13 @@ placeholder="z.B. Kubicek BB45">
 <button
 class="start"
 onclick="flugStarten()">
-
 ▶ Fahrt starten
-
 </button>
 
 <button
 class="stop"
 onclick="flugBeenden()">
-
 ■ Fahrt beenden
-
 </button>
 
 </div>
@@ -167,9 +161,7 @@ height="120">
 
 <h2>📝 Flugdaten</h2>
 
-<label for="landungen">
-Landungen
-</label>
+<label for="landungen">Landungen</label>
 
 <input
 id="landungen"
@@ -177,9 +169,7 @@ type="number"
 value="1"
 min="1">
 
-<label for="bemerkung">
-Bemerkungen
-</label>
+<label for="bemerkung">Bemerkungen</label>
 
 <textarea
 id="bemerkung"
@@ -190,9 +180,7 @@ placeholder="Bemerkungen zum Flug">
 <button
 class="save"
 onclick="flugSpeichern()">
-
 💾 Flug speichern
-
 </button>
 
 </section>
@@ -206,19 +194,14 @@ onclick="flugSpeichern()">
 </section>
 
 <!-- Leaflet -->
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Chart.js -->
-
 https://cdn.jsdelivr.net/npm/chart.jsscript>
 
 <!-- Eigene Dateien -->
-
 <script src="map.js"></script>
-
 <script src="weather.js"></script>
-
 <script src="app.js"></script>
 
 </body>
