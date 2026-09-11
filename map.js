@@ -16,22 +16,43 @@ const satellite = L.tileLayer(
   }
 );
 
+// Beschriftungen für Hybrid
+
+const labels = L.tileLayer(
+  "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+  {
+    attribution: "© Esri Labels"
+  }
+);
+
+// Hybrid = Satellit + Beschriftungen
+
+const hybrid = L.layerGroup([
+  satellite,
+  labels
+]);
+
 // ======================
-// Karte erstellen
+// Karte erzeugen
 // ======================
 
 const map = L.map("map", {
   center: [47.285, 15.98],
   zoom: 10,
-  layers: [osm]
+  layers: [hybrid]
 });
 
-L.control.layers(
-  {
-    "🗺 Standard": osm,
-    "🛰 Satellit": satellite
-  }
-).addTo(map);
+// Umschalter
+
+L.control.layers({
+
+  "🗺 Standard": osm,
+
+  "🛰 Hybrid": hybrid,
+
+  "🛰 Satellit": satellite
+
+}).addTo(map);
 
 // ======================
 // Marker
@@ -54,8 +75,10 @@ function setStartMarker(lat, lng) {
   const startIcon = L.icon({
     iconUrl:
       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+
     shadowUrl:
       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+
     iconSize: [25, 41],
     iconAnchor: [12, 41]
   });
@@ -66,12 +89,13 @@ function setStartMarker(lat, lng) {
       icon: startIcon
     }
   )
-    .addTo(map)
-    .bindPopup("🎈 Startpunkt");
+  .addTo(map)
+  .bindPopup("🎈 Start");
 
   map.setView([lat, lng], 13);
 
   zeichneRoute();
+
 }
 
 // ======================
@@ -87,8 +111,10 @@ function setLandingMarker(lat, lng) {
   const landingIcon = L.icon({
     iconUrl:
       "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+
     shadowUrl:
       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+
     iconSize: [25, 41],
     iconAnchor: [12, 41]
   });
@@ -99,14 +125,15 @@ function setLandingMarker(lat, lng) {
       icon: landingIcon
     }
   )
-    .addTo(map)
-    .bindPopup("🏁 Landung");
+  .addTo(map)
+  .bindPopup("🏁 Landung");
 
   zeichneRoute();
+
 }
 
 // ======================
-// Route ziehen
+// Flugroute
 // ======================
 
 function zeichneRoute() {
@@ -126,15 +153,18 @@ function zeichneRoute() {
     landeMarker.getLatLng();
 
   routeLine = L.polyline(
+
     [
       [start.lat, start.lng],
       [ende.lat, ende.lng]
     ],
+
     {
-      color: "#005eff",
+      color: "#00a651",
       weight: 5,
       opacity: 0.8
     }
+
   ).addTo(map);
 
   map.fitBounds(
@@ -147,7 +177,7 @@ function zeichneRoute() {
 }
 
 // ======================
-// Strecke in km
+// Entfernung
 // ======================
 
 function berechneStrecke() {
