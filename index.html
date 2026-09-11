@@ -2,17 +2,16 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Flugbuch Ballonfahren Pro</title>
+<title>Flugbuch Ballonfahren PRO</title>
 
 <style>
 
 body{
 font-family:Arial,sans-serif;
 background:#f4f4f4;
-margin:0;
-padding:20px;
+padding:15px;
 max-width:900px;
 margin:auto;
 }
@@ -22,7 +21,11 @@ background:white;
 padding:20px;
 border-radius:12px;
 margin-bottom:20px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
+box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1{
+text-align:center;
 }
 
 input,textarea{
@@ -38,16 +41,16 @@ padding:12px;
 border:none;
 border-radius:8px;
 cursor:pointer;
-margin-right:10px;
+margin:3px;
 }
 
 .start{
-background:green;
+background:#28a745;
 color:white;
 }
 
 .stop{
-background:red;
+background:#dc3545;
 color:white;
 }
 
@@ -57,18 +60,24 @@ color:white;
 }
 
 .delete{
-background:#d9534f;
+background:#666;
 color:white;
 }
 
 .flug{
-background:white;
 padding:15px;
-margin-top:10px;
+background:#fafafa;
 border-radius:10px;
+margin-top:10px;
+border:1px solid #ddd;
+}
+
+.check{
+margin-bottom:10px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -77,11 +86,49 @@ border-radius:10px;
 
 <div class="card">
 
-<h2>Statistik</h2>
+<h2>Dashboard</h2>
 
-<p id="totalFlights">Gesamtflüge: 0</p>
+<p id="gesamtFluege">Gesamtflüge: 0</p>
 
-<p id="totalMinutes">Gesamtflugzeit: 0 Min.</p>
+<p id="gesamtZeit">Gesamtflugzeit: 0 Minuten</p>
+
+</div>
+
+<div class="card">
+
+<h2>Pilot und Ballon</h2>
+
+<label>Pilot</label>
+<input id="pilot">
+
+<label>Ballon Kennzeichen</label>
+<input id="ballon">
+
+</div>
+
+<div class="card">
+
+<h2>Checkliste</h2>
+
+<div class="check">
+<input type="checkbox"> Hülle geprüft
+</div>
+
+<div class="check">
+<input type="checkbox"> Brenner geprüft
+</div>
+
+<div class="check">
+<input type="checkbox"> Gas geprüft
+</div>
+
+<div class="check">
+<input type="checkbox"> Funkgerät geprüft
+</div>
+
+<div class="check">
+<input type="checkbox"> Wetter geprüft
+</div>
 
 </div>
 
@@ -90,11 +137,15 @@ border-radius:10px;
 <h2>Tracking</h2>
 
 <button class="start" onclick="startFlight()">
+
 ▶ Flug starten
+
 </button>
 
 <button class="stop" onclick="stopFlight()">
+
 ■ Flug beenden
+
 </button>
 
 <p id="status">
@@ -109,17 +160,21 @@ Kein Flug aktiv
 
 <label>Landungen</label>
 
-<input type="number"
+<input
+type="number"
 id="landungen"
-value="1">
+value="1"
+>
 
 <label>Bemerkungen</label>
 
 <textarea
 id="bemerkung"
-rows="4"></textarea>
+rows="4"
+></textarea>
 
-<button class="save"
+<button
+class="save"
 onclick="saveFlight()">
 
 Flug speichern
@@ -130,7 +185,7 @@ Flug speichern
 
 <div class="card">
 
-<h2>Gespeicherte Flüge</h2>
+<h2>Flüge</h2>
 
 <div id="flugliste"></div>
 
@@ -144,7 +199,7 @@ JSON.parse(localStorage.getItem("fluege"))
 
 let aktuellerFlug = null;
 
-updateView();
+anzeigen();
 
 function startFlight(){
 
@@ -152,18 +207,24 @@ navigator.geolocation.getCurrentPosition(function(pos){
 
 aktuellerFlug = {
 
-datum: new Date().toLocaleDateString(),
+datum:new Date().toLocaleDateString(),
 
-startzeit: new Date(),
+pilot:
+document.getElementById("pilot").value,
 
-startLat: pos.coords.latitude,
+ballon:
+document.getElementById("ballon").value,
 
-startLng: pos.coords.longitude
+startzeit:new Date(),
+
+startLat:pos.coords.latitude,
+
+startLng:pos.coords.longitude
 
 };
 
 document.getElementById("status").innerHTML =
-"Flug läuft...";
+"✅ Flug aktiv";
 
 });
 
@@ -172,8 +233,11 @@ document.getElementById("status").innerHTML =
 function stopFlight(){
 
 if(!aktuellerFlug){
+
 alert("Kein Flug aktiv");
+
 return;
+
 }
 
 navigator.geolocation.getCurrentPosition(function(pos){
@@ -188,7 +252,7 @@ aktuellerFlug.landeLng =
 pos.coords.longitude;
 
 document.getElementById("status").innerHTML =
-"Flug beendet";
+"✅ Flug beendet";
 
 });
 
@@ -197,11 +261,14 @@ document.getElementById("status").innerHTML =
 function saveFlight(){
 
 if(!aktuellerFlug){
-alert("Zuerst Flug aufzeichnen");
+
+alert("Bitte zuerst Flug starten");
+
 return;
+
 }
 
-let dauerMinuten = Math.round(
+let minuten = Math.round(
 
 (
 aktuellerFlug.landezeit -
@@ -212,14 +279,14 @@ aktuellerFlug.startzeit
 
 );
 
+aktuellerFlug.flugzeit =
+minuten;
+
 aktuellerFlug.landungen =
 document.getElementById("landungen").value;
 
 aktuellerFlug.bemerkung =
 document.getElementById("bemerkung").value;
-
-aktuellerFlug.flugzeit =
-dauerMinuten;
 
 fluege.push(aktuellerFlug);
 
@@ -230,13 +297,13 @@ JSON.stringify(fluege)
 
 aktuellerFlug = null;
 
-document.getElementById("bemerkung").value="";
+document.getElementById("bemerkung").value = "";
 
-updateView();
+anzeigen();
 
 }
 
-function deleteFlight(index){
+function loeschen(index){
 
 fluege.splice(index,1);
 
@@ -245,19 +312,20 @@ localStorage.setItem(
 JSON.stringify(fluege)
 );
 
-updateView();
+anzeigen();
 
 }
 
-function updateView(){
+function anzeigen(){
 
 let html = "";
 
-let totalMinutes = 0;
+let gesamtMinuten = 0;
 
 fluege.forEach((flug,index)=>{
 
-totalMinutes += Number(flug.flugzeit);
+gesamtMinuten +=
+Number(flug.flugzeit);
 
 html += `
 
@@ -266,6 +334,16 @@ html += `
 <b>${flug.datum}</b>
 
 <br><br>
+
+Pilot:
+${flug.pilot}
+
+<br>
+
+Ballon:
+${flug.ballon}
+
+<br>
 
 Flugzeit:
 ${flug.flugzeit} Minuten
@@ -277,13 +355,13 @@ ${flug.landungen}
 
 <br>
 
-GPS Start:
+Start GPS:
 ${flug.startLat.toFixed(5)},
 ${flug.startLng.toFixed(5)}
 
 <br>
 
-GPS Landung:
+Landung GPS:
 ${flug.landeLat.toFixed(5)},
 ${flug.landeLng.toFixed(5)}
 
@@ -296,7 +374,7 @@ ${flug.bemerkung}
 
 <button
 class="delete"
-onclick="deleteFlight(${index})">
+onclick="loeschen(${index})">
 
 Löschen
 
@@ -311,11 +389,11 @@ Löschen
 document.getElementById("flugliste").innerHTML =
 html;
 
-document.getElementById("totalFlights").innerHTML =
+document.getElementById("gesamtFluege").innerHTML =
 "Gesamtflüge: " + fluege.length;
 
-document.getElementById("totalMinutes").innerHTML =
-"Gesamtflugzeit: " + totalMinutes + " Min.";
+document.getElementById("gesamtZeit").innerHTML =
+"Gesamtflugzeit: " + gesamtMinuten + " Minuten";
 
 }
 
