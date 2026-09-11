@@ -2,95 +2,128 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>Flugbuch Ballonfahren</title>
-<div class="card">
+<title>Flugbuch Ballonfahren Pro</title>
 
-<h2>Statistik</h2>
-
-<p id="anzahlFluege">
-Gesamtflüge: 0
-</p>
-
-</div>
-    
 <style>
+
 body{
-    font-family: Arial, sans-serif;
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-    background:#f4f4f4;
+font-family:Arial,sans-serif;
+background:#f4f4f4;
+margin:0;
+padding:20px;
+max-width:900px;
+margin:auto;
 }
 
 .card{
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
+background:white;
+padding:20px;
+border-radius:12px;
+margin-bottom:20px;
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
-input, textarea{
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    margin-bottom:15px;
+input,textarea{
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:15px;
+box-sizing:border-box;
 }
 
 button{
-    background:#0066cc;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:5px;
-    cursor:pointer;
+padding:12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+margin-right:10px;
 }
 
-h1{
-    text-align:center;
+.start{
+background:green;
+color:white;
+}
+
+.stop{
+background:red;
+color:white;
+}
+
+.save{
+background:#0066cc;
+color:white;
+}
+
+.delete{
+background:#d9534f;
+color:white;
 }
 
 .flug{
-    background:white;
-    padding:10px;
-    margin-top:10px;
-    border-radius:10px;
+background:white;
+padding:15px;
+margin-top:10px;
+border-radius:10px;
 }
+
 </style>
 </head>
 
 <body>
 
-<h1>🎈 Flugbuch Ballonfahren</h1>
+<h1>🎈 Flugbuch Ballonfahren PRO</h1>
 
 <div class="card">
 
-<h2>Neuer Flug</h2>
+<h2>Statistik</h2>
 
-<label>Datum</label>
-<input type="date" id="datum">
+<p id="totalFlights">Gesamtflüge: 0</p>
 
-<label>Startzeit</label>
-<input type="time" id="start">
+<p id="totalMinutes">Gesamtflugzeit: 0 Min.</p>
 
-<label>Landezeit</label>
-<input type="time" id="landung">
+</div>
 
-<label>Startort</label>
-<input type="text" id="startort">
+<div class="card">
 
-<label>Landeort</label>
-<input type="text" id="landeort">
+<h2>Tracking</h2>
+
+<button class="start" onclick="startFlight()">
+▶ Flug starten
+</button>
+
+<button class="stop" onclick="stopFlight()">
+■ Flug beenden
+</button>
+
+<p id="status">
+Kein Flug aktiv
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>Flugdaten</h2>
 
 <label>Landungen</label>
-<input type="number" id="landungen">
+
+<input type="number"
+id="landungen"
+value="1">
 
 <label>Bemerkungen</label>
-<textarea id="bemerkung"></textarea>
 
-<button onclick="flugSpeichern()">
+<textarea
+id="bemerkung"
+rows="4"></textarea>
+
+<button class="save"
+onclick="saveFlight()">
+
 Flug speichern
+
 </button>
 
 </div>
@@ -105,83 +138,184 @@ Flug speichern
 
 <script>
 
-function flugSpeichern(){
-<script>
+let fluege =
+JSON.parse(localStorage.getItem("fluege"))
+|| [];
 
-let fluege = JSON.parse(
-  localStorage.getItem("fluege")
-) || [];
+let aktuellerFlug = null;
 
-anzeigen();
+updateView();
 
-function flugSpeichern(){
+function startFlight(){
 
-  let flug = {
-    datum: document.getElementById("datum").value,
-    start: document.getElementById("start").value,
-    landung: document.getElementById("landung").value,
-    startort: document.getElementById("startort").value,
-    landeort: document.getElementById("landeort").value,
-    landungen: document.getElementById("landungen").value,
-    bemerkung: document.getElementById("bemerkung").value
-  };
+navigator.geolocation.getCurrentPosition(function(pos){
 
-  fluege.push(flug);
+aktuellerFlug = {
 
-  localStorage.setItem(
-    "fluege",
-    JSON.stringify(fluege)
-  );
+datum: new Date().toLocaleDateString(),
 
-  anzeigen();
+startzeit: new Date(),
+
+startLat: pos.coords.latitude,
+
+startLng: pos.coords.longitude
+
+};
+
+document.getElementById("status").innerHTML =
+"Flug läuft...";
+
+});
 
 }
 
-function anzeigen(){
+function stopFlight(){
 
-  let html = "";
+if(!aktuellerFlug){
+alert("Kein Flug aktiv");
+return;
+}
 
-  fluege.forEach((flug,index)=>{
+navigator.geolocation.getCurrentPosition(function(pos){
 
-    html += `
-    <div class="flug">
+aktuellerFlug.landezeit =
+new Date();
 
-      <b>${flug.datum}</b><br>
+aktuellerFlug.landeLat =
+pos.coords.latitude;
 
-      ${flug.startort} ➜ ${flug.landeort}<br>
+aktuellerFlug.landeLng =
+pos.coords.longitude;
 
-      Start: ${flug.start}<br>
+document.getElementById("status").innerHTML =
+"Flug beendet";
 
-      Landung: ${flug.landung}<br>
+});
 
-      Landungen: ${flug.landungen}<br>
+}
 
-      Bemerkung: ${flug.bemerkung}<br><br>
+function saveFlight(){
 
-      <button onclick="loeschen(${index})">
-      Löschen
-      </button>
+if(!aktuellerFlug){
+alert("Zuerst Flug aufzeichnen");
+return;
+}
 
-    </div>
-    `;
-  });
+let dauerMinuten = Math.round(
 
-  document.getElementById("flugliste").innerHTML =
-    html;
-    document.getElementById("anzahlFluege").innerText =
+(
+aktuellerFlug.landezeit -
+aktuellerFlug.startzeit
+)
+
+/1000/60
+
+);
+
+aktuellerFlug.landungen =
+document.getElementById("landungen").value;
+
+aktuellerFlug.bemerkung =
+document.getElementById("bemerkung").value;
+
+aktuellerFlug.flugzeit =
+dauerMinuten;
+
+fluege.push(aktuellerFlug);
+
+localStorage.setItem(
+"fluege",
+JSON.stringify(fluege)
+);
+
+aktuellerFlug = null;
+
+document.getElementById("bemerkung").value="";
+
+updateView();
+
+}
+
+function deleteFlight(index){
+
+fluege.splice(index,1);
+
+localStorage.setItem(
+"fluege",
+JSON.stringify(fluege)
+);
+
+updateView();
+
+}
+
+function updateView(){
+
+let html = "";
+
+let totalMinutes = 0;
+
+fluege.forEach((flug,index)=>{
+
+totalMinutes += Number(flug.flugzeit);
+
+html += `
+
+<div class="flug">
+
+<b>${flug.datum}</b>
+
+<br><br>
+
+Flugzeit:
+${flug.flugzeit} Minuten
+
+<br>
+
+Landungen:
+${flug.landungen}
+
+<br>
+
+GPS Start:
+${flug.startLat.toFixed(5)},
+${flug.startLng.toFixed(5)}
+
+<br>
+
+GPS Landung:
+${flug.landeLat.toFixed(5)},
+${flug.landeLng.toFixed(5)}
+
+<br>
+
+Bemerkung:
+${flug.bemerkung}
+
+<br><br>
+
+<button
+class="delete"
+onclick="deleteFlight(${index})">
+
+Löschen
+
+</button>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("flugliste").innerHTML =
+html;
+
+document.getElementById("totalFlights").innerHTML =
 "Gesamtflüge: " + fluege.length;
-}
 
-function loeschen(index){
-
-  fluege.splice(index,1);
-
-  localStorage.setItem(
-    "fluege",
-    JSON.stringify(fluege)
-  );
-
-  anzeigen();
+document.getElementById("totalMinutes").innerHTML =
+"Gesamtflugzeit: " + totalMinutes + " Min.";
 
 }
 
