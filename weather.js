@@ -3,10 +3,17 @@ async function ladeWetter() {
     const wetterContainer =
     document.getElementById("weather");
 
+    if (!wetterContainer) {
+        return;
+    }
+
+    wetterContainer.innerHTML =
+    "<p>🌤 Wetter wird geladen...</p>";
+
     if (!navigator.geolocation) {
 
         wetterContainer.innerHTML =
-        "GPS nicht verfügbar";
+        "<p>GPS wird nicht unterstützt.</p>";
 
         return;
     }
@@ -34,17 +41,20 @@ async function ladeWetter() {
                 await response.json();
 
                 let ampel = "🟢";
+                let text = "Gute Bedingungen";
 
                 if (
                     data.current.wind_speed_10m > 10
                 ) {
                     ampel = "🟡";
+                    text = "Vorsicht";
                 }
 
                 if (
                     data.current.wind_speed_10m > 20
                 ) {
                     ampel = "🔴";
+                    text = "Nicht empfohlen";
                 }
 
                 wetterContainer.innerHTML = `
@@ -52,65 +62,84 @@ async function ladeWetter() {
                 <div class="card">
 
                     <h2>
-                    🌤 Wetter Ballonfahren
+                        🌤 Wetter für Ballonfahrer
                     </h2>
 
+                    <h3>
+                        ${ampel} ${text}
+                    </h3>
+
+                    <hr>
+
                     <p>
-                    ${ampel}
+                        🌡 Temperatur:
+                        ${data.current.temperature_2m} °C
                     </p>
 
                     <p>
-                    🌡 Temperatur:
-                    ${data.current.temperature_2m} °C
+                        💧 Luftfeuchtigkeit:
+                        ${data.current.relative_humidity_2m} %
                     </p>
 
                     <p>
-                    💧 Luftfeuchtigkeit:
-                    ${data.current.relative_humidity_2m} %
+                        🌬 Wind:
+                        ${data.current.wind_speed_10m} km/h
                     </p>
 
                     <p>
-                    🌬 Wind:
-                    ${data.current.wind_speed_10m} km/h
+                        🧭 Windrichtung:
+                        ${data.current.wind_direction_10m}°
                     </p>
 
                     <p>
-                    🧭 Windrichtung:
-                    ${data.current.wind_direction_10m}°
+                        📈 Luftdruck:
+                        ${data.current.surface_pressure} hPa
+                    </p>
+
+                    <hr>
+
+                    <p>
+                        🌅 Sonnenaufgang:
+                        ${new Date(
+                            data.daily.sunrise[0]
+                        ).toLocaleTimeString("de-DE")}
                     </p>
 
                     <p>
-                    📈 Luftdruck:
-                    ${data.current.surface_pressure} hPa
-                    </p>
-
-                    <p>
-                    🌅 Sonnenaufgang:
-                    ${new Date(
-                        data.daily.sunrise[0]
-                    ).toLocaleTimeString("de-DE")}
-                    </p>
-
-                    <p>
-                    🌇 Sonnenuntergang:
-                    ${new Date(
-                        data.daily.sunset[0]
-                    ).toLocaleTimeString("de-DE")}
+                        🌇 Sonnenuntergang:
+                        ${new Date(
+                            data.daily.sunset[0]
+                        ).toLocaleTimeString("de-DE")}
                     </p>
 
                 </div>
 
                 `;
 
-            } catch(error) {
+            }
+            catch (error) {
 
-                console.log(error);
+                console.error(error);
 
                 wetterContainer.innerHTML =
-                "Wetterdaten konnten nicht geladen werden.";
-
+                `
+                <div class="card">
+                    ❌ Wetterdaten konnten nicht geladen werden.
+                </div>
+                `;
             }
+        },
 
+        function(error) {
+
+            console.error(error);
+
+            wetterContainer.innerHTML =
+            `
+            <div class="card">
+                ❌ Standort konnte nicht ermittelt werden.
+            </div>
+            `;
         }
 
     );
