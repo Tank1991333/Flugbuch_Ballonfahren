@@ -2,212 +2,120 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Flugbuch Ballonfahren PRO</title>
+<title>Flugbuch Ballonfahren</title>
 
 <style>
-
 body{
-font-family:Arial,sans-serif;
-background:#f4f4f4;
-padding:15px;
-max-width:900px;
-margin:auto;
+    font-family: Arial,sans-serif;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    background:#f4f4f4;
 }
 
 .card{
-background:white;
-padding:20px;
-border-radius:12px;
-margin-bottom:20px;
-box-shadow:0 2px 8px rgba(0,0,0,.1);
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
 }
 
-h1{
-text-align:center;
-}
-
-input,textarea{
-width:100%;
-padding:10px;
-margin-top:5px;
-margin-bottom:15px;
-box-sizing:border-box;
+input,
+textarea{
+    width:100%;
+    padding:10px;
+    margin-bottom:15px;
 }
 
 button{
-padding:12px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-margin:3px;
-}
-
-.start{
-background:#28a745;
-color:white;
-}
-
-.stop{
-background:#dc3545;
-color:white;
-}
-
-.save{
-background:#0066cc;
-color:white;
-}
-
-.delete{
-background:#666;
-color:white;
+    background:#0066cc;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:5px;
+    cursor:pointer;
 }
 
 .flug{
-padding:15px;
-background:#fafafa;
-border-radius:10px;
-margin-top:10px;
-border:1px solid #ddd;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-top:10px;
 }
-
-.check{
-margin-bottom:10px;
-}
-
 </style>
 
 </head>
-
 <body>
 
-<h1>🎈 Flugbuch Ballonfahren PRO</h1>
+<h1>🎈 Flugbuch Ballonfahren</h1>
 
 <div class="card">
+<h2>Statistik</h2>
 
-<h2>Dashboard</h2>
+<p id="anzahlFluege">
+Gesamtflüge: 0
+</p>
 
-<p id="gesamtFluege">Gesamtflüge: 0</p>
-
-<p id="gesamtZeit">Gesamtflugzeit: 0 Minuten</p>
-
-</div>
-
-<div class="card">
-
-<h2>Pilot und Ballon</h2>
-
-<label>Pilot</label>
-<input id="pilot">
-
-<label>Ballon Kennzeichen</label>
-<input id="ballon">
-
-</div>
-
-<div class="card">
-
-<h2>Checkliste</h2>
-
-<div class="check">
-<input type="checkbox"> Hülle geprüft
-</div>
-
-<div class="check">
-<input type="checkbox"> Brenner geprüft
-</div>
-
-<div class="check">
-<input type="checkbox"> Gas geprüft
-</div>
-
-<div class="check">
-<input type="checkbox"> Funkgerät geprüft
-</div>
-
-<div class="check">
-<input type="checkbox"> Wetter geprüft
-</div>
-
-</div>
-
-<div class="card">
-
-<h2>Tracking</h2>
-
-<button class="start" onclick="startFlight()">
-
-▶ Flug starten
-
-</button>
-
-<button class="stop" onclick="stopFlight()">
-
-■ Flug beenden
-
-</button>
-
-<p id="status">
-Kein Flug aktiv
+<p id="gesamtLandungen">
+Gesamtlandungen: 0
 </p>
 
 </div>
 
 <div class="card">
 
-<h2>Flugdaten</h2>
+<h2>Neuer Flug</h2>
+
+<label>Pilot</label>
+<input type="text" id="pilot">
+
+<label>Ballon Kennzeichen</label>
+<input type="text" id="ballon">
+
+<label>Datum</label>
+<input type="date" id="datum">
+
+<label>Startzeit</label>
+<input type="time" id="start">
+
+<label>Landezeit</label>
+<input type="time" id="landung">
+
+<label>Startort</label>
+<input type="text" id="startort">
+
+<label>Landeort</label>
+<input type="text" id="landeort">
 
 <label>Landungen</label>
+<input type="number" id="landungen">
 
-<input
-type="number"
-id="landungen"
-value="1"
->
+<label>Bemerkung</label>
+<textarea id="bemerkung"></textarea>
 
-<label>Bemerkungen</label>
-
-<textarea
-id="bemerkung"
-rows="4"
-></textarea>
-
-<button
-class="save"
-onclick="saveFlight()">
-
+<button onclick="flugSpeichern()">
 Flug speichern
-
 </button>
 
 </div>
 
 <div class="card">
-
-<h2>Flüge</h2>
-
+<h2>Gespeicherte Flüge</h2>
 <div id="flugliste"></div>
-
 </div>
 
 <script>
 
 let fluege =
-JSON.parse(localStorage.getItem("fluege"))
-|| [];
-
-let aktuellerFlug = null;
+JSON.parse(localStorage.getItem("fluege")) || [];
 
 anzeigen();
 
-function startFlight(){
+function flugSpeichern(){
 
-navigator.geolocation.getCurrentPosition(function(pos){
-
-aktuellerFlug = {
-
-datum:new Date().toLocaleDateString(),
+let flug = {
 
 pilot:
 document.getElementById("pilot").value,
@@ -215,97 +123,41 @@ document.getElementById("pilot").value,
 ballon:
 document.getElementById("ballon").value,
 
-startzeit:new Date(),
+datum:
+document.getElementById("datum").value,
 
-startLat:pos.coords.latitude,
+start:
+document.getElementById("start").value,
 
-startLng:pos.coords.longitude
+landung:
+document.getElementById("landung").value,
 
+startort:
+document.getElementById("startort").value,
+
+landeort:
+document.getElementById("landeort").value,
+
+landungen:
+document.getElementById("landungen").value,
+
+bemerkung:
+document.getElementById("bemerkung").value
 };
 
-document.getElementById("status").innerHTML =
-"✅ Flug aktiv";
+let startZeit =
+new Date("2000-01-01T" + flug.start);
 
-});
+let landeZeit =
+new Date("2000-01-01T" + flug.landung);
 
-}
+let dauer =
+(landeZeit - startZeit) / 1000 / 60;
 
-function stopFlight(){
+flug.dauer =
+Math.round(dauer) + " Minuten";
 
-if(!aktuellerFlug){
-
-alert("Kein Flug aktiv");
-
-return;
-
-}
-
-navigator.geolocation.getCurrentPosition(function(pos){
-
-aktuellerFlug.landezeit =
-new Date();
-
-aktuellerFlug.landeLat =
-pos.coords.latitude;
-
-aktuellerFlug.landeLng =
-pos.coords.longitude;
-
-document.getElementById("status").innerHTML =
-"✅ Flug beendet";
-
-});
-
-}
-
-function saveFlight(){
-
-if(!aktuellerFlug){
-
-alert("Bitte zuerst Flug starten");
-
-return;
-
-}
-
-let minuten = Math.round(
-
-(
-aktuellerFlug.landezeit -
-aktuellerFlug.startzeit
-)
-
-/1000/60
-
-);
-
-aktuellerFlug.flugzeit =
-minuten;
-
-aktuellerFlug.landungen =
-document.getElementById("landungen").value;
-
-aktuellerFlug.bemerkung =
-document.getElementById("bemerkung").value;
-
-fluege.push(aktuellerFlug);
-
-localStorage.setItem(
-"fluege",
-JSON.stringify(fluege)
-);
-
-aktuellerFlug = null;
-
-document.getElementById("bemerkung").value = "";
-
-anzeigen();
-
-}
-
-function loeschen(index){
-
-fluege.splice(index,1);
+fluege.push(flug);
 
 localStorage.setItem(
 "fluege",
@@ -319,82 +171,65 @@ anzeigen();
 function anzeigen(){
 
 let html = "";
-
-let gesamtMinuten = 0;
+let landungenSumme = 0;
 
 fluege.forEach((flug,index)=>{
 
-gesamtMinuten +=
-Number(flug.flugzeit);
+landungenSumme +=
+Number(flug.landungen || 0);
 
 html += `
-
 <div class="flug">
 
-<b>${flug.datum}</b>
+<b>${flug.datum}</b><br><br>
 
-<br><br>
+Pilot: ${flug.pilot}<br>
+Ballon: ${flug.ballon}<br>
 
-Pilot:
-${flug.pilot}
+${flug.startort}
+➜
+${flug.landeort}<br>
 
-<br>
+Start: ${flug.start}<br>
 
-Ballon:
-${flug.ballon}
+Landung: ${flug.landung}<br>
 
-<br>
+Dauer: ${flug.dauer}<br>
 
-Flugzeit:
-${flug.flugzeit} Minuten
+Landungen: ${flug.landungen}<br>
 
-<br>
+Bemerkung: ${flug.bemerkung}<br><br>
 
-Landungen:
-${flug.landungen}
-
-<br>
-
-Start GPS:
-${flug.startLat.toFixed(5)},
-${flug.startLng.toFixed(5)}
-
-<br>
-
-Landung GPS:
-${flug.landeLat.toFixed(5)},
-${flug.landeLng.toFixed(5)}
-
-<br>
-
-Bemerkung:
-${flug.bemerkung}
-
-<br><br>
-
-<button
-class="delete"
-onclick="loeschen(${index})">
-
+<button onclick="loeschen(${index})">
 Löschen
-
 </button>
 
 </div>
-
 `;
-
 });
 
-document.getElementById("flugliste").innerHTML =
-html;
+document.getElementById("flugliste")
+.innerHTML = html;
 
-document.getElementById("gesamtFluege").innerHTML =
+document.getElementById("anzahlFluege")
+.innerText =
 "Gesamtflüge: " + fluege.length;
 
-document.getElementById("gesamtZeit").innerHTML =
-"Gesamtflugzeit: " + gesamtMinuten + " Minuten";
+document.getElementById("gesamtLandungen")
+.innerText =
+"Gesamtlandungen: " + landungenSumme;
+}
 
+function loeschen(index){
+
+fluege.splice(index,1);
+
+localStorage.setItem(
+"fluege",
+JSON.stringify(fluege)
+);
+
+anzeigen();
 }
 
 </script>
