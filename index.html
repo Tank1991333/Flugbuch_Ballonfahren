@@ -4,153 +4,212 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>
-🎈 Flugbuch Ballonfahren
-</title>
+<title>🎈 FlightBook Balloon</title>
 
 <link
 rel="stylesheet"
-href="https://unpkg.com/le.css
+href="t/leaflet.css
+
+style.css
 
 </head>
 
 <body>
 
-<h1>🎈 Flugbuch Ballonfahren</h1>
+<header class="hero">
 
-<div class="card">
+    <div class="hero-overlay">
 
-<h2>Status</h2>
+        <h1>🎈 FlightBook Balloon</h1>
 
-<p id="status">
-Kein Flug aktiv
-</p>
+        <p>
+            Digitales Flugbuch für Ballonfahrer
+        </p>
 
-</div>
+        <div id="status" class="status-badge">
+            Kein Flug aktiv
+        </div>
 
-<div class="card">
+    </div>
 
-<h2>📊 Statistik</h2>
+</header>
 
-<p>
-Gesamtflüge:
-<span id="countFlights">0</span>
-</p>
+<section class="dashboard">
 
-<p>
-Gesamtlandungen:
-<span id="countLandings">0</span>
-</p>
+    <div class="stat-card">
 
-<p>
-Gesamtflugzeit:
-<span id="countMinutes">0h 0m</span>
-</p>
+        <div class="stat-icon">✈️</div>
 
-</div>
+        <div class="stat-title">
+            Flüge
+        </div>
+
+        <div
+        id="countFlights"
+        class="stat-value"
+        >
+            0
+        </div>
+
+    </div>
+
+    <div class="stat-card">
+
+        <div class="stat-icon">🛬</div>
+
+        <div class="stat-title">
+            Landungen
+        </div>
+
+        <div
+        id="countLandings"
+        class="stat-value"
+        >
+            0
+        </div>
+
+    </div>
+
+    <div class="stat-card">
+
+        <div class="stat-icon">⏱️</div>
+
+        <div class="stat-title">
+            Flugzeit
+        </div>
+
+        <div
+        id="countMinutes"
+        class="stat-value"
+        >
+            0h 0m
+        </div>
+
+    </div>
+
+</section>
 
 <div id="weather"></div>
 
-<div class="card">
+<section class="glass-card">
 
-<h2>👨‍✈️ Pilot & Ballon</h2>
+    <h2>👨‍✈️ Pilot & Ballon</h2>
 
-<label>Pilot</label>
+    <div class="grid">
 
-<input
-type="text"
-id="pilot"
-placeholder="Pilot eingeben"
-/>
+        <div>
 
-<label>Ballon Kennzeichen</label>
+            <label>Pilot</label>
 
-<input
-type="text"
-id="ballon"
-placeholder="z.B. OE-XYZ"
-/>
+            <input
+            type="text"
+            id="pilot"
+            placeholder="Pilot eingeben"
+            >
 
-</div>
+        </div>
 
-<div class="card">
+        <div>
 
-<h2>🚀 Flugsteuerung</h2>
+            <label>Ballon</label>
 
-<button onclick="flugStarten()">
-Flug starten
-</button>
+            <input
+            type="text"
+            id="ballon"
+            placeholder="OE-XXX"
+            >
 
-<button onclick="flugBeenden()">
-Flug beenden
-</button>
+        </div>
 
-<button onclick="flugSpeichern()">
-Flug speichern
-</button>
+    </div>
 
-</div>
+</section>
 
-<div class="card">
+<section class="glass-card">
 
-<h2>📝 Flugdetails</h2>
+    <h2>🚀 Flugsteuerung</h2>
 
-<label>Landungen</label>
+    <div class="button-row">
 
-<input
-type="number"
-id="landungen"
-value="1"
-/>
+        <button
+        class="success"
+        onclick="flugStarten()">
+            Flug starten
+        </button>
 
-<label>Bemerkung</label>
+        <button
+        class="warning"
+        onclick="flugBeenden()">
+            Flug beenden
+        </button>
 
-<textarea
-id="bemerkung"
-rows="4"
-placeholder="Notizen zum Flug..."
-></textarea>
+        <button
+        class="primary"
+        onclick="flugSpeichern()">
+            Flug speichern
+        </button>
 
-</div>
+    </div>
 
-<div class="card">
+</section>
 
-<h2>🗺 Flugkarte</h2>
+<section class="glass-card">
 
-<div id="map"></div>
+    <h2>📝 Flugdaten</h2>
 
-<br>
+    <label>Landungen</label>
 
-<button onclick="aktuellePosition()">
-📍 Aktuelle Position
-</button>
+    <input
+    type="number"
+    id="landungen"
+    value="1"
+    >
 
-<button onclick="routeLoeschen()">
-🗑 Route löschen
-</button>
+    <label>Bemerkung</label>
 
-</div>
+    <textarea
+    id="bemerkung"
+    rows="4"
+    placeholder="Wetter, Besonderheiten, Gäste ..."
+    ></textarea>
 
-<div class="card">
+</section>
 
-<h2>📖 Flugbuch</h2>
+<section class="glass-card">
 
-<div id="flugliste"></div>
+    <h2>🗺 Live Flugkarte</h2>
 
-</div>
+    <div id="map"></div>
+
+    <div class="button-row">
+
+        <button onclick="aktuellePosition()">
+            📍 Position
+        </button>
+
+        <button onclick="routeLoeschen()">
+            🗑 Route löschen
+        </button>
+
+    </div>
+
+</section>
+
+<section class="glass-card">
+
+    <h2>📖 Flugbuch</h2>
+
+    <div id="flugliste"></div>
+
+</section>
 
 https://unpkg.com/leaflet/dist/leaflet.jsscript>
 
 <script src="map.js"></script>
-
 <script src="weather.js"></script>
-
 <script src="app.js"></script>
 
 </body>
-
 </html>
