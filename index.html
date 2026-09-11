@@ -1,17 +1,141 @@
-** Flugbuch Ballonfahren
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-Dashboard**** Heute
-├── Wetter
-├──**etzte Flüge
+<title>Flugbuch Ballonfahren</title>
 
-Flugbuch
-├──**euer**lug
-├──**lugliste
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    background:#f4f4f4;
+}
 
-Checklisten
-├──**or Start
-├── Nach Landung
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
 
-Statis**k**── Flugstunden
-├──**nzahl Fahrten
-├──**urchschnitt**auer
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    margin-bottom:15px;
+}
+
+button{
+    background:#0066cc;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+h1{
+    text-align:center;
+}
+
+.flug{
+    background:white;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎈 Flugbuch Ballonfahren</h1>
+
+<div class="card">
+
+<h2>Neuer Flug</h2>
+
+<label>Datum</label>
+<input type="date" id="datum">
+
+<label>Startzeit</label>
+<input type="time" id="start">
+
+<label>Landezeit</label>
+<input type="time" id="landung">
+
+<label>Startort</label>
+<input type="text" id="startort">
+
+<label>Landeort</label>
+<input type="text" id="landeort">
+
+<label>Landungen</label>
+<input type="number" id="landungen">
+
+<label>Bemerkungen</label>
+<textarea id="bemerkung"></textarea>
+
+<button onclick="flugSpeichern()">
+Flug speichern
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>Gespeicherte Flüge</h2>
+
+<div id="flugliste"></div>
+
+</div>
+
+<script>
+
+function flugSpeichern(){
+
+let datum =
+document.getElementById("datum").value;
+
+let start =
+document.getElementById("start").value;
+
+let landung =
+document.getElementById("landung").value;
+
+let startort =
+document.getElementById("startort").value;
+
+let landeort =
+document.getElementById("landeort").value;
+
+let landungen =
+document.getElementById("landungen").value;
+
+let bemerkung =
+document.getElementById("bemerkung").value;
+
+let html = `
+<div class="flug">
+<b>${datum}</b><br>
+${startort} ➜ ${landeort}<br>
+Start: ${start}<br>
+Landung: ${landung}<br>
+Landungen: ${landungen}<br>
+Bemerkung: ${bemerkung}
+</div>
+`;
+
+document.getElementById("flugliste")
+.innerHTML += html;
+
+}
+
+</script>
+
+</body>
+</html>
