@@ -14,7 +14,7 @@ async function ortName(lat, lng) {
     try {
 
         const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
             {
                 headers: {
                     "Accept": "application/json"
