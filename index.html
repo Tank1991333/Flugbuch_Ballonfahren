@@ -6,13 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>🎈 Ballonflugbuch Professional</title>
+<title>🎈 Ballonflugbuch Professional V9</title>
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<link rel="stylesheet"
-href="style.css">
+<link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -24,15 +22,11 @@ href="style.css">
 
 <h1>🎈 Ballonflugbuch Professional</h1>
 
-<p>
-Digitales Flugbuch für Heißluftballonfahrten
-</p>
+<p>Digitales Flugbuch für Heißluftballonfahrer</p>
 
 </div>
 
 </header>
-
-<!-- Dashboard -->
 
 <section class="dashboard">
 
@@ -57,8 +51,6 @@ Digitales Flugbuch für Heißluftballonfahrten
 </div>
 
 </section>
-
-<!-- Wetter -->
 
 <section class="card weather">
 
@@ -88,17 +80,13 @@ Digitales Flugbuch für Heißluftballonfahrten
 
 </div>
 
-<div
-id="weatherRating"
-class="weather-rating">
+<div id="weatherRating" class="weather-rating">
 
-Wetterdaten werden geladen...
+Wetterdaten werden geladen ...
 
 </div>
 
 </section>
-
-<!-- Pilot -->
 
 <section class="card">
 
@@ -109,7 +97,7 @@ Wetterdaten werden geladen...
 <input
 id="pilot"
 type="text"
-placeholder="Pilot eingeben">
+placeholder="Pilotname">
 
 <label for="ballon">Ballon Kennzeichen</label>
 
@@ -126,8 +114,6 @@ type="text"
 placeholder="z.B. Kubicek BB45">
 
 </section>
-
-<!-- Tracking -->
 
 <section class="card">
 
@@ -154,22 +140,20 @@ onclick="flugBeenden()">
 </div>
 
 <p id="status">
+
 Kein Flug aktiv
+
 </p>
 
 </section>
 
-<!-- Karte -->
-
-<section class="card">
+<section class="card map-card">
 
 <h2>🗺 Flugkarte</h2>
 
 <div id="map"></div>
 
 </section>
-
-<!-- Höhenprofil -->
 
 <section class="card">
 
@@ -178,11 +162,10 @@ Kein Flug aktiv
 <canvas
 id="heightChart"
 height="120">
+
 </canvas>
 
 </section>
-
-<!-- Flugdaten -->
 
 <section class="card">
 
@@ -210,6 +193,7 @@ Bemerkungen
 id="bemerkung"
 rows="4"
 placeholder="Bemerkungen zum Flug">
+
 </textarea>
 
 <button
@@ -222,8 +206,6 @@ onclick="flugSpeichern()">
 
 </section>
 
-<!-- Flugbuch -->
-
 <section class="card">
 
 <h2>📒 Flugbuch</h2>
@@ -232,15 +214,9 @@ onclick="flugSpeichern()">
 
 </section>
 
-<!-- Leaflet -->
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Chart.js -->
-
 https://cdn.jsdelivr.net/npm/chart.jsscript>
-
-<!-- Eigene Dateien -->
 
 <script src="map.js"></script>
 
@@ -249,4 +225,5 @@ https://cdn.jsdelivr.net/npm/chart.jsscript>
 <script src="app.js"></script>
 
 </body>
+
 </html>
