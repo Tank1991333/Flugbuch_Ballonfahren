@@ -1,146 +1,357 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎈 Flugbuch Ballonfahren</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>BalloonLog Pro</title>
 
 <style>
 
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,Arial,sans-serif;
+}
+
 body{
-    font-family:Arial, sans-serif;
-    max-width:1000px;
-    margin:auto;
-    padding:20px;
-    background:#f4f4f4;
+background:#eef5ff;
+padding:15px;
+}
+
+.hero{
+
+background:
+linear-gradient(
+rgba(0,0,0,0.4),
+rgba(0,0,0,0.4)
+),
+
+url("https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=1500&q=80");
+
+background-size:cover;
+background-position:center;
+
+height:280px;
+
+border-radius:20px;
+
+color:white;
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+padding:30px;
+
+margin-bottom:20px;
+}
+
+.hero h1{
+font-size:38px;
+}
+
+.hero p{
+margin-top:10px;
+font-size:18px;
 }
 
 .card{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    margin-bottom:20px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+
+background:white;
+
+padding:20px;
+
+border-radius:20px;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.08);
+
+margin-bottom:20px;
+
 }
 
-h1{
-    text-align:center;
+.dashboard{
+
+display:grid;
+
+gap:15px;
+
+grid-template-columns:
+repeat(auto-fit,minmax(180px,1fr));
+
+}
+
+.stat{
+
+background:#f5f8ff;
+
+padding:15px;
+
+border-radius:15px;
+
+text-align:center;
+
+}
+
+.stat h3{
+color:#0066cc;
+font-size:28px;
 }
 
 input,
 textarea{
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    margin-bottom:10px;
-    box-sizing:border-box;
+
+width:100%;
+
+padding:12px;
+
+margin-top:5px;
+
+margin-bottom:15px;
+
+border:1px solid #ddd;
+
+border-radius:10px;
+
 }
 
 button{
-    background:#0066cc;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:6px;
-    cursor:pointer;
+
+border:none;
+
+padding:14px;
+
+border-radius:12px;
+
+cursor:pointer;
+
+font-weight:bold;
+
 }
 
-button:hover{
-    background:#004fa3;
+.start{
+
+background:#00b050;
+
+color:white;
+
 }
 
-.flug{
-    background:#f9f9f9;
-    padding:15px;
-    margin-top:10px;
-    border-radius:10px;
+.stop{
+
+background:#d60000;
+
+color:white;
+
+}
+
+.save{
+
+background:#0066ff;
+
+color:white;
+
+width:100%;
+
+}
+
+.flight{
+
+padding:15px;
+
+background:#fafafa;
+
+border-radius:15px;
+
+margin-top:10px;
+
+border-left:5px solid #0066ff;
+
+}
+
+.weather{
+
+background:linear-gradient(
+135deg,
+#4facfe,
+#00f2fe);
+
+color:white;
+
+}
+
+.map-placeholder{
+
+height:200px;
+
+background:#edf3ff;
+
+border-radius:15px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:20px;
+
+color:#888;
+
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>🎈 Flugbuch Ballonfahren</h1>
+<div class="hero">
 
-<div class="card">
+<h1>🎈 BalloonLog PRO</h1>
 
-<h2>📊 Statistik</h2>
-
-<p id="anzahlFluege">
-Gesamtflüge: 0
-</p>
-
-<p id="gesamtLandungen">
-Gesamtlandungen: 0
+<p>
+Digitales Flugbuch für Heißluftballonfahrer
 </p>
 
 </div>
 
 <div class="card">
 
-<h2>📍 GPS Tracking</h2>
+<h2>📊 Dashboard</h2>
 
-<p id="position">
-Position nicht verfügbar
+<br>
+
+<div class="dashboard">
+
+<div class="stat">
+<p>Flüge</p>
+<h3 id="fluegeCount">0</h3>
+</div>
+
+<div class="stat">
+<p>Landungen</p>
+<h3 id="landungenCount">0</h3>
+</div>
+
+<div class="stat">
+<p>Minuten</p>
+<h3 id="flugzeitCount">0</h3>
+</div>
+
+</div>
+
+</div>
+
+<div class="card weather">
+
+<h2>🌤 Wetter</h2>
+
+<br>
+
+<p id="wetter">
+Wetterdaten werden geladen ...
 </p>
-
-<p id="hoehe">
-Höhe: -
-</p>
-
-<p id="genauigkeit">
-Genauigkeit: -
-</p>
-
-<button onclick="starteGPS()">
-GPS starten
-</button>
 
 </div>
 
 <div class="card">
 
-<h2>📝 Neuer Flug</h2>
+<h2>🎈 Pilot & Ballon</h2>
+
+<br>
 
 <label>Pilot</label>
-<input type="text" id="pilot">
+
+<input id="pilot">
 
 <label>Ballon Kennzeichen</label>
-<input type="text" id="ballon">
 
-<label>Datum</label>
-<input type="date" id="datum">
+<input id="ballon">
 
-<label>Startzeit</label>
-<input type="time" id="start">
+</div>
 
-<label>Landezeit</label>
-<input type="time" id="landung">
+<div class="card">
 
-<label>Startort</label>
-<input type="text" id="startort">
+<h2>📍 Tracking</h2>
 
-<label>Landeort</label>
-<input type="text" id="landeort">
+<br>
 
-<label>Anzahl Landungen</label>
-<input type="number" id="landungen">
+<button
+class="start"
+onclick="flugStarten()">
 
-<label>Bemerkung</label>
-<textarea id="bemerkung"></textarea>
+▶ Flug starten
 
-<button onclick="flugSpeichern()">
+</button>
+
+<button
+class="stop"
+onclick="flugBeenden()">
+
+■ Flug beenden
+
+</button>
+
+<br><br>
+
+<p id="status">
+Kein Flug aktiv
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>📝 Flugdaten</h2>
+
+<br>
+
+<label>Landungen</label>
+
+<input
+id="landungen"
+type="number"
+value="1">
+
+<label>Bemerkungen</label>
+
+<textarea
+id="bemerkung"
+rows="4"></textarea>
+
+<button
+class="save"
+onclick="flugSpeichern()">
+
 Flug speichern
+
 </button>
 
 </div>
 
 <div class="card">
 
-<h2>📖 Gespeicherte Flüge</h2>
+<h2>🗺 Karte</h2>
+
+<br>
+
+<div class="map-placeholder">
+
+Kartenansicht folgt in Version 5
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>📒 Flugbuch</h2>
+
+<br>
 
 <div id="flugliste"></div>
 
@@ -149,91 +360,29 @@ Flug speichern
 <script>
 
 let fluege =
-JSON.parse(localStorage.getItem("fluege")) || [];
+JSON.parse(
+localStorage.getItem("fluege")
+) || [];
 
-anzeigen();
+let aktuellerFlug = null;
 
-function starteGPS(){
+dashboard();
 
-if(!navigator.geolocation){
-alert("GPS wird nicht unterstützt");
-return;
-}
+wetterLaden();
 
-navigator.geolocation.watchPosition(
-zeigePosition,
-gpsFehler,
-{
-enableHighAccuracy:true
-}
-);
+function flugStarten(){
 
-}
+navigator.geolocation.getCurrentPosition(
 
-function zeigePosition(position){
+function(pos){
 
-let breite =
-position.coords.latitude.toFixed(6);
+aktuellerFlug={
 
-let laenge =
-position.coords.longitude.toFixed(6);
+datum:
+new Date().toLocaleDateString(),
 
-let hoehe =
-position.coords.altitude;
-
-let genauigkeit =
-Math.round(position.coords.accuracy);
-
-let mapsLink =
-`https://maps.google.com/?q=${breite},${laenge}`;
-
-document.getElementById("position").innerHTML =
-`
-📍 ${breite}, ${laenge}<br>
-<a href="${mapsLink}" target="_blank">
-Karte öffnen
-</a>
-`;
-
-document.getElementById("hoehe").innerHTML =
-"🎈 Höhe: " +
-(hoehe ? Math.round(hoehe) : "-") +
-" m";
-
-document.getElementById("genauigkeit").innerHTML =
-"🎯 Genauigkeit: " +
-genauigkeit +
-" m";
-
-}
-
-function gpsFehler(error){
-
-alert(
-"GPS Fehler: " +
-error.message
-);
-
-}
-
-function flugSpeichern(){
-
-let startZeit =
-new Date(
-"2000-01-01T" +
-document.getElementById("start").value
-);
-
-let landeZeit =
-new Date(
-"2000-01-01T" +
-document.getElementById("landung").value
-);
-
-let dauer =
-(Math.abs(landeZeit - startZeit) / 1000 / 60);
-
-let flug = {
+start:
+new Date(),
 
 pilot:
 document.getElementById("pilot").value,
@@ -241,86 +390,161 @@ document.getElementById("pilot").value,
 ballon:
 document.getElementById("ballon").value,
 
-datum:
-document.getElementById("datum").value,
+startLat:
+pos.coords.latitude,
 
-start:
-document.getElementById("start").value,
-
-landung:
-document.getElementById("landung").value,
-
-startort:
-document.getElementById("startort").value,
-
-landeort:
-document.getElementById("landeort").value,
-
-landungen:
-document.getElementById("landungen").value,
-
-bemerkung:
-document.getElementById("bemerkung").value,
-
-gps:
-document.getElementById("position").innerText,
-
-dauer:
-Math.round(dauer) + " Minuten"
+startLng:
+pos.coords.longitude
 
 };
 
-fluege.push(flug);
+document.getElementById("status")
+.innerHTML =
+"✅ Flug läuft";
+
+});
+
+}
+
+function flugBeenden(){
+
+if(!aktuellerFlug){
+
+alert("Kein Flug aktiv");
+
+return;
+
+}
+
+navigator.geolocation.getCurrentPosition(
+
+function(pos){
+
+aktuellerFlug.ende =
+new Date();
+
+aktuellerFlug.landeLat =
+pos.coords.latitude;
+
+aktuellerFlug.landeLng =
+pos.coords.longitude;
+
+document.getElementById("status")
+.innerHTML =
+"✅ Flug beendet";
+
+});
+
+}
+
+function flugSpeichern(){
+
+if(!aktuellerFlug){
+
+alert("Bitte Flug starten");
+
+return;
+
+}
+
+let minuten = Math.round(
+
+(
+aktuellerFlug.ende -
+aktuellerFlug.start
+)
+
+/1000/60
+
+);
+
+aktuellerFlug.flugzeit =
+minuten;
+
+aktuellerFlug.landungen =
+Number(
+document.getElementById(
+"landungen"
+).value
+);
+
+aktuellerFlug.bemerkung =
+document.getElementById(
+"bemerkung"
+).value;
+
+fluege.push(
+aktuellerFlug
+);
 
 localStorage.setItem(
 "fluege",
 JSON.stringify(fluege)
 );
 
-anzeigen();
+aktuellerFlug=null;
+
+dashboard();
 
 }
 
-function anzeigen(){
+function dashboard(){
 
-let html = "";
-let landungenSumme = 0;
+let html="";
 
-fluege.forEach((flug,index)=>{
+let gesamtZeit=0;
 
-landungenSumme +=
-Number(flug.landungen || 0);
+let gesamtLandungen=0;
+
+fluege.forEach((flug)=>{
+
+gesamtZeit +=
+flug.flugzeit;
+
+gesamtLandungen +=
+flug.landungen;
 
 html += `
 
-<div class="flug">
+<div class="flight">
 
 <b>${flug.datum}</b>
 
-<hr>
+<br><br>
 
-Pilot: ${flug.pilot}<br>
-Ballon: ${flug.ballon}<br>
+👨‍✈️ Pilot:
+${flug.pilot}
 
-Startort: ${flug.startort}<br>
-Landeort: ${flug.landeort}<br>
+<br>
 
-Startzeit: ${flug.start}<br>
-Landezeit: ${flug.landung}<br>
+🎈 Ballon:
+${flug.ballon}
 
-Flugdauer: ${flug.dauer}<br>
+<br>
 
-Landungen: ${flug.landungen}<br>
+⏱ Flugzeit:
+${flug.flugzeit} Minuten
 
-GPS:<br>
-${flug.gps}<br><br>
+<br>
 
-Bemerkung:<br>
-${flug.bemerkung}<br><br>
+🛬 Landungen:
+${flug.landungen}
 
-<button onclick="loeschen(${index})">
-🗑 Löschen
-</button>
+<br>
+
+📌 Start GPS:
+${flug.startLat.toFixed(4)},
+${flug.startLng.toFixed(4)}
+
+<br>
+
+📌 Landung GPS:
+${flug.landeLat.toFixed(4)},
+${flug.landeLng.toFixed(4)}
+
+<br>
+
+📝 ${flug.bemerkung}
 
 </div>
 
@@ -328,26 +552,50 @@ ${flug.bemerkung}<br><br>
 
 });
 
-document.getElementById("flugliste").innerHTML = html;
+document.getElementById("flugliste")
+.innerHTML=html;
 
-document.getElementById("anzahlFluege").innerText =
-"Gesamtflüge: " + fluege.length;
+document.getElementById("fluegeCount")
+.innerHTML = fluege.length;
 
-document.getElementById("gesamtLandungen").innerText =
-"Gesamtlandungen: " + landungenSumme;
+document.getElementById("landungenCount")
+.innerHTML = gesamtLandungen;
+
+document.getElementById("flugzeitCount")
+.innerHTML = gesamtZeit;
 
 }
 
-function loeschen(index){
+function wetterLaden(){
 
-fluege.splice(index,1);
+navigator.geolocation.getCurrentPosition(
 
-localStorage.setItem(
-"fluege",
-JSON.stringify(fluege)
-);
+function(pos){
 
-anzeigen();
+fetch(
+`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m,wind_speed_10m`
+)
+
+.then(r=>r.json())
+
+.then(data=>{
+
+document.getElementById("wetter")
+.innerHTML =
+
+"🌡 Temperatur: "
++
+data.current.temperature_2m
++
+" °C<br><br>💨 Wind: "
++
+data.current.wind_speed_10m
++
+" km/h";
+
+});
+
+});
 
 }
 
