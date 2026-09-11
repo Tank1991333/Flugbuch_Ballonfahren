@@ -97,41 +97,80 @@ Flug speichern
 <script>
 
 function flugSpeichern(){
+<script>
 
-let datum =
-document.getElementById("datum").value;
+let fluege = JSON.parse(
+  localStorage.getItem("fluege")
+) || [];
 
-let start =
-document.getElementById("start").value;
+anzeigen();
 
-let landung =
-document.getElementById("landung").value;
+function flugSpeichern(){
 
-let startort =
-document.getElementById("startort").value;
+  let flug = {
+    datum: document.getElementById("datum").value,
+    start: document.getElementById("start").value,
+    landung: document.getElementById("landung").value,
+    startort: document.getElementById("startort").value,
+    landeort: document.getElementById("landeort").value,
+    landungen: document.getElementById("landungen").value,
+    bemerkung: document.getElementById("bemerkung").value
+  };
 
-let landeort =
-document.getElementById("landeort").value;
+  fluege.push(flug);
 
-let landungen =
-document.getElementById("landungen").value;
+  localStorage.setItem(
+    "fluege",
+    JSON.stringify(fluege)
+  );
 
-let bemerkung =
-document.getElementById("bemerkung").value;
+  anzeigen();
 
-let html = `
-<div class="flug">
-<b>${datum}</b><br>
-${startort} ➜ ${landeort}<br>
-Start: ${start}<br>
-Landung: ${landung}<br>
-Landungen: ${landungen}<br>
-Bemerkung: ${bemerkung}
-</div>
-`;
+}
 
-document.getElementById("flugliste")
-.innerHTML += html;
+function anzeigen(){
+
+  let html = "";
+
+  fluege.forEach((flug,index)=>{
+
+    html += `
+    <div class="flug">
+
+      <b>${flug.datum}</b><br>
+
+      ${flug.startort} ➜ ${flug.landeort}<br>
+
+      Start: ${flug.start}<br>
+
+      Landung: ${flug.landung}<br>
+
+      Landungen: ${flug.landungen}<br>
+
+      Bemerkung: ${flug.bemerkung}<br><br>
+
+      <button onclick="loeschen(${index})">
+      Löschen
+      </button>
+
+    </div>
+    `;
+  });
+
+  document.getElementById("flugliste").innerHTML =
+    html;
+}
+
+function loeschen(index){
+
+  fluege.splice(index,1);
+
+  localStorage.setItem(
+    "fluege",
+    JSON.stringify(fluege)
+  );
+
+  anzeigen();
 
 }
 
