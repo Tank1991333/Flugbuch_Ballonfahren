@@ -168,6 +168,8 @@ function anzeigen(){
 
   document.getElementById("flugliste").innerHTML =
     html;
+    document.getElementById("anzahlFluege").innerText =
+"Gesamtflüge: " + fluege.length;
 }
 
 function loeschen(index){
