@@ -1,548 +1,116 @@
-/* ====================================
-   Grundlayout
-==================================== */
-
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
 body{
-
-font-family:
-"Segoe UI",
-Tahoma,
-sans-serif;
-
-background:
-linear-gradient(
-180deg,
-#dbeafe 0%,
-#eef6ff 100%
-);
-
-color:#1f2937;
-
-padding:15px;
-
-min-height:100vh;
-
+    font-family:Segoe UI, Arial, sans-serif;
+    background:#eef3f8;
+    color:#333;
+    max-width:1400px;
+    margin:auto;
+    padding:20px;
 }
 
-/* ====================================
-   Hero
-==================================== */
-
-.hero{
-
-background:
-linear-gradient(
-rgba(0,0,0,.35),
-rgba(0,0,0,.35)
-),
-url("https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=1500&q=80");
-
-background-size:cover;
-background-position:center;
-
-height:320px;
-
-border-radius:25px;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-overflow:hidden;
-
-margin-bottom:25px;
-
-box-shadow:
-0 15px 35px rgba(0,0,0,.15);
-
+h1{
+    text-align:center;
+    margin-bottom:25px;
+    color:#003366;
 }
-
-.hero-overlay{
-
-padding:30px;
-
-text-align:center;
-
-backdrop-filter:
-blur(4px);
-
-}
-
-.hero h1{
-
-font-size:48px;
-
-color:white;
-
-margin-bottom:10px;
-
-text-shadow:
-0 2px 10px rgba(0,0,0,.4);
-
-}
-
-.hero p{
-
-color:white;
-
-font-size:20px;
-
-}
-
-/* ====================================
-   Dashboard
-==================================== */
 
 .dashboard{
-
-display:grid;
-
-grid-template-columns:
-repeat(auto-fit,minmax(200px,1fr));
-
-gap:15px;
-
-margin-bottom:25px;
-
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+    margin-bottom:20px;
 }
 
-.stat{
-
-background:white;
-
-border-radius:20px;
-
-padding:25px;
-
-text-align:center;
-
-box-shadow:
-0 10px 20px rgba(0,0,0,.08);
-
-transition:
-all .25s ease;
-
+.stat-card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:
+    0 4px 15px rgba(0,0,0,.08);
+    text-align:center;
 }
 
-.stat:hover{
-
-transform:
-translateY(-3px);
-
+.stat-card h3{
+    font-size:14px;
+    color:#666;
+    margin-bottom:10px;
 }
 
-.stat h3{
-
-font-size:34px;
-
-color:#2563eb;
-
-margin-bottom:8px;
-
+.stat-card span{
+    font-size:28px;
+    font-weight:bold;
+    color:#0077cc;
 }
-
-.stat p{
-
-font-weight:600;
-
-color:#64748b;
-
-}
-
-/* ====================================
-   Karten
-==================================== */
 
 .card{
-
-background:white;
-
-padding:25px;
-
-border-radius:20px;
-
-margin-bottom:20px;
-
-box-shadow:
-0 10px 20px rgba(0,0,0,.08);
-
-}
-
-.card h2{
-
-margin-bottom:15px;
-
-color:#1e40af;
-
-}
-
-/* ====================================
-   Wetterbereich
-==================================== */
-
-.weather{
-
-background:
-linear-gradient(
-135deg,
-#0ea5e9,
-#2563eb
-);
-
-color:white;
-
-}
-
-.weather h2{
-
-color:white;
-
-}
-
-.weather-grid{
-
-display:grid;
-
-grid-template-columns:
-repeat(auto-fit,minmax(220px,1fr));
-
-gap:12px;
-
-margin-top:20px;
-
-}
-
-.weather-grid div{
-
-padding:15px;
-
-border-radius:12px;
-
-background:
-rgba(255,255,255,.15);
-
-backdrop-filter:
-blur(5px);
-
-}
-
-.weather-rating{
-
-margin-top:18px;
-
-padding:15px;
-
-border-radius:12px;
-
-font-weight:bold;
-
-background:
-rgba(255,255,255,.15);
-
-}
-
-/* ====================================
-   Formular
-==================================== */
-
-label{
-
-display:block;
-
-font-weight:600;
-
-margin-bottom:5px;
-
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:
+    0 4px 15px rgba(0,0,0,.08);
 }
 
 input,
 textarea{
-
-width:100%;
-
-padding:14px;
-
-margin-bottom:15px;
-
-border-radius:12px;
-
-border:
-1px solid #d5dbe5;
-
-font-size:15px;
-
-}
-
-input:focus,
-textarea:focus{
-
-outline:none;
-
-border-color:#2563eb;
-
-box-shadow:
-0 0 0 3px rgba(37,99,235,.15);
-
-}
-
-/* ====================================
-   Buttons
-==================================== */
-
-.button-group{
-
-display:flex;
-
-gap:10px;
-
-flex-wrap:wrap;
-
-margin-bottom:15px;
-
+    width:100%;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    margin-top:5px;
+    margin-bottom:15px;
 }
 
 button{
-
-border:none;
-
-padding:14px 18px;
-
-border-radius:12px;
-
-cursor:pointer;
-
-font-size:15px;
-
-font-weight:bold;
-
-transition:
-all .2s ease;
-
+    background:#0077cc;
+    color:white;
+    border:none;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    margin-right:10px;
+    margin-bottom:10px;
+    transition:.3s;
 }
 
 button:hover{
-
-transform:
-translateY(-2px);
-
+    background:#005fa3;
 }
-
-.start{
-
-background:#16a34a;
-
-color:white;
-
-}
-
-.stop{
-
-background:#dc2626;
-
-color:white;
-
-}
-
-.save{
-
-width:100%;
-
-background:#2563eb;
-
-color:white;
-
-}
-
-.delete{
-
-background:#64748b;
-
-color:white;
-
-margin-top:10px;
-
-}
-
-/* ====================================
-   Status
-==================================== */
-
-#status{
-
-margin-top:15px;
-
-font-weight:bold;
-
-font-size:16px;
-
-color:#0f172a;
-
-}
-
-/* ====================================
-   Karte
-==================================== */
 
 #map{
-
-height:550px;
-
-border-radius:18px;
-
-overflow:hidden;
-
+    height:600px;
+    width:100%;
+    border-radius:16px;
+    overflow:hidden;
 }
-
-/* ====================================
-   Höhenprofil
-==================================== */
-
-#heightChart{
-
-width:100%;
-
-margin-top:15px;
-
-background:white;
-
-border-radius:15px;
-
-}
-
-/* ====================================
-   Flugbuch
-==================================== */
 
 .flight{
-
-background:#f8fafc;
-
-padding:18px;
-
-border-left:
-6px solid #2563eb;
-
-border-radius:15px;
-
-margin-top:15px;
-
-line-height:1.8;
-
-transition:
-all .2s ease;
-
+    border-left:5px solid #0077cc;
+    background:#f8fbff;
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:10px;
 }
 
-.flight:hover{
-
-background:#f1f5f9;
-
+#status{
+    font-weight:bold;
+    font-size:18px;
 }
 
-.flight b{
-
-font-size:18px;
-
-color:#1e3a8a;
-
+.weather-good{
+    color:green;
 }
 
-/* ====================================
-   Leaflet
-==================================== */
-
-.leaflet-container{
-
-border-radius:18px;
-
+.weather-warning{
+    color:orange;
 }
 
-/* ====================================
-   Scrollbar
-==================================== */
-
-::-webkit-scrollbar{
-
-width:10px;
-
-}
-
-::-webkit-scrollbar-track{
-
-background:#e5e7eb;
-
-}
-
-::-webkit-scrollbar-thumb{
-
-background:#2563eb;
-
-border-radius:10px;
-
-}
-
-/* ====================================
-   Mobile
-==================================== */
-
-@media(max-width:768px){
-
-.hero{
-
-height:240px;
-
-}
-
-.hero h1{
-
-font-size:32px;
-
-}
-
-.hero p{
-
-font-size:16px;
-
-}
-
-#map{
-
-height:400px;
-
-}
-
-.dashboard{
-
-grid-template-columns:1fr 1fr;
-
-}
-
-}
-
-@media(max-width:500px){
-
-.dashboard{
-
-grid-template-columns:1fr;
-
-}
-
-.button-group{
-
-flex-direction:column;
-
-}
-
-button{
-
-width:100%;
-
-}
-
+.weather-danger{
+    color:red;
 }
