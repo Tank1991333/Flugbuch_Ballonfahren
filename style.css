@@ -1,225 +1,440 @@
-<!DOCTYPE html>
-<html lang="de">
+/* =====================================
+   RESET
+===================================== */
 
-<head>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+html{
+scroll-behavior:smooth;
+}
 
-<title>🎈 Ballonflugbuch Professional</title>
+body{
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+font-family:
+"Segoe UI",
+Arial,
+sans-serif;
 
-<link rel="stylesheet" href="style.css">
+background:
+linear-gradient(
+180deg,
+#dbeafe 0%,
+#f8fbff 100%
+);
 
-</head>
+color:#1e293b;
 
-<body>
+padding:15px;
 
-<header class="hero">
+min-height:100vh;
 
-<div class="hero-overlay">
+}
 
-<h1>🎈 Ballonflugbuch Professional</h1>
+/* =====================================
+   HERO
+===================================== */
 
-<p>Digitales Flugbuch für Heißluftballonfahrten</p>
+.hero{
 
-</div>
+height:320px;
 
-</header>
+border-radius:25px;
 
-<section class="dashboard">
+overflow:hidden;
 
-<div class="stat">
-<h3 id="countFlights">0</h3>
-<p>Flüge</p>
-</div>
+margin-bottom:25px;
 
-<div class="stat">
-<h3 id="countMinutes">0h</h3>
-<p>Flugzeit</p>
-</div>
+background:
+linear-gradient(
+rgba(0,0,0,.45),
+rgba(0,0,0,.45)
+),
+url("https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=1600&q=80");
 
-<div class="stat">
-<h3 id="countLandings">0</h3>
-<p>Landungen</p>
-</div>
+background-size:cover;
+background-position:center;
 
-<div class="stat">
-<h3 id="countKm">0</h3>
-<p>Kilometer</p>
-</div>
+display:flex;
+align-items:center;
+justify-content:center;
 
-</section>
+box-shadow:
+0 10px 25px rgba(0,0,0,.15);
 
-<section class="card weather">
+}
 
-<h2>🌤 Wetter</h2>
+.hero-overlay{
 
-<div class="weather-grid">
+text-align:center;
 
-<div>
-<p id="temperature">🌡 Temperatur: --</p>
-</div>
+padding:25px;
 
-<div>
-<p id="wind">💨 Wind: --</p>
-</div>
+color:white;
 
-<div>
-<p id="windDirection">🧭 Windrichtung: --</p>
-</div>
+}
 
-<div>
-<p id="sunrise">🌅 Sonnenaufgang: --</p>
-</div>
+.hero h1{
 
-<div>
-<p id="sunset">🌇 Sonnenuntergang: --</p>
-</div>
+font-size:48px;
 
-</div>
+margin-bottom:10px;
 
-<div id="weatherRating" class="weather-rating">
-Wetterdaten werden geladen ...
-</div>
+text-shadow:
+0 2px 10px rgba(0,0,0,.5);
 
-</section>
+}
 
-<section class="card">
+.hero p{
 
-<h2>👨‍✈️ Pilot & Ballon</h2>
+font-size:18px;
 
-<label for="pilot">Pilot</label>
+opacity:.95;
 
-<input
-id="pilot"
-type="text"
-placeholder="Pilot eingeben">
+}
 
-<label for="ballon">Ballon Kennzeichen</label>
+/* =====================================
+   DASHBOARD
+===================================== */
 
-<input
-id="ballon"
-type="text"
-placeholder="z.B. OE-BAL">
+.dashboard{
 
-<label for="ballontyp">Ballontyp</label>
+display:grid;
 
-<input
-id="ballontyp"
-type="text"
-placeholder="z.B. Kubicek BB45">
+grid-template-columns:
+repeat(auto-fit,minmax(180px,1fr));
 
-</section>
+gap:15px;
 
-<section class="card">
+margin-bottom:20px;
 
-<h2>📍 Tracking</h2>
+}
 
-<div class="button-group">
+.stat{
 
-<button
-class="start"
-onclick="flugStarten()">
+background:white;
 
-▶ Fahrt starten
+border-radius:18px;
 
-</button>
+padding:22px;
 
-<button
-class="stop"
-onclick="flugBeenden()">
+text-align:center;
 
-■ Fahrt beenden
+box-shadow:
+0 6px 15px rgba(0,0,0,.07);
 
-</button>
+transition:.2s;
 
-</div>
+}
 
-<p id="status">
-Kein Flug aktiv
-</p>
+.stat:hover{
 
-</section>
+transform:
+translateY(-3px);
 
-<section class="card">
+}
 
-<h2>🗺 Flugkarte</h2>
+.stat h3{
 
-<div id="map"></div>
+font-size:34px;
 
-</section>
+color:#2563eb;
 
-<section class="card">
+margin-bottom:5px;
 
-<h2>📈 Höhenprofil</h2>
+}
 
-<canvas
-id="heightChart"
-height="120">
-</canvas>
+.stat p{
 
-</section>
+font-weight:600;
 
-<section class="card">
+color:#64748b;
 
-<h2>📝 Flugdaten</h2>
+}
 
-<label for="landungen">
-Landungen
-</label>
+/* =====================================
+   KARTEN
+===================================== */
 
-<input
-id="landungen"
-type="number"
-value="1"
-min="1">
+.card{
 
-<label for="bemerkung">
-Bemerkungen
-</label>
+background:white;
 
-<textarea
-id="bemerkung"
-rows="4"
-placeholder="Bemerkungen zum Flug">
-</textarea>
+border-radius:20px;
 
-<button
-class="save"
-onclick="flugSpeichern()">
+padding:25px;
 
-💾 Flug speichern
+margin-bottom:20px;
 
-</button>
+box-shadow:
+0 6px 15px rgba(0,0,0,.07);
 
-</section>
+}
 
-<section class="card">
+.card h2{
 
-<h2>📒 Flugbuch</h2>
+margin-bottom:15px;
 
-<div id="flugliste"></div>
+color:#1d4ed8;
 
-</section>
+}
 
-<!-- Leaflet -->
+/* =====================================
+   WETTER
+===================================== */
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+.weather{
 
-<!-- Chart.js -->
+background:
+linear-gradient(
+135deg,
+#0ea5e9,
+#2563eb
+);
 
-https://cdn.jsdelivr.net/npm/chart.jsscript>
+color:white;
 
-<!-- Eigene Dateien -->
+}
 
-<script src="map.js"></script>
+.weather h2{
 
-<script src="weather.js"></script>
+color:white;
 
-<script src="app.js"></script>
+}
 
-</body>
-</html>
+.weather-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(180px,1fr));
+
+gap:12px;
+
+margin-top:15px;
+
+}
+
+.weather-grid div{
+
+padding:15px;
+
+border-radius:12px;
+
+background:
+rgba(255,255,255,.15);
+
+}
+
+.weather-rating{
+
+margin-top:15px;
+
+padding:15px;
+
+border-radius:12px;
+
+font-weight:bold;
+
+text-align:center;
+
+}
+
+/* =====================================
+   INPUTS
+===================================== */
+
+label{
+
+display:block;
+
+font-weight:600;
+
+margin-bottom:5px;
+
+}
+
+input,
+textarea{
+
+width:100%;
+
+padding:14px;
+
+margin-bottom:15px;
+
+border-radius:12px;
+
+border:
+1px solid #cbd5e1;
+
+font-size:15px;
+
+background:white;
+
+}
+
+input:focus,
+textarea:focus{
+
+outline:none;
+
+border-color:#2563eb;
+
+box-shadow:
+0 0 0 3px rgba(37,99,235,.15);
+
+}
+
+textarea{
+
+resize:vertical;
+
+min-height:120px;
+
+}
+
+/* =====================================
+   BUTTONS
+===================================== */
+
+.button-group{
+
+display:flex;
+
+gap:10px;
+
+flex-wrap:wrap;
+
+}
+
+button{
+
+border:none;
+
+border-radius:12px;
+
+padding:14px 18px;
+
+font-size:15px;
+
+font-weight:700;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+button:hover{
+
+transform:
+translateY(-2px);
+
+}
+
+.start{
+
+background:#16a34a;
+
+color:white;
+
+}
+
+.stop{
+
+background:#dc2626;
+
+color:white;
+
+}
+
+.save{
+
+width:100%;
+
+background:#2563eb;
+
+color:white;
+
+}
+
+.delete{
+
+background:#64748b;
+
+color:white;
+
+margin-top:10px;
+
+}
+
+/* =====================================
+   STATUS
+===================================== */
+
+#status{
+
+margin-top:15px;
+
+font-weight:700;
+
+font-size:16px;
+
+}
+
+/* =====================================
+   KARTE
+===================================== */
+
+#map{
+
+width:100%;
+
+height:550px;
+
+border-radius:18px;
+
+overflow:hidden;
+
+border:
+2px solid #dbeafe;
+
+}
+
+.leaflet-container{
+
+border-radius:18px;
+
+}
+
+/* =====================================
+   HÖHENPROFIL
+===================================== */
+
+#heightChart{
+
+width:100%;
+
+background:white;
+
+border-radius:12px;
+
+}
+
+/* =====================================
+   FLUGBUCH
+===================================== */
+
+.flight{
+
+background:#f8fafc;
+
+padding:18px;
+
+margin-top:15px;
+
+border-left
