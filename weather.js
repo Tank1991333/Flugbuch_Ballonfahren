@@ -1,8 +1,99 @@
 // =====================================
+// Ballonflugbuch Professional
+// weather.js
+// =====================================
+
+function windrichtungText(winkel) {
+
+  if (winkel >= 337.5 || winkel < 22.5) {
+    return "N";
+  }
+
+  if (winkel < 67.5) {
+    return "NO";
+  }
+
+  if (winkel < 112.5) {
+    return "O";
+  }
+
+  if (winkel < 157.5) {
+    return "SO";
+  }
+
+  if (winkel < 202.5) {
+    return "S";
+  }
+
+  if (winkel < 247.5) {
+    return "SW";
+  }
+
+  if (winkel < 292.5) {
+    return "W";
+  }
+
+  return "NW";
+}
+
+// =====================================
+// Wetterbewertung
+// =====================================
+
+function bewerteWetter(wind) {
+
+  const feld =
+    document.getElementById(
+      "weatherRating"
+    );
+
+  if (!feld) {
+    return;
+  }
+
+  if (wind <= 10) {
+
+    feld.innerHTML =
+      "🟢 Gute Bedingungen für Ballonfahrten";
+
+    feld.style.background =
+      "#16a34a";
+
+    feld.style.color =
+      "#ffffff";
+
+    return;
+  }
+
+  if (wind <= 20) {
+
+    feld.innerHTML =
+      "🟡 Erhöhte Aufmerksamkeit empfohlen";
+
+    feld.style.background =
+      "#facc15";
+
+    feld.style.color =
+      "#000000";
+
+    return;
+  }
+
+  feld.innerHTML =
+    "🔴 Hoher Wind - Ballonfahrt nicht empfohlen";
+
+  feld.style.background =
+    "#dc2626";
+
+  feld.style.color =
+    "#ffffff";
+}
+
+// =====================================
 // Wetter laden
 // =====================================
 
-function wetterLaden() {
+async function wetterLaden() {
 
   if (!navigator.geolocation) {
     return;
@@ -10,22 +101,22 @@ function wetterLaden() {
 
   navigator.geolocation.getCurrentPosition(
 
-    async function (pos) {
-
-      const lat =
-        pos.coords.latitude;
-
-      const lon =
-        pos.coords.longitude;
+    async function(pos) {
 
       try {
 
+        const lat =
+          pos.coords.latitude;
+
+        const lon =
+          pos.coords.longitude;
+
+        const url =
+
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset&timezone=auto`;
+
         const response =
-          await fetch(
-
-            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset&timezone=auto`
-
-          );
+          await fetch(url);
 
         const data =
           await response.json();
@@ -36,8 +127,13 @@ function wetterLaden() {
         const wind =
           data.current.wind_speed_10m;
 
-        const windrichtung =
+        const richtung =
           data.current.wind_direction_10m;
+
+        const richtungText =
+          windrichtungText(
+            richtung
+          );
 
         const sunrise =
           new Date(
@@ -61,54 +157,93 @@ function wetterLaden() {
             }
           );
 
-        document.getElementById(
-          "temperature"
-        ).innerHTML =
-          "🌡 Temperatur: " +
-          temperatur +
-          " °C";
+        const temperaturFeld =
+          document.getElementById(
+            "temperature"
+          );
 
-        document.getElementById(
-          "wind"
-        ).innerHTML =
-          "💨 Wind: " +
-          wind +
-          " km/h";
+        const windFeld =
+          document.getElementById(
+            "wind"
+          );
 
-        document.getElementById(
-          "windDirection"
-        ).innerHTML =
-          "🧭 Windrichtung: " +
-          windrichtung +
-          "°";
+        const richtungFeld =
+          document.getElementById(
+            "windDirection"
+          );
 
-        document.getElementById(
-          "sunrise"
-        ).innerHTML =
-          "🌅 Sonnenaufgang: " +
-          sunrise;
+        const sunriseFeld =
+          document.getElementById(
+            "sunrise"
+          );
 
-        document.getElementById(
-          "sunset"
-        ).innerHTML =
-          "🌇 Sonnenuntergang: " +
-          sunset;
+        const sunsetFeld =
+          document.getElementById(
+            "sunset"
+          );
 
-        wetterBewertung(
-          wind,
-          temperatur
-        );
+        if (temperaturFeld) {
+          temperaturFeld.innerHTML =
+            `🌡 Temperatur: ${temperatur} °C`;
+        }
 
-      } catch (error) {
+        if (windFeld) {
+          windFeld.innerHTML =
+            `💨 Wind: ${wind} km/h`;
+        }
 
-        console.log(error);
+        if (richtungFeld) {
+          richtungFeld.innerHTML =
+            `🧭 Windrichtung: ${richtungText} (${richtung}°)`;
+        }
 
-        document.getElementById(
-          "weatherRating"
-        ).innerHTML =
-          "❌ Wetterdaten nicht verfügbar";
+        if (sunriseFeld) {
+          sunriseFeld.innerHTML =
+            `🌅 Sonnenaufgang: ${sunrise}`;
+        }
+
+        if (sunsetFeld) {
+          sunsetFeld.innerHTML =
+            `🌇 Sonnenuntergang: ${sunset}`;
+        }
+
+        bewerteWetter(wind);
 
       }
+      catch (error) {
+
+        console.error(
+          "Wetterfehler:",
+          error
+        );
+
+        const feld =
+          document.getElementById(
+            "weatherRating"
+          );
+
+        if (feld) {
+
+          feld.innerHTML =
+            "❌ Wetterdaten konnten nicht geladen werden";
+
+          feld.style.background =
+            "#dc2626";
+
+          feld.style.color =
+            "#ffffff";
+        }
+
+      }
+
+    },
+
+    function(error) {
+
+      console.error(
+        "GPS Fehler:",
+        error
+      );
 
     }
 
@@ -117,100 +252,12 @@ function wetterLaden() {
 }
 
 // =====================================
-// Wetterbewertung
-// =====================================
-
-function wetterBewertung(
-  wind,
-  temperatur
-) {
-
-  const feld =
-    document.getElementById(
-      "weatherRating"
-    );
-
-  if (
-    wind <= 10 &&
-    temperatur >= -5 &&
-    temperatur <= 30
-  ) {
-
-    feld.innerHTML =
-      "🟢 Gute Bedingungen für Ballonfahrten";
-
-    feld.style.background =
-      "#16a34a";
-
-    feld.style.color =
-      "#ffffff";
-
-    return;
-  }
-
-  if (
-    wind <= 20
-  ) {
-
-    feld.innerHTML =
-      "🟡 Bedingungen eingeschränkt. Wetter prüfen.";
-
-    feld.style.background =
-      "#eab308";
-
-    feld.style.color =
-      "#000000";
-
-    return;
-  }
-
-  feld.innerHTML =
-    "🔴 Hoher Wind. Ballonfahrt nicht empfohlen.";
-
-  feld.style.background =
-    "#dc2626";
-
-  feld.style.color =
-    "#ffffff";
-
-}
-
-// =====================================
-// Windrichtung Text
-// =====================================
-
-function windrichtungText(winkel) {
-
-  if (winkel >= 337.5 || winkel < 22.5)
-    return "N";
-
-  if (winkel < 67.5)
-    return "NO";
-
-  if (winkel < 112.5)
-    return "O";
-
-  if (winkel < 157.5)
-    return "SO";
-
-  if (winkel < 202.5)
-    return "S";
-
-  if (winkel < 247.5)
-    return "SW";
-
-  if (winkel < 292.5)
-    return "W";
-
-  return "NW";
-
-}
-
-// =====================================
-// Wetter aktualisieren
+// Start
 // =====================================
 
 wetterLaden();
+
+// alle 10 Minuten aktualisieren
 
 setInterval(
   wetterLaden,
