@@ -14,15 +14,11 @@ async function ortName(lat, lng) {
     try {
 
         const response = await fetch(
-`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-            {
-                headers: {
-                    "Accept": "application/json"
-                }
-            }
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
         );
 
-        const data = await response.json();
+        const data =
+        await response.json();
 
         return (
             data.address?.city ||
@@ -76,15 +72,6 @@ function entfernung(lat1, lon1, lat2, lon2){
 
 function flugStarten(){
 
-    if(!navigator.geolocation){
-
-        alert(
-            "GPS wird nicht unterstützt"
-        );
-
-        return;
-    }
-
     const pilot =
     document.getElementById("pilot").value;
 
@@ -124,32 +111,36 @@ function flugStarten(){
                 datum:
                 new Date().toLocaleDateString(),
 
-                pilot: pilot,
-
-                ballon: ballon,
+                pilot,
+                ballon,
 
                 startzeit:
                 new Date(),
+
+                startOrt:
+                ort,
 
                 startLat:
                 pos.coords.latitude,
 
                 startLng:
-                pos.coords.longitude,
-
-                startOrt:
-                ort
+                pos.coords.longitude
 
             };
 
             trackpunkte = [];
+
+            setStartMarker(
+                pos.coords.latitude,
+                pos.coords.longitude
+            );
 
             watchId =
             navigator.geolocation.watchPosition(
 
                 function(position){
 
-                    trackpunkte.push({
+                    const punkt = {
 
                         lat:
                         position.coords.latitude,
@@ -166,7 +157,16 @@ function flugStarten(){
                         zeit:
                         new Date()
 
-                    });
+                    };
+
+                    trackpunkte.push(
+                        punkt
+                    );
+
+                    addTrackPoint(
+                        punkt.lat,
+                        punkt.lng
+                    );
 
                 },
 
@@ -177,9 +177,7 @@ function flugStarten(){
                 },
 
                 {
-                    enableHighAccuracy:true,
-                    maximumAge:0,
-                    timeout:5000
+                    enableHighAccuracy:true
                 }
 
             );
@@ -199,7 +197,7 @@ function flugBeenden(){
     if(!aktuellerFlug){
 
         alert(
-            "Bitte zuerst starten"
+            "Kein Flug aktiv"
         );
 
         return;
@@ -211,7 +209,6 @@ function flugBeenden(){
             watchId
         );
 
-        watchId = null;
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -236,6 +233,11 @@ function flugBeenden(){
             aktuellerFlug.landeOrt =
             ort;
 
+            setLandingMarker(
+                pos.coords.latitude,
+                pos.coords.longitude
+            );
+
             document.getElementById(
                 "status"
             ).innerHTML =
@@ -254,13 +256,17 @@ function flugSpeichern(){
     ){
 
         alert(
-            "Bitte Flug zuerst beenden"
+            "Bitte Flug beenden"
         );
 
         return;
+
     }
 
-    const minuten =
+    aktuellerFlug.track =
+    trackpunkte;
+
+    aktuellerFlug.flugzeit =
     Math.round(
 
         (
@@ -272,12 +278,6 @@ function flugSpeichern(){
 
     );
 
-    aktuellerFlug.flugzeit =
-    minuten;
-
-    aktuellerFlug.track =
-    trackpunkte;
-
     const hoehen =
 
     trackpunkte
@@ -286,38 +286,38 @@ function flugSpeichern(){
 
     .filter(h => h > 0);
 
-    if(hoehen.length){
+    aktuellerFlug.maxHoehe =
 
-        aktuellerFlug.maxHoehe =
-        Math.round(
-            Math.max(...hoehen)
-        );
+    hoehen.length ?
 
-        aktuellerFlug.minHoehe =
-        Math.round(
-            Math.min(...hoehen)
-        );
+    Math.round(
+        Math.max(...hoehen)
+    ) : 0;
 
-        aktuellerFlug.avgHoehe =
-        Math.round(
+    aktuellerFlug.minHoehe =
 
-            hoehen.reduce(
-                (a,b)=>a+b,
-                0
-            )
+    hoehen.length ?
 
-            /
+    Math.round(
+        Math.min(...hoehen)
+    ) : 0;
 
-            hoehen.length
+    aktuellerFlug.avgHoehe =
 
-        );
+    hoehen.length ?
 
-    }else{
+    Math.round(
 
-        aktuellerFlug.maxHoehe = 0;
-        aktuellerFlug.minHoehe = 0;
-        aktuellerFlug.avgHoehe = 0;
-    }
+        hoehen.reduce(
+            (a,b)=>a+b,
+            0
+        )
+
+        /
+
+        hoehen.length
+
+    ) : 0;
 
     const speeds =
 
@@ -327,11 +327,13 @@ function flugSpeichern(){
 
     .filter(s => s > 0);
 
-    if(speeds.length){
+    aktuellerFlug.avgSpeed =
 
-        aktuellerFlug.avgSpeed =
-        Math.round(
+    speeds.length ?
 
+    Math.round(
+
+        (
             speeds.reduce(
                 (a,b)=>a+b,
                 0
@@ -341,16 +343,11 @@ function flugSpeichern(){
 
             speeds.length
 
-            *
+        )
 
-            3.6
+        * 3.6
 
-        );
-
-    }else{
-
-        aktuellerFlug.avgSpeed = 0;
-    }
+    ) : 0;
 
     let strecke = 0;
 
@@ -361,6 +358,7 @@ function flugSpeichern(){
     ){
 
         strecke +=
+
         entfernung(
 
             trackpunkte[i-1].lat,
@@ -374,16 +372,14 @@ function flugSpeichern(){
     }
 
     aktuellerFlug.strecke =
-    strecke.toFixed(1);
+    strecke.toFixed(2);
 
     aktuellerFlug.landungen =
 
     Number(
-
         document.getElementById(
             "landungen"
         ).value
-
     );
 
     aktuellerFlug.bemerkung =
@@ -415,7 +411,7 @@ function loeschen(index){
 
     if(
         confirm(
-            "Flug wirklich löschen?"
+            "Flug löschen?"
         )
     ){
 
@@ -450,14 +446,6 @@ function anzeigeAktualisieren(){
             gesamtLandungen +=
             flug.landungen || 0;
 
-            let stunden =
-            Math.floor(
-                flug.flugzeit / 60
-            );
-
-            let minuten =
-            flug.flugzeit % 60;
-
             html += `
 
             <div class="flight">
@@ -467,30 +455,26 @@ function anzeigeAktualisieren(){
             <br><br>
 
             👨‍✈️ ${flug.pilot}<br>
-
             🎈 ${flug.ballon}<br>
 
             📍 ${flug.startOrt}
             → ${flug.landeOrt}<br>
 
-            ⏱ ${stunden}h ${minuten}min<br>
+            ⏱ ${flug.flugzeit} Minuten<br>
 
             🗺 ${flug.strecke} km<br>
 
             🚀 ${flug.avgSpeed} km/h<br>
 
-            📈 Max Höhe:
-            ${flug.maxHoehe} m<br>
+            📈 ${flug.maxHoehe} m<br>
 
-            📉 Min Höhe:
-            ${flug.minHoehe} m<br>
+            📉 ${flug.minHoehe} m<br>
 
-            📊 Durchschnitt:
-            ${flug.avgHoehe} m<br>
+            📊 ${flug.avgHoehe} m<br>
 
-            🛬 ${flug.landungen}<br>
+            📝 ${flug.bemerkung}<br>
 
-            📝 ${flug.bemerkung}<br><br>
+            <br>
 
             <button
             class="delete"
@@ -510,26 +494,31 @@ function anzeigeAktualisieren(){
         "flugliste"
     ).innerHTML = html;
 
-    document.getElementById(
-        "countFlights"
-    ).innerHTML =
-    fluege.length;
+    if(document.getElementById("countFlights"))
+        document.getElementById(
+            "countFlights"
+        ).innerHTML =
+        fluege.length;
 
-    document.getElementById(
-        "countLandings"
-    ).innerHTML =
-    gesamtLandungen;
+    if(document.getElementById("countLandings"))
+        document.getElementById(
+            "countLandings"
+        ).innerHTML =
+        gesamtLandungen;
 
-    let h =
-    Math.floor(
-        gesamtZeit/60
-    );
+    if(document.getElementById("countMinutes")){
 
-    let m =
-    gesamtZeit%60;
+        let h =
+        Math.floor(
+            gesamtZeit/60
+        );
 
-    document.getElementById(
-        "countMinutes"
-    ).innerHTML =
-    h + "h " + m + "m";
+        let m =
+        gesamtZeit%60;
+
+        document.getElementById(
+            "countMinutes"
+        ).innerHTML =
+        h + "h " + m + "m";
+    }
 }
