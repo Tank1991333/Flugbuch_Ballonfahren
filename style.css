@@ -1,116 +1,225 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+<!DOCTYPE html>
+<html lang="de">
 
-body{
-    font-family:Segoe UI, Arial, sans-serif;
-    background:#eef3f8;
-    color:#333;
-    max-width:1400px;
-    margin:auto;
-    padding:20px;
-}
+<head>
 
-h1{
-    text-align:center;
-    margin-bottom:25px;
-    color:#003366;
-}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-.dashboard{
-    display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(220px,1fr));
-    gap:15px;
-    margin-bottom:20px;
-}
+<title>🎈 Ballonflugbuch Professional</title>
 
-.stat-card{
-    background:white;
-    border-radius:16px;
-    padding:20px;
-    box-shadow:
-    0 4px 15px rgba(0,0,0,.08);
-    text-align:center;
-}
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-.stat-card h3{
-    font-size:14px;
-    color:#666;
-    margin-bottom:10px;
-}
+<link rel="stylesheet" href="style.css">
 
-.stat-card span{
-    font-size:28px;
-    font-weight:bold;
-    color:#0077cc;
-}
+</head>
 
-.card{
-    background:white;
-    border-radius:16px;
-    padding:20px;
-    margin-bottom:20px;
-    box-shadow:
-    0 4px 15px rgba(0,0,0,.08);
-}
+<body>
 
-input,
-textarea{
-    width:100%;
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:12px;
-    margin-top:5px;
-    margin-bottom:15px;
-}
+<header class="hero">
 
-button{
-    background:#0077cc;
-    color:white;
-    border:none;
-    padding:12px 18px;
-    border-radius:10px;
-    cursor:pointer;
-    margin-right:10px;
-    margin-bottom:10px;
-    transition:.3s;
-}
+<div class="hero-overlay">
 
-button:hover{
-    background:#005fa3;
-}
+<h1>🎈 Ballonflugbuch Professional</h1>
 
-#map{
-    height:600px;
-    width:100%;
-    border-radius:16px;
-    overflow:hidden;
-}
+<p>Digitales Flugbuch für Heißluftballonfahrten</p>
 
-.flight{
-    border-left:5px solid #0077cc;
-    background:#f8fbff;
-    border-radius:12px;
-    padding:15px;
-    margin-bottom:10px;
-}
+</div>
 
-#status{
-    font-weight:bold;
-    font-size:18px;
-}
+</header>
 
-.weather-good{
-    color:green;
-}
+<section class="dashboard">
 
-.weather-warning{
-    color:orange;
-}
+<div class="stat">
+<h3 id="countFlights">0</h3>
+<p>Flüge</p>
+</div>
 
-.weather-danger{
-    color:red;
-}
+<div class="stat">
+<h3 id="countMinutes">0h</h3>
+<p>Flugzeit</p>
+</div>
+
+<div class="stat">
+<h3 id="countLandings">0</h3>
+<p>Landungen</p>
+</div>
+
+<div class="stat">
+<h3 id="countKm">0</h3>
+<p>Kilometer</p>
+</div>
+
+</section>
+
+<section class="card weather">
+
+<h2>🌤 Wetter</h2>
+
+<div class="weather-grid">
+
+<div>
+<p id="temperature">🌡 Temperatur: --</p>
+</div>
+
+<div>
+<p id="wind">💨 Wind: --</p>
+</div>
+
+<div>
+<p id="windDirection">🧭 Windrichtung: --</p>
+</div>
+
+<div>
+<p id="sunrise">🌅 Sonnenaufgang: --</p>
+</div>
+
+<div>
+<p id="sunset">🌇 Sonnenuntergang: --</p>
+</div>
+
+</div>
+
+<div id="weatherRating" class="weather-rating">
+Wetterdaten werden geladen ...
+</div>
+
+</section>
+
+<section class="card">
+
+<h2>👨‍✈️ Pilot & Ballon</h2>
+
+<label for="pilot">Pilot</label>
+
+<input
+id="pilot"
+type="text"
+placeholder="Pilot eingeben">
+
+<label for="ballon">Ballon Kennzeichen</label>
+
+<input
+id="ballon"
+type="text"
+placeholder="z.B. OE-BAL">
+
+<label for="ballontyp">Ballontyp</label>
+
+<input
+id="ballontyp"
+type="text"
+placeholder="z.B. Kubicek BB45">
+
+</section>
+
+<section class="card">
+
+<h2>📍 Tracking</h2>
+
+<div class="button-group">
+
+<button
+class="start"
+onclick="flugStarten()">
+
+▶ Fahrt starten
+
+</button>
+
+<button
+class="stop"
+onclick="flugBeenden()">
+
+■ Fahrt beenden
+
+</button>
+
+</div>
+
+<p id="status">
+Kein Flug aktiv
+</p>
+
+</section>
+
+<section class="card">
+
+<h2>🗺 Flugkarte</h2>
+
+<div id="map"></div>
+
+</section>
+
+<section class="card">
+
+<h2>📈 Höhenprofil</h2>
+
+<canvas
+id="heightChart"
+height="120">
+</canvas>
+
+</section>
+
+<section class="card">
+
+<h2>📝 Flugdaten</h2>
+
+<label for="landungen">
+Landungen
+</label>
+
+<input
+id="landungen"
+type="number"
+value="1"
+min="1">
+
+<label for="bemerkung">
+Bemerkungen
+</label>
+
+<textarea
+id="bemerkung"
+rows="4"
+placeholder="Bemerkungen zum Flug">
+</textarea>
+
+<button
+class="save"
+onclick="flugSpeichern()">
+
+💾 Flug speichern
+
+</button>
+
+</section>
+
+<section class="card">
+
+<h2>📒 Flugbuch</h2>
+
+<div id="flugliste"></div>
+
+</section>
+
+<!-- Leaflet -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Chart.js -->
+
+https://cdn.jsdelivr.net/npm/chart.jsscript>
+
+<!-- Eigene Dateien -->
+
+<script src="map.js"></script>
+
+<script src="weather.js"></script>
+
+<script src="app.js"></script>
+
+</body>
+</html>
