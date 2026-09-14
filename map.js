@@ -1,22 +1,28 @@
 "use strict";
 
-let map = null;
+let map;
 let startMarker = null;
 let landingMarker = null;
 let routeLine = null;
 let allFlightsLayer = null;
 
-function initMap() {
-    const mapElement = document.getElementById("map");
+function mapPointValid(point) {
+    return (
+        point &&
+        Number.isFinite(Number(point.lat)) &&
+        Number.isFinite(Number(point.lng))
+    );
+}
 
+function mapInitialisieren() {
     if (
         typeof L === "undefined" ||
-        !mapElement
+        !document.getElementById("map")
     ) {
         return;
     }
 
-    const osm = L.tileLayer(
+    const standardMap = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
             maxZoom: 19,
@@ -25,7 +31,7 @@ function initMap() {
         }
     );
 
-    const satellite = L.tileLayer(
+    const satelliteMap = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/" +
         "World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -40,15 +46,14 @@ function initMap() {
         {
             center: [47.05, 15.43],
             zoom: 8,
-            layers: [satellite],
-            zoomControl: true
+            layers: [satelliteMap]
         }
     );
 
     L.control.layers(
         {
-            "Satellit": satellite,
-            "Standard": osm
+            "🛰 Satellit": satelliteMap,
+            "🗺 Standard": standardMap
         }
     ).addTo(map);
 
@@ -70,15 +75,7 @@ function initMap() {
     );
 }
 
-function validPoint(point) {
-    return (
-        point &&
-        Number.isFinite(Number(point.lat)) &&
-        Number.isFinite(Number(point.lng))
-    );
-}
-
-function clearCurrent() {
+function aktuelleKartenElementeLoeschen() {
     if (!map) {
         return;
     }
@@ -124,12 +121,12 @@ function setStartMarker(lat, lng) {
             radius: 8,
             color: "#ffffff",
             weight: 2,
-            fillColor: "#35d65f",
+            fillColor: "#43dd6b",
             fillOpacity: 1
         }
     )
         .addTo(map)
-        .bindPopup("Start");
+        .bindPopup("🎈 Startpunkt");
 
     map.setView(
         [latitude, longitude],
@@ -162,21 +159,24 @@ function setLandingMarker(lat, lng) {
             radius: 8,
             color: "#ffffff",
             weight: 2,
-            fillColor: "#ff574f",
+            fillColor: "#ff625b",
             fillOpacity: 1
         }
     )
         .addTo(map)
-        .bindPopup("Landung");
+        .bindPopup("🏁 Landepunkt");
 }
 
-function zeichneTrack(track) {
-    if (!map || !Array.isArray(track)) {
+function zeichneTrack(trackpunkte) {
+    if (
+        !map ||
+        !Array.isArray(trackpunkte)
+    ) {
         return;
     }
 
-    const points = track
-        .filter(validPoint)
+    const route = trackpunkte
+        .filter(mapPointValid)
         .map(function (point) {
             return [
                 Number(point.lat),
@@ -189,16 +189,16 @@ function zeichneTrack(track) {
         routeLine = null;
     }
 
-    if (points.length < 2) {
+    if (route.length < 2) {
         return;
     }
 
     routeLine = L.polyline(
-        points,
+        route,
         {
-            color: "#16a4ff",
+            color: "#16a2ff",
             weight: 4,
-            opacity: 0.9,
+            opacity: 0.92,
             lineCap: "round",
             lineJoin: "round"
         }
@@ -224,41 +224,35 @@ function flugAufKarte(track) {
     }
 
     const points =
-        track.filter(validPoint);
+        track.filter(mapPointValid);
 
     if (points.length === 0) {
         return;
     }
 
-    clearCurrent();
+    aktuelleKartenElementeLoeschen();
 
-    const start = points[0];
-    const landing =
+    const firstPoint = points[0];
+    const lastPoint =
         points[points.length - 1];
 
     setStartMarker(
-        Number(start.lat),
-        Number(start.lng)
+        firstPoint.lat,
+        firstPoint.lng
     );
 
     setLandingMarker(
-        Number(landing.lat),
-        Number(landing.lng)
+        lastPoint.lat,
+        lastPoint.lng
     );
 
     zeichneTrack(points);
 
-    const mapSection =
-        document.getElementById("karte");
-
-    if (mapSection) {
-        mapSection.scrollIntoView(
-            {
-                behavior: "smooth",
-                block: "center"
-            }
-        );
-    }
+    document.getElementById("karte")
+        ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
 }
 
 function karteZuruecksetzen() {
@@ -266,7 +260,7 @@ function karteZuruecksetzen() {
         return;
     }
 
-    clearCurrent();
+    aktuelleKartenElementeLoeschen();
 
     map.setView(
         [47.05, 15.43],
@@ -274,7 +268,7 @@ function karteZuruecksetzen() {
     );
 }
 
-function alleFluegeAufKarte(flights) {
+function alleFluegeAufKarte(fluege) {
     if (
         !map ||
         !allFlightsLayer
@@ -284,64 +278,63 @@ function alleFluegeAufKarte(flights) {
 
     allFlightsLayer.clearLayers();
 
-    const bounds = [];
+    const allCoordinates = [];
 
-    (Array.isArray(flights) ? flights : [])
+    (Array.isArray(fluege) ? fluege : [])
         .forEach(function (flight) {
-            const points = (
+            const route =
                 Array.isArray(flight.track)
                     ? flight.track
-                    : []
-            )
-                .filter(validPoint)
-                .map(function (point) {
-                    return [
-                        Number(point.lat),
-                        Number(point.lng)
-                    ];
-                });
+                        .filter(mapPointValid)
+                        .map(function (point) {
+                            return [
+                                Number(point.lat),
+                                Number(point.lng)
+                            ];
+                        })
+                    : [];
 
-            if (points.length < 2) {
+            if (route.length < 2) {
                 return;
             }
 
             L.polyline(
-                points,
+                route,
                 {
-                    color: "#1da7ff",
+                    color: "#149eff",
                     weight: 2,
-                    opacity: 0.65
+                    opacity: 0.68
                 }
             ).addTo(allFlightsLayer);
 
             L.circleMarker(
-                points[0],
+                route[0],
                 {
                     radius: 5,
-                    fillColor: "#4ee069",
-                    fillOpacity: 1,
                     color: "#ffffff",
-                    weight: 1
+                    weight: 1,
+                    fillColor: "#43dd6b",
+                    fillOpacity: 1
                 }
             ).addTo(allFlightsLayer);
 
             L.circleMarker(
-                points[points.length - 1],
+                route[route.length - 1],
                 {
                     radius: 5,
-                    fillColor: "#ff594f",
-                    fillOpacity: 1,
                     color: "#ffffff",
-                    weight: 1
+                    weight: 1,
+                    fillColor: "#ff625b",
+                    fillOpacity: 1
                 }
             ).addTo(allFlightsLayer);
 
-            bounds.push(...points);
+            allCoordinates.push(...route);
         });
 
-    if (bounds.length > 0) {
+    if (allCoordinates.length > 0) {
         map.fitBounds(
-            bounds,
+            allCoordinates,
             {
                 padding: [20, 20],
                 maxZoom: 11
@@ -352,7 +345,7 @@ function alleFluegeAufKarte(flights) {
 
 document.addEventListener(
     "DOMContentLoaded",
-    initMap
+    mapInitialisieren
 );
 
 window.addEventListener(
