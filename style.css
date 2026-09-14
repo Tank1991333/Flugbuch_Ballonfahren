@@ -640,3 +640,363 @@ footer p + p {
         animation: none !important;
     }
 }
+
+/* =====================================
+   AKTIVITAETSMONITOR
+===================================== */
+
+.monitor-card {
+    border-top:
+        6px solid #2563eb;
+}
+
+.monitor-titel {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.monitor-titel h2 {
+    margin-bottom: 5px;
+}
+
+.monitor-titel p {
+    color: #64748b;
+}
+
+.monitor-zeitraum {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px, 1fr)
+        );
+
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.monitor-zeitraum > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    padding: 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #eff6ff;
+}
+
+.monitor-zeitraum span {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.monitor-zeitraum strong {
+    color: #1d4ed8;
+}
+
+.monitor-werte {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 15px;
+}
+
+.monitor-wert {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.monitor-wert-erfuellt {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.monitor-wert-offen {
+    border-color: #fca5a5;
+    background: #fff7ed;
+}
+
+.monitor-wert-kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.monitor-wert-zahlen {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.monitor-wert-zahlen strong {
+    color: #1d4ed8;
+    font-size: 38px;
+    line-height: 1;
+}
+
+.monitor-wert-zahlen span {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.monitor-wert p {
+    margin-top: 10px;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.monitor-fortschritt {
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.monitor-fortschritt-balken {
+    height: 100%;
+    min-width: 0;
+    border-radius: 999px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #2563eb,
+            #16a34a
+        );
+
+    transition: width 0.4s ease;
+}
+
+.monitor-zusatzwerte {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.monitor-zusatzwerte > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 15px;
+    border-radius: 12px;
+    background: #f1f5f9;
+}
+
+.monitor-zusatzwerte span {
+    color: #475569;
+    font-weight: 600;
+}
+
+.monitor-zusatzwerte strong {
+    color: #1d4ed8;
+}
+
+.monitor-status {
+    margin-top: 18px;
+    padding: 17px;
+    border-radius: 14px;
+    text-align: center;
+    font-weight: 800;
+}
+
+.monitor-status-erfuellt {
+    color: #14532d;
+    border: 1px solid #86efac;
+    background: #dcfce7;
+}
+
+.monitor-status-offen {
+    color: #7f1d1d;
+    border: 1px solid #fca5a5;
+    background: #fee2e2;
+}
+
+.monitor-restwerte {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.monitor-restwerte > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+}
+
+.monitor-restwerte span {
+    color: #475569;
+}
+
+.monitor-restwerte strong {
+    font-size: 18px;
+}
+
+.monitor-hinweis {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    color: #713f12;
+    background: #fffbeb;
+}
+
+.monitor-hinweis span {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.monitor-hinweis small {
+    color: #92400e;
+}
+
+.monitor-rechtshinweis {
+    margin-top: 15px;
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.monitor-einstellungen {
+    margin-top: 22px;
+    padding: 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.monitor-einstellungen summary {
+    color: #1d4ed8;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+}
+
+.monitor-einstellungen[open] summary {
+    margin-bottom: 18px;
+}
+
+.monitor-formular {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 15px;
+}
+
+.monitor-formular input {
+    margin-bottom: 0;
+}
+
+.monitor-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.monitor-speichern {
+    color: white;
+    background: #2563eb;
+}
+
+.monitor-zuruecksetzen {
+    color: white;
+    background: #64748b;
+}
+
+.monitor-meldung {
+    min-height: 24px;
+    margin-top: 12px;
+    font-weight: 700;
+}
+
+.monitor-meldung-erfolg {
+    color: #15803d;
+}
+
+.monitor-meldung-fehler {
+    color: #b91c1c;
+}
+
+/* =====================================
+   MONITOR MOBILE
+===================================== */
+
+@media (max-width: 700px) {
+    .monitor-werte,
+    .monitor-zusatzwerte,
+    .monitor-restwerte {
+        grid-template-columns: 1fr;
+    }
+
+    .monitor-formular {
+        grid-template-columns: 1fr;
+    }
+
+    .monitor-buttons {
+        flex-direction: column;
+    }
+
+    .monitor-buttons button {
+        width: 100%;
+    }
+
+    .monitor-zusatzwerte > div,
+    .monitor-restwerte > div {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .monitor-wert-zahlen strong {
+        font-size: 32px;
+    }
+}
