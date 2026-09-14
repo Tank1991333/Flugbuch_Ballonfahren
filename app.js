@@ -9,7 +9,7 @@
 // Globale Variablen
 // =====================================
 
-let fluege = ladeGespeicherteFluege();
+var fluege = ladeGespeicherteFluege();
 
 let aktuellerFlug = null;
 let trackpunkte = [];
