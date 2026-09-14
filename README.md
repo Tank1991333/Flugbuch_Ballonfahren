@@ -1,72 +1,149 @@
-# 🎈 Ballonflugbuch Professional
+# 🎈 Ballonflugbuch Professional V10
 
-Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
+Browserbasiertes digitales Flugbuch für Heißluftballonfahrer im dunklen Professional-Dashboard-Stil.
 
 ## Funktionen
 
-- GPS-basierter Start- und Landeort
-- Automatische Aufzeichnung der Flugroute
-- Anzeige der Flugroute auf einer Leaflet-Karte
-- Standard- und Satellitenkarte
+- GPS-basierte Ermittlung der Startposition
+- Kontinuierliche Aufzeichnung der Flugroute
+- GPS-basierte Ermittlung der Landeposition
+- Leaflet-Karte
+- Satellitenkarte von Esri
+- Standardkarte von OpenStreetMap
+- Anzeige einzelner gespeicherter Flüge
+- Gemeinsame Darstellung aller gespeicherten Flüge
+- Start- und Landemarkierungen
 - Berechnung der zurückgelegten Strecke
-- Ermittlung der durchschnittlichen Geschwindigkeit
-- Ermittlung der maximalen Geschwindigkeit
+- Berechnung der durchschnittlichen Geschwindigkeit
+- Berechnung der maximalen Geschwindigkeit
+- Ermittlung der maximalen Höhe
+- Ermittlung der minimalen Höhe
+- Ermittlung der durchschnittlichen Höhe
 - Höhenprofil mit Chart.js
-- Maximale, minimale und durchschnittliche Höhe
+- Monatsstatistik der letzten zwölf Monate
+- Persönliche Rekorde
+- Gesamtstatistik
+- Aktivitätsmonitor
+- Frei einstellbarer Betrachtungszeitraum
+- Frei einstellbare Mindestanzahl an Fahrten
+- Frei einstellbare Mindestanzahl an Landungen
+- Anzeige des nächsten Fluges, der aus dem Zeitraum fällt
 - Wetterdaten über Open-Meteo
 - Sonnenaufgang und Sonnenuntergang
-- Windrichtung und Windgeschwindigkeit
-- Lokale Speicherung der Flüge im Browser
-- Flugstatistik mit Flugzeit, Kilometern und Landungen
-- Anzeige gespeicherter Flüge auf der Karte
+- Windgeschwindigkeit
+- Windrichtung
+- Luftfeuchtigkeit
+- Luftdruck
+- Ortsnamen über Nominatim
+- Speicherung der Flugdaten im localStorage
+- Speicherung der Pilot- und Ballondaten
+- Speicherung des Wartungsdatums
+- JSON-Backup
+- JSON-Wiederherstellung
+- Responsive Darstellung für Desktop, Tablet und Smartphone
 
 ## Dateien
+
+Die Anwendung besteht aus folgenden Dateien:
 
 - `index.html`
 - `style.css`
 - `app.js`
 - `map.js`
 - `weather.js`
+- `monitor.js`
+- `README.md`
 
-## Verwendung
+Alle Dateien müssen gemeinsam im gleichen Verzeichnis liegen.
 
-Die Anwendung muss über HTTPS aufgerufen werden, damit die GPS-Funktionen im Browser verwendet werden können.
+## Installation
 
-GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
+1. Ein neues GitHub-Repository erstellen.
+2. Alle sieben Dateien in das Stammverzeichnis des Repositorys hochladen.
+3. Das Repository auf GitHub öffnen.
+4. `Settings` auswählen.
+5. `Pages` auswählen.
+6. Unter `Build and deployment` die Option `Deploy from a branch` auswählen.
+7. Als Branch `main` auswählen.
+8. Als Ordner `/ (root)` auswählen.
+9. Auf `Save` klicken.
+10. Einige Minuten warten.
+11. Die von GitHub bereitgestellte HTTPS-Adresse öffnen.
 
-## GitHub Pages aktivieren
+## HTTPS
 
-1. Repository auf GitHub öffnen.
-2. `Settings` auswählen.
-3. `Pages` auswählen.
-4. Unter `Build and deployment` die Option `Deploy from a branch` auswählen.
-5. Als Branch `main` auswählen.
-6. Als Ordner `/ (root)` auswählen.
-7. Auf `Save` klicken.
+Die Anwendung benötigt HTTPS, damit Standortfunktionen im Browser verwendet werden können.
 
-Nach einigen Minuten ist die Anwendung über GitHub Pages erreichbar.
+GitHub Pages stellt die Anwendung automatisch über HTTPS bereit.
+
+Bei einer lokalen Entwicklung kann die Anwendung auch über `localhost` geöffnet werden.
+
+Das direkte Öffnen der Datei über eine Adresse wie:
+
+`file:///C:/.../index.html`
+
+kann dazu führen, dass die GPS-Funktion nicht verfügbar ist.
+
+## Browserberechtigungen
+
+Beim ersten Aufruf fragt der Browser nach dem Zugriff auf den Standort.
+
+Der Zugriff muss erlaubt werden, damit folgende Funktionen arbeiten:
+
+- Startposition
+- Flugroute
+- Landeposition
+- Wetterdaten am aktuellen Standort
+- Ortsnamen von Start und Landung
 
 ## Datenspeicherung
 
-Alle Flugdaten werden im `localStorage` des Browsers gespeichert.
+Die Anwendung speichert Flüge und Einstellungen im `localStorage` des Browsers.
 
 Das bedeutet:
 
-- Die Daten befinden sich nur auf dem verwendeten Gerät.
+- Die Daten befinden sich nur auf dem verwendeten Gerät und im verwendeten Browser.
 - Andere Geräte besitzen keine automatische Synchronisierung.
-- Beim Löschen der Browserdaten können auch die Flugdaten gelöscht werden.
-- Der private Browsermodus kann die dauerhafte Speicherung verhindern.
+- Beim Löschen der Browserdaten können die Flugdaten gelöscht werden.
+- Im privaten Browsermodus können Daten möglicherweise nicht dauerhaft gespeichert werden.
+- Ein regelmäßiges JSON-Backup wird empfohlen.
 
-## Benötigte Browserberechtigungen
+## Backup erstellen
 
-Die Anwendung benötigt Zugriff auf den Standort des Geräts.
+1. In der linken Navigation `Backup` auswählen.
+2. Der Browser lädt eine JSON-Datei herunter.
+3. Diese Datei sicher speichern.
 
-Beim ersten Öffnen fragt der Browser nach der Standortberechtigung. Diese Berechtigung muss erlaubt werden, damit folgende Funktionen verfügbar sind:
+Das Backup enthält:
 
-- Startposition
-- Landeposition
-- Flugroute
-- Wetterdaten am aktuellen Standort
+- alle gespeicherten Flüge
+- alle Trackpunkte
+- Flugzeiten
+- Strecken
+- Höhenwerte
+- Geschwindigkeitswerte
+- Landungen
+- Bemerkungen
+
+## Backup importieren
+
+1. In der linken Navigation `Import` auswählen.
+2. Eine zuvor exportierte JSON-Datei auswählen.
+3. Den Import bestätigen.
+
+Hinweis: Beim Import werden die derzeit gespeicherten Flüge durch die Daten aus der Backup-Datei ersetzt.
+
+## Aktivitätsmonitor
+
+Der Aktivitätsmonitor verwendet standardmäßig folgende Werte:
+
+- Betrachtungszeitraum: 24 Monate
+- Erforderliche Fahrten: 30
+- Erforderliche Landungen: 40
+
+Die Einstellungen können am unteren Ende der Anwendung geändert werden.
+
+Die Monitoreinstellungen werden ebenfalls lokal im Browser gespeichert.
 
 ## Externe Dienste
 
@@ -74,17 +151,32 @@ Die Anwendung verwendet folgende externe Dienste:
 
 - Leaflet für die Kartendarstellung
 - OpenStreetMap für die Standardkarte
-- Esri für die Satellitenkarte
-- Chart.js für das Höhenprofil
+- Esri World Imagery für die Satellitenkarte
+- Chart.js für Diagramme
 - Open-Meteo für Wetterdaten
 - Nominatim für die Ermittlung von Ortsnamen
 
+Für Karten, Wetterdaten und Ortsnamen ist eine aktive Internetverbindung erforderlich.
+
 ## Hinweis zur Flugsicherheit
 
-Die angezeigte Wetterbewertung ist nur eine vereinfachte technische Einschätzung anhand der Windgeschwindigkeit.
+Die Wetteranzeige und die Wetterbewertung sind nur eine vereinfachte technische Darstellung.
 
-Sie ersetzt keine professionelle Flugwetterberatung und keine eigenverantwortliche Prüfung der tatsächlichen Wetter- und Flugbedingungen.
+Die angezeigte Bewertung berücksichtigt insbesondere nicht alle für eine Ballonfahrt relevanten Bedingungen.
+
+Die Anwendung ersetzt nicht:
+
+- professionelle Flugwetterberatung
+- behördliche Wetterinformationen
+- NOTAM-Prüfungen
+- Luftraumprüfungen
+- Windmessungen am Startplatz
+- eigenverantwortliche Sicherheitsentscheidungen
+- Herstellerangaben
+- gesetzliche oder betriebliche Vorgaben
+
+Die Entscheidung über die Durchführung einer Ballonfahrt liegt vollständig in der Verantwortung des Piloten beziehungsweise des verantwortlichen Luftfahrers.
 
 ## Version
 
-Ballonflugbuch Professional V9
+Ballonflugbuch Professional V10
