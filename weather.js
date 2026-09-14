@@ -1,217 +1,174 @@
-// =====================================
-// Ballonflugbuch Professional V9
-// weather.js
-// =====================================
-
 "use strict";
 
-function wetterElement(id) {
-    return document.getElementById(id);
-}
+function weatherSetText(id, text) {
+    const element =
+        document.getElementById(id);
 
-function wetterTextSetzen(id, text) {
-    const ziel = wetterElement(id);
-
-    if (ziel) {
-        ziel.textContent = text;
+    if (element) {
+        element.textContent = text;
     }
 }
 
-function wetterBewertungSetzen(text, klasse = "") {
-    const ziel = wetterElement("weatherRating");
+function windRichtungText(degrees) {
+    const value = Number(degrees);
 
-    if (!ziel) {
-        return;
-    }
-
-    ziel.textContent = text;
-    ziel.className =
-        `weather-rating ${klasse}`.trim();
-}
-
-function wetterFehlermeldung(error) {
-    if (!error) {
-        return "Der Standort konnte nicht ermittelt werden.";
-    }
-
-    switch (error.code) {
-        case error.PERMISSION_DENIED:
-            return (
-                "Standortzugriff wurde verweigert. " +
-                "Bitte erlaube den Standortzugriff im Browser."
-            );
-
-        case error.POSITION_UNAVAILABLE:
-            return "Der aktuelle Standort ist nicht verfügbar.";
-
-        case error.TIMEOUT:
-            return "Die Standortabfrage hat zu lange gedauert.";
-
-        default:
-            return "Der Standort konnte nicht ermittelt werden.";
-    }
-}
-
-function windRichtungText(deg) {
-    const grad = Number(deg);
-
-    if (!Number.isFinite(grad)) {
+    if (!Number.isFinite(value)) {
         return "-";
     }
 
-    const normalisiert =
-        ((grad % 360) + 360) % 360;
+    const directions = [
+        "N",
+        "NO",
+        "O",
+        "SO",
+        "S",
+        "SW",
+        "W",
+        "NW"
+    ];
 
-    if (
-        normalisiert >= 337.5 ||
-        normalisiert < 22.5
-    ) {
-        return "N";
-    }
+    const normalized =
+        ((value % 360) + 360) % 360;
 
-    if (normalisiert < 67.5) {
-        return "NO";
-    }
+    const index =
+        Math.round(normalized / 45) % 8;
 
-    if (normalisiert < 112.5) {
-        return "O";
-    }
-
-    if (normalisiert < 157.5) {
-        return "SO";
-    }
-
-    if (normalisiert < 202.5) {
-        return "S";
-    }
-
-    if (normalisiert < 247.5) {
-        return "SW";
-    }
-
-    if (normalisiert < 292.5) {
-        return "W";
-    }
-
-    return "NW";
-}
-
-function uhrzeitFormatieren(wert) {
-    if (!wert) {
-        return "--";
-    }
-
-    const datum = new Date(wert);
-
-    if (Number.isNaN(datum.getTime())) {
-        /*
-         * Falls ein Browser das Datumsformat nicht versteht,
-         * werden zumindest Stunden und Minuten extrahiert.
-         */
-        const treffer =
-            String(wert).match(/T(\d{2}:\d{2})/);
-
-        return treffer ? treffer[1] : "--";
-    }
-
-    return datum.toLocaleTimeString(
-        "de-AT",
-        {
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    );
+    return directions[index];
 }
 
 function wetterBewerten(wind) {
-    const windgeschwindigkeit = Number(wind);
-
-    if (!Number.isFinite(windgeschwindigkeit)) {
+    if (!Number.isFinite(wind)) {
         return {
             text:
-                "⚪ Wetterbewertung derzeit nicht möglich",
-            klasse: ""
+                "Wetterbewertung nicht möglich",
+            className: ""
         };
     }
 
-    if (windgeschwindigkeit <= 10) {
+    if (wind <= 10) {
         return {
             text:
-                "🟢 Sehr gute Windbedingungen für Ballonfahrten",
-            klasse: "weather-good"
+                "🟢 Ruhige Windbedingungen",
+            className:
+                "weather-good"
         };
     }
 
-    if (windgeschwindigkeit <= 20) {
+    if (wind <= 20) {
         return {
             text:
-                "🟡 Erhöhte Aufmerksamkeit empfohlen",
-            klasse: "weather-warning"
+                "🟡 Erhöhte Aufmerksamkeit erforderlich",
+            className:
+                "weather-warning"
         };
     }
 
     return {
         text:
-            "🔴 Ballonfahrt aufgrund des Windes derzeit nicht empfohlen",
-        klasse: "weather-danger"
+            "🔴 Wind für eine Ballonfahrt kritisch",
+        className:
+            "weather-danger"
     };
 }
 
-async function wetterAbrufen(lat, lon) {
-    const parameter = new URLSearchParams({
-        latitude: String(lat),
-        longitude: String(lon),
-        current:
-            "temperature_2m," +
-            "relative_humidity_2m," +
-            "surface_pressure," +
-            "wind_speed_10m," +
-            "wind_direction_10m",
-        daily: "sunrise,sunset",
-        wind_speed_unit: "kmh",
-        timezone: "auto",
-        forecast_days: "1"
-    });
+function wetterZahlFormatieren(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "--";
+    }
+
+    return number.toLocaleString(
+        "de-AT",
+        {
+            maximumFractionDigits: 1
+        }
+    );
+}
+
+async function wetterdatenAbrufen(
+    latitude,
+    longitude
+) {
+    const parameters =
+        new URLSearchParams(
+            {
+                latitude:
+                    String(latitude),
+
+                longitude:
+                    String(longitude),
+
+                current:
+                    "temperature_2m," +
+                    "wind_speed_10m," +
+                    "wind_direction_10m," +
+                    "relative_humidity_2m," +
+                    "surface_pressure",
+
+                daily:
+                    "sunrise,sunset",
+
+                wind_speed_unit:
+                    "kmh",
+
+                timezone:
+                    "auto",
+
+                forecast_days:
+                    "1"
+            }
+        );
 
     const response = await fetch(
         "https://api.open-meteo.com/v1/forecast?" +
-        parameter.toString()
+        parameters.toString()
     );
 
     if (!response.ok) {
         throw new Error(
-            `Wetterabfrage fehlgeschlagen: ${response.status}`
+            "Wetterabfrage fehlgeschlagen: " +
+            response.status
         );
     }
 
     return response.json();
 }
 
-async function ladeWetter() {
-    if (!navigator.geolocation) {
-        wetterBewertungSetzen(
-            "❌ GPS ist in diesem Browser nicht verfügbar.",
-            "weather-danger"
+function ladeWetter() {
+    const rating =
+        document.getElementById(
+            "weatherRating"
         );
+
+    if (!rating) {
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        rating.textContent =
+            "GPS wird von diesem Browser nicht unterstützt.";
+
+        rating.className =
+            "weather-rating weather-danger";
 
         return;
     }
 
-    wetterBewertungSetzen(
-        "📡 Wetterdaten werden geladen ..."
-    );
+    rating.textContent =
+        "📡 Wetterdaten werden geladen ...";
+
+    rating.className =
+        "weather-rating";
 
     navigator.geolocation.getCurrentPosition(
         async function (position) {
-            const lat =
-                position.coords.latitude;
-
-            const lon =
-                position.coords.longitude;
-
             try {
                 const data =
-                    await wetterAbrufen(lat, lon);
+                    await wetterdatenAbrufen(
+                        position.coords.latitude,
+                        position.coords.longitude
+                    );
 
                 if (
                     !data ||
@@ -219,149 +176,165 @@ async function ladeWetter() {
                     !data.daily
                 ) {
                     throw new Error(
-                        "Unvollständige Wetterdaten erhalten."
+                        "Unvollständige Wetterdaten."
                     );
                 }
 
-                const temperatur =
-                    Number(
-                        data.current.temperature_2m
-                    );
-
-                const luftfeuchte =
-                    Number(
-                        data.current.relative_humidity_2m
-                    );
+                const current =
+                    data.current;
 
                 const wind =
                     Number(
-                        data.current.wind_speed_10m
+                        current.wind_speed_10m
                     );
 
-                const richtung =
+                const direction =
                     Number(
-                        data.current.wind_direction_10m
+                        current.wind_direction_10m
                     );
 
-                const druck =
-                    Number(
-                        data.current.surface_pressure
-                    );
-
-                const temperaturText =
-                    Number.isFinite(temperatur)
-                        ? temperatur.toLocaleString(
-                            "de-AT",
-                            {
-                                maximumFractionDigits: 1
-                            }
-                        )
-                        : "--";
-
-                const windText =
-                    Number.isFinite(wind)
-                        ? wind.toLocaleString(
-                            "de-AT",
-                            {
-                                maximumFractionDigits: 1
-                            }
-                        )
-                        : "--";
-
-                const richtungText =
-                    Number.isFinite(richtung)
-                        ? `${Math.round(richtung)}° ` +
-                          `(${windRichtungText(richtung)})`
-                        : "--";
-
-                wetterTextSetzen(
+                weatherSetText(
                     "temperature",
-                    `🌡 Temperatur: ${temperaturText} °C`
+
+                    "🌡 Temperatur: " +
+                    wetterZahlFormatieren(
+                        current.temperature_2m
+                    ) +
+                    " °C"
                 );
 
-                wetterTextSetzen(
+                weatherSetText(
                     "wind",
-                    `💨 Wind: ${windText} km/h`
+
+                    "💨 Wind: " +
+                    wetterZahlFormatieren(wind) +
+                    " km/h"
                 );
 
-                wetterTextSetzen(
+                weatherSetText(
                     "windDirection",
-                    `🧭 Windrichtung: ${richtungText}`
+
+                    "🧭 Richtung: " +
+                    (
+                        Number.isFinite(direction)
+                            ? Math.round(direction)
+                            : "--"
+                    ) +
+                    "° (" +
+                    windRichtungText(direction) +
+                    ")"
                 );
 
-                wetterTextSetzen(
+                const sunrise =
+                    data.daily.sunrise?.[0];
+
+                const sunset =
+                    data.daily.sunset?.[0];
+
+                weatherSetText(
                     "sunrise",
+
                     "🌅 Sonnenaufgang: " +
-                    uhrzeitFormatieren(
-                        data.daily.sunrise?.[0]
+                    (
+                        sunrise
+                            ? sunrise.slice(-5)
+                            : "--"
                     )
                 );
 
-                wetterTextSetzen(
+                weatherSetText(
                     "sunset",
+
                     "🌇 Sonnenuntergang: " +
-                    uhrzeitFormatieren(
-                        data.daily.sunset?.[0]
+                    (
+                        sunset
+                            ? sunset.slice(-5)
+                            : "--"
                     )
                 );
 
-                const bewertung =
+                const result =
                     wetterBewerten(wind);
 
-                const luftfeuchteText =
-                    Number.isFinite(luftfeuchte)
-                        ? `${Math.round(luftfeuchte)} %`
-                        : "--";
+                const humidity =
+                    Number(
+                        current.relative_humidity_2m
+                    );
 
-                const druckText =
-                    Number.isFinite(druck)
-                        ? `${Math.round(druck)} hPa`
-                        : "--";
+                const pressure =
+                    Number(
+                        current.surface_pressure
+                    );
 
-                wetterBewertungSetzen(
-                    `${bewertung.text} | ` +
-                    `Luftfeuchtigkeit: ${luftfeuchteText} | ` +
-                    `Luftdruck: ${druckText}`,
-                    bewertung.klasse
-                );
+                rating.textContent =
+                    result.text +
+                    " · Luftfeuchte " +
+                    (
+                        Number.isFinite(humidity)
+                            ? Math.round(humidity)
+                            : "--"
+                    ) +
+                    " % · Luftdruck " +
+                    (
+                        Number.isFinite(pressure)
+                            ? Math.round(pressure)
+                            : "--"
+                    ) +
+                    " hPa";
+
+                rating.className =
+                    "weather-rating " +
+                    result.className;
             } catch (error) {
                 console.error(
                     "Wetterdaten konnten nicht geladen werden:",
                     error
                 );
 
-                wetterBewertungSetzen(
-                    "❌ Wetterdaten konnten nicht geladen werden.",
-                    "weather-danger"
-                );
+                rating.textContent =
+                    "❌ Wetterdaten konnten nicht geladen werden.";
+
+                rating.className =
+                    "weather-rating weather-danger";
             }
         },
 
         function (error) {
             console.error(
-                "Standort für Wetter konnte nicht ermittelt werden:",
+                "Standort konnte nicht ermittelt werden:",
                 error
             );
 
-            wetterBewertungSetzen(
-                "❌ " + wetterFehlermeldung(error),
-                "weather-danger"
-            );
+            rating.textContent =
+                "Standortfreigabe ist für Wetterdaten erforderlich.";
+
+            rating.className =
+                "weather-rating weather-warning";
         },
 
         {
-            enableHighAccuracy: false,
             maximumAge: 300000,
-            timeout: 15000
+            timeout: 15000,
+            enableHighAccuracy: false
         }
     );
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener(
-        "DOMContentLoaded",
-        ladeWetter
-    );
-} else {
-    ladeWetter();
-}
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+        const reloadButton =
+            document.getElementById(
+                "weatherReload"
+            );
+
+        if (reloadButton) {
+            reloadButton.addEventListener(
+                "click",
+                ladeWetter
+            );
+        }
+
+        ladeWetter();
+    }
+);
