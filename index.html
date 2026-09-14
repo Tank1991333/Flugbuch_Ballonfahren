@@ -63,7 +63,217 @@
                 <h3 id="countKm">0,0</h3>
                 <p>Kilometer</p>
             </div>
-
+<section class="card monitor-card">
+2
+ 
+3
+<div class="monitor-titel">
+4
+ 
+5
+<div>
+6
+<h2>🎈 Aktivitätsüberwachung</h2>
+7
+ 
+8
+<p>
+9
+Auswertung deiner gespeicherten Fahrten
+10
+und Landungen im gleitenden Zeitraum.
+11
+</p>
+12
+</div>
+13
+ 
+14
+</div>
+15
+ 
+16
+<div
+17
+id="aktivitaetsmonitorInhalt"
+18
+aria-live="polite"
+19
+>
+20
+<p class="empty-message">
+21
+Aktivitätsdaten werden berechnet ...
+22
+</p>
+23
+</div>
+24
+ 
+25
+<details class="monitor-einstellungen">
+26
+ 
+27
+<summary>
+28
+⚙️ Anforderungen einstellen
+29
+</summary>
+30
+ 
+31
+<div class="monitor-formular">
+32
+ 
+33
+<div>
+34
+<label for="monitorZeitraum">
+35
+Betrachtungszeitraum in Monaten
+36
+</label>
+37
+ 
+38
+<input
+39
+id="monitorZeitraum"
+40
+type="number"
+41
+min="1"
+42
+max="120"
+43
+step="1"
+44
+value="24"
+45
+>
+46
+</div>
+47
+ 
+48
+<div>
+49
+<label for="monitorSollFahrten">
+50
+Erforderliche Fahrten
+51
+</label>
+52
+ 
+53
+<input
+54
+id="monitorSollFahrten"
+55
+type="number"
+56
+min="0"
+57
+step="1"
+58
+value="30"
+59
+>
+60
+</div>
+61
+ 
+62
+<div>
+63
+<label for="monitorSollLandungen">
+64
+Erforderliche Landungen
+65
+</label>
+66
+ 
+67
+<input
+68
+id="monitorSollLandungen"
+69
+type="number"
+70
+min="0"
+71
+step="1"
+72
+value="40"
+73
+>
+74
+</div>
+75
+ 
+76
+</div>
+77
+ 
+78
+<div class="monitor-buttons">
+79
+ 
+80
+<button
+81
+class="monitor-speichern"
+82
+type="button"
+83
+onclick="monitorEinstellungenSpeichern()"
+84
+>
+85
+💾 Anforderungen speichern
+86
+</button>
+87
+ 
+88
+<button
+89
+class="monitor-zuruecksetzen"
+90
+type="button"
+91
+onclick="monitorEinstellungenZuruecksetzen()"
+92
+>
+93
+↩ Zurücksetzen
+94
+</button>
+95
+ 
+96
+</div>
+97
+ 
+98
+<p
+99
+id="monitorMeldung"
+100
+class="monitor-meldung"
+101
+aria-live="polite"
+102
+></p>
+103
+ 
+104
+</details>
+105
+ 
+106
+</section>
         </section>
 
         <section class="card weather">
