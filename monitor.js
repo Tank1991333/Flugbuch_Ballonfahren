@@ -5,8 +5,8 @@ const MONITOR_STORAGE_KEY =
 
 const MONITOR_DEFAULTS = Object.freeze({
     zeitraumMonate: 24,
-    erforderlicheFahrten: 30,
-    erforderlicheLandungen: 40
+    erforderlicheFahrten: 6,
+    erforderlicheLandungen: 10
 });
 
 function monitorEinstellungenLaden() {
