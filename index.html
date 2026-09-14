@@ -1,11 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="theme-color"
+        content="#07111f"
     >
 
     <meta
@@ -13,7 +18,9 @@
         content="Digitales Flugbuch für Heißluftballonfahrer"
     >
 
-    <title>🎈 Ballonflugbuch Professional V9</title>
+    <title>Ballonflugbuch Professional V10</title>
+
+    https://unpkg.com
 
     <link
         rel="stylesheet"
@@ -21,450 +28,613 @@
         crossorigin=""
     >
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 </head>
 
 <body>
 
     <noscript>
-        <div class="noscript-warning">
+        <div class="noscript">
             Diese Anwendung benötigt JavaScript.
-            Bitte aktiviere JavaScript in deinem Browser.
         </div>
     </noscript>
 
-    <header class="hero">
-        <div class="hero-overlay">
-            <h1>🎈 Ballonflugbuch Professional</h1>
-            <p>Digitales Flugbuch für Heißluftballonfahrer</p>
-        </div>
-    </header>
+    <div class="app-shell">
 
-    <main>
+        <aside
+            class="sidebar"
+            id="sidebar"
+        >
 
-        <section class="dashboard" aria-label="Flugstatistik">
+            #dashboard
+                <span class="brand-balloon">
+                    🎈
+                </span>
 
-            <div class="stat">
-                <h3 id="countFlights">0</h3>
-                <p>Flüge</p>
+                <span>
+                    <b>BALLONFLUGBUCH</b>
+                    <small>PROFESSIONAL</small>
+                </span>
+            </a>
+
+            <nav aria-label="Hauptnavigation">
+
+                #dashboard
+                    <span>▣</span>
+                    <span>Dashboard</span>
+                </a>
+
+                #flugbuch
+                    <span>▤</span>
+                    <span>Flugbuch</span>
+                </a>
+
+                #karte
+                    <span>◇</span>
+                    <span>Karte</span>
+                </a>
+
+                #statistiken
+                    <span>▥</span>
+                    <span>Statistiken</span>
+                </a>
+
+                #wetter
+                    <span>☁</span>
+                    <span>Wetter</span>
+                </a>
+
+                #einstellungen
+                    <span>⚙</span>
+                    <span>Einstellungen</span>
+                </a>
+
+                <button
+                    class="nav-link nav-button"
+                    id="exportButton"
+                    type="button"
+                >
+                    <span>⇩</span>
+                    <span>Backup</span>
+                </button>
+
+                <label class="nav-link import-label">
+
+                    <span>⇧</span>
+                    <span>Import</span>
+
+                    <input
+                        id="importInput"
+                        type="file"
+                        accept="application/json"
+                        hidden
+                    >
+
+                </label>
+
+            </nav>
+
+            <div class="maintenance">
+
+                <span>🔧</span>
+
+                <span>
+                    Nächste Wartung
+
+                    <strong id="maintenanceDate">
+                        nicht festgelegt
+                    </strong>
+                </span>
+
             </div>
 
-            <div class="stat">
-                <h3 id="countMinutes">0h 0m</h3>
-                <p>Flugzeit</p>
-            </div>
+        </aside>
 
-            <div class="stat">
-                <h3 id="countLandings">0</h3>
-                <p>Landungen</p>
-            </div>
+        <main class="main">
 
-            <div class="stat">
-                <h3 id="countKm">0,0</h3>
-                <p>Kilometer</p>
-            </div>
-<section class="card monitor-card">
-2
- 
-3
-<div class="monitor-titel">
-4
- 
-5
-<div>
-6
-<h2>🎈 Aktivitätsüberwachung</h2>
-7
- 
-8
-<p>
-9
-Auswertung deiner gespeicherten Fahrten
-10
-und Landungen im gleitenden Zeitraum.
-11
-</p>
-12
-</div>
-13
- 
-14
-</div>
-15
- 
-16
-<div
-17
-id="aktivitaetsmonitorInhalt"
-18
-aria-live="polite"
-19
->
-20
-<p class="empty-message">
-21
-Aktivitätsdaten werden berechnet ...
-22
-</p>
-23
-</div>
-24
- 
-25
-<details class="monitor-einstellungen">
-26
- 
-27
-<summary>
-28
-⚙️ Anforderungen einstellen
-29
-</summary>
-30
- 
-31
-<div class="monitor-formular">
-32
- 
-33
-<div>
-34
-<label for="monitorZeitraum">
-35
-Betrachtungszeitraum in Monaten
-36
-</label>
-37
- 
-38
-<input
-39
-id="monitorZeitraum"
-40
-type="number"
-41
-min="1"
-42
-max="120"
-43
-step="1"
-44
-value="24"
-45
->
-46
-</div>
-47
- 
-48
-<div>
-49
-<label for="monitorSollFahrten">
-50
-Erforderliche Fahrten
-51
-</label>
-52
- 
-53
-<input
-54
-id="monitorSollFahrten"
-55
-type="number"
-56
-min="0"
-57
-step="1"
-58
-value="30"
-59
->
-60
-</div>
-61
- 
-62
-<div>
-63
-<label for="monitorSollLandungen">
-64
-Erforderliche Landungen
-65
-</label>
-66
- 
-67
-<input
-68
-id="monitorSollLandungen"
-69
-type="number"
-70
-min="0"
-71
-step="1"
-72
-value="40"
-73
->
-74
-</div>
-75
- 
-76
-</div>
-77
- 
-78
-<div class="monitor-buttons">
-79
- 
-80
-<button
-81
-class="monitor-speichern"
-82
-type="button"
-83
-onclick="monitorEinstellungenSpeichern()"
-84
->
-85
-💾 Anforderungen speichern
-86
-</button>
-87
- 
-88
-<button
-89
-class="monitor-zuruecksetzen"
-90
-type="button"
-91
-onclick="monitorEinstellungenZuruecksetzen()"
-92
->
-93
-↩ Zurücksetzen
-94
-</button>
-95
- 
-96
-</div>
-97
- 
-98
-<p
-99
-id="monitorMeldung"
-100
-class="monitor-meldung"
-101
-aria-live="polite"
-102
-></p>
-103
- 
-104
-</details>
-105
- 
-106
-</section>
-        </section>
+            <header class="topbar">
 
-        <section class="card weather">
-
-            <h2>🌤 Wetter</h2>
-
-            <div class="weather-grid">
+                <button
+                    id="menuButton"
+                    class="icon-button"
+                    type="button"
+                    aria-label="Menü öffnen"
+                >
+                    ☰
+                </button>
 
                 <div>
-                    <p id="temperature">
+                    <h1>Willkommen zurück!</h1>
+                    <p>Hier ist deine aktuelle Flugübersicht.</p>
+                </div>
+
+                <div class="top-meta">
+
+                    <span id="currentDate"></span>
+                    <span id="currentTime"></span>
+
+                    <span class="avatar">
+                        🎈
+                    </span>
+
+                    <span>
+                        <b id="pilotHeader">Pilot</b>
+                        <small>Ballonpilot</small>
+                    </span>
+
+                </div>
+
+            </header>
+
+            <section
+                id="dashboard"
+                class="page-section hero-dashboard"
+            >
+
+                <div class="hero-copy">
+
+                    <span class="eyebrow">
+                        BALLONFLUGBUCH PROFESSIONAL
+                    </span>
+
+                    <h2>
+                        Deine Fahrten. Deine Daten.<br>
+                        Dein Überblick.
+                    </h2>
+
+                </div>
+
+                <div
+                    class="hero-balloon"
+                    aria-hidden="true"
+                >
+                    🎈
+                </div>
+
+            </section>
+
+            <section
+                class="kpi-grid"
+                aria-label="Kennzahlen"
+            >
+
+                <article class="kpi blue">
+
+                    <span class="kpi-icon">🎈</span>
+
+                    <div>
+                        <small>FAHRTEN</small>
+                        <strong id="countFlights">0</strong>
+                        <em>im gewählten Zeitraum</em>
+                    </div>
+
+                </article>
+
+                <article class="kpi green">
+
+                    <span class="kpi-icon">🛬</span>
+
+                    <div>
+                        <small>LANDUNGEN</small>
+                        <strong id="countLandings">0</strong>
+                        <em>im gewählten Zeitraum</em>
+                    </div>
+
+                </article>
+
+                <article class="kpi yellow">
+
+                    <span class="kpi-icon">◷</span>
+
+                    <div>
+                        <small>FLUGZEIT</small>
+                        <strong id="countMinutes">0h 00m</strong>
+                        <em>im gewählten Zeitraum</em>
+                    </div>
+
+                </article>
+
+                <article class="kpi purple">
+
+                    <span class="kpi-icon">⌖</span>
+
+                    <div>
+                        <small>KILOMETER</small>
+                        <strong id="countKm">0,0 km</strong>
+                        <em>im gewählten Zeitraum</em>
+                    </div>
+
+                </article>
+
+            </section>
+
+            <section class="dashboard-grid">
+
+                <article
+                    class="panel"
+                    id="monitorPanel"
+                >
+
+                    <div class="panel-title">
+
+                        <h2>BERECHTIGUNGSMONITOR</h2>
+
+                        <span id="monitorPeriodLabel">
+                            24 MONATE
+                        </span>
+
+                    </div>
+
+                    <div id="aktivitaetsmonitorInhalt"></div>
+
+                </article>
+
+                <article class="panel">
+
+                    <div class="panel-title">
+                        <h2>ZUSAMMENFASSUNG</h2>
+                        <span>GESAMT</span>
+                    </div>
+
+                    <div
+                        id="summaryList"
+                        class="summary-list"
+                    ></div>
+
+                    <div
+                        id="nextExit"
+                        class="next-exit"
+                    ></div>
+
+                </article>
+
+                <article
+                    class="panel chart-panel"
+                    id="statistiken"
+                >
+
+                    <div class="panel-title">
+                        <h2>MONATSSTATISTIK</h2>
+                        <span>FAHRTEN</span>
+                    </div>
+
+                    <div class="chart-wrap">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+
+                </article>
+
+                <article class="panel records-panel">
+
+                    <div class="panel-title">
+                        <h2>REKORDE</h2>
+                    </div>
+
+                    <div
+                        id="records"
+                        class="records"
+                    ></div>
+
+                </article>
+
+                <article
+                    class="panel map-panel"
+                    id="karte"
+                >
+
+                    <div class="panel-title">
+
+                        <h2>FLUGKARTE</h2>
+
+                        <span>
+                            START ● &nbsp; LANDUNG ●
+                        </span>
+
+                    </div>
+
+                    <div id="map"></div>
+
+                </article>
+
+            </section>
+
+            <section
+                id="wetter"
+                class="panel section-panel"
+            >
+
+                <div class="panel-title">
+
+                    <h2>AKTUELLES WETTER</h2>
+
+                    <button
+                        id="weatherReload"
+                        class="small-button"
+                        type="button"
+                    >
+                        Aktualisieren
+                    </button>
+
+                </div>
+
+                <div class="weather-grid">
+
+                    <div id="temperature">
                         🌡 Temperatur: --
-                    </p>
-                </div>
+                    </div>
 
-                <div>
-                    <p id="wind">
+                    <div id="wind">
                         💨 Wind: --
-                    </p>
-                </div>
+                    </div>
 
-                <div>
-                    <p id="windDirection">
-                        🧭 Windrichtung: --
-                    </p>
-                </div>
+                    <div id="windDirection">
+                        🧭 Richtung: --
+                    </div>
 
-                <div>
-                    <p id="sunrise">
+                    <div id="sunrise">
                         🌅 Sonnenaufgang: --
-                    </p>
-                </div>
+                    </div>
 
-                <div>
-                    <p id="sunset">
+                    <div id="sunset">
                         🌇 Sonnenuntergang: --
-                    </p>
+                    </div>
+
                 </div>
 
-            </div>
-
-            <div
-                id="weatherRating"
-                class="weather-rating"
-                aria-live="polite"
-            >
-                Wetterdaten werden geladen ...
-            </div>
-
-        </section>
-
-        <section class="card">
-
-            <h2>👨‍✈️ Pilot &amp; Ballon</h2>
-
-            <label for="pilot">Pilot</label>
-
-            <input
-                id="pilot"
-                type="text"
-                placeholder="Pilotname"
-                autocomplete="name"
-            >
-
-            <label for="ballon">Ballon-Kennzeichen</label>
-
-            <input
-                id="ballon"
-                type="text"
-                placeholder="z. B. OE-BAL"
-                autocomplete="off"
-            >
-
-            <label for="ballontyp">Ballontyp</label>
-
-            <input
-                id="ballontyp"
-                type="text"
-                placeholder="z. B. Kubicek BB45"
-                autocomplete="off"
-            >
-
-        </section>
-
-        <section class="card">
-
-            <h2>📍 Tracking</h2>
-
-            <div class="button-group">
-
-                <button
-                    id="startButton"
-                    class="start"
-                    type="button"
-                    onclick="flugStarten()"
+                <div
+                    id="weatherRating"
+                    class="weather-rating"
                 >
-                    ▶ Fahrt starten
-                </button>
+                    Wetterdaten werden geladen ...
+                </div>
 
-                <button
-                    id="stopButton"
-                    class="stop"
-                    type="button"
-                    onclick="flugBeenden()"
-                    disabled
+            </section>
+
+            <section class="form-grid">
+
+                <article
+                    class="panel section-panel"
+                    id="einstellungen"
                 >
-                    ■ Fahrt beenden
-                </button>
 
-            </div>
+                    <div class="panel-title">
+                        <h2>PILOT &amp; BALLON</h2>
+                    </div>
 
-            <p id="status" aria-live="polite">
-                Kein Flug aktiv
-            </p>
+                    <label for="pilot">
+                        Pilot
 
-        </section>
+                        <input
+                            id="pilot"
+                            type="text"
+                            autocomplete="name"
+                            placeholder="Pilotname"
+                        >
+                    </label>
 
-        <section class="card map-card">
+                    <label for="ballon">
+                        Ballon-Kennzeichen
 
-            <h2>🗺 Flugkarte</h2>
+                        <input
+                            id="ballon"
+                            type="text"
+                            autocomplete="off"
+                            placeholder="z. B. OE-BAL"
+                        >
+                    </label>
 
-            <div
-                id="map"
-                aria-label="Karte der Ballonfahrt"
-            ></div>
+                    <label for="ballontyp">
+                        Ballontyp
 
-        </section>
+                        <input
+                            id="ballontyp"
+                            type="text"
+                            autocomplete="off"
+                            placeholder="z. B. Kubicek BB45"
+                        >
+                    </label>
 
-        <section class="card">
+                    <label for="maintenanceInput">
+                        Nächste Wartung
 
-            <h2>📈 Höhenprofil</h2>
+                        <input
+                            id="maintenanceInput"
+                            type="date"
+                        >
+                    </label>
 
-            <div class="chart-container">
-                <canvas id="heightChart"></canvas>
-            </div>
+                </article>
 
-        </section>
+                <article class="panel section-panel">
 
-        <section class="card">
+                    <div class="panel-title">
+                        <h2>TRACKING</h2>
+                    </div>
 
-            <h2>📝 Flugdaten</h2>
+                    <div class="tracking-actions">
 
-            <label for="landungen">Landungen</label>
+                        <button
+                            id="startButton"
+                            class="primary success"
+                            type="button"
+                        >
+                            ▶ Fahrt starten
+                        </button>
 
-            <input
-                id="landungen"
-                type="number"
-                value="1"
-                min="1"
-                step="1"
+                        <button
+                            id="stopButton"
+                            class="primary danger"
+                            type="button"
+                            disabled
+                        >
+                            ■ Fahrt beenden
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="status"
+                        class="status"
+                        aria-live="polite"
+                    >
+                        Kein Flug aktiv
+                    </div>
+
+                    <label for="landungen">
+                        Landungen
+
+                        <input
+                            id="landungen"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value="1"
+                        >
+                    </label>
+
+                    <label for="bemerkung">
+                        Bemerkungen
+
+                        <textarea
+                            id="bemerkung"
+                            rows="4"
+                            placeholder="Bemerkungen zum Flug"
+                        ></textarea>
+                    </label>
+
+                    <button
+                        id="saveButton"
+                        class="primary full-width"
+                        type="button"
+                        disabled
+                    >
+                        💾 Flug speichern
+                    </button>
+
+                </article>
+
+                <article class="panel section-panel">
+
+                    <div class="panel-title">
+                        <h2>HÖHENPROFIL</h2>
+                    </div>
+
+                    <div class="chart-wrap height">
+                        <canvas id="heightChart"></canvas>
+                    </div>
+
+                </article>
+
+            </section>
+
+            <section
+                id="flugbuch"
+                class="panel section-panel"
             >
 
-            <label for="bemerkung">Bemerkungen</label>
+                <div class="panel-title">
 
-            <textarea
-                id="bemerkung"
-                rows="4"
-                placeholder="Bemerkungen zum Flug"
-            ></textarea>
+                    <h2>FLUGBUCH</h2>
 
-            <button
-                id="saveButton"
-                class="save"
-                type="button"
-                onclick="flugSpeichern()"
-                disabled
-            >
-                💾 Flug speichern
-            </button>
+                    <span id="flightbookCount">
+                        0 EINTRÄGE
+                    </span>
 
-        </section>
+                </div>
 
-        <section class="card">
+                <div id="flugliste"></div>
 
-            <h2>📒 Flugbuch</h2>
+            </section>
 
-            <div id="flugliste">
-                <p class="empty-message">
-                    Noch keine Flüge gespeichert.
-                </p>
-            </div>
+            <section class="panel section-panel monitor-settings">
 
-        </section>
+                <details>
 
-    </main>
+                    <summary>
+                        ⚙ Anforderungen für den Aktivitätsmonitor
+                    </summary>
 
-    <footer>
-        <p>🎈 Ballonflugbuch Professional V9</p>
-        <p>
-            Flugdaten werden lokal auf diesem Gerät gespeichert.
-        </p>
-    </footer>
+                    <div class="settings-grid">
+
+                        <label for="monitorZeitraum">
+                            Zeitraum in Monaten
+
+                            <input
+                                id="monitorZeitraum"
+                                type="number"
+                                min="1"
+                                max="120"
+                                step="1"
+                                value="24"
+                            >
+                        </label>
+
+                        <label for="monitorSollFahrten">
+                            Erforderliche Fahrten
+
+                            <input
+                                id="monitorSollFahrten"
+                                type="number"
+                                min="0"
+                                step="1"
+                                value="30"
+                            >
+                        </label>
+
+                        <label for="monitorSollLandungen">
+                            Erforderliche Landungen
+
+                            <input
+                                id="monitorSollLandungen"
+                                type="number"
+                                min="0"
+                                step="1"
+                                value="40"
+                            >
+                        </label>
+
+                    </div>
+
+                    <div class="tracking-actions">
+
+                        <button
+                            id="monitorSpeichern"
+                            class="primary"
+                            type="button"
+                        >
+                            Speichern
+                        </button>
+
+                        <button
+                            id="monitorZuruecksetzen"
+                            class="small-button"
+                            type="button"
+                        >
+                            Zurücksetzen
+                        </button>
+
+                    </div>
+
+                    <p
+                        id="monitorMeldung"
+                        aria-live="polite"
+                    ></p>
+
+                </details>
+
+            </section>
+
+            <footer>
+                Ballonflugbuch Professional V10 ·
+                Daten werden lokal auf diesem Gerät gespeichert.
+            </footer>
+
+        </main>
+
+    </div>
 
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -473,11 +643,10 @@ aria-live="polite"
 
     https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.jsscript>
 
-<script src="map.js"></script>
-<script src="weather.js"></script>
-<script src="app.js"></script>
-monitor.jsscript>
+    <script src="map.js"></script>
+    <script src="weather.js"></script>
+    <script src="monitor.js"></script>
+    <script src="app.js"></script>
 
 </body>
-
 </html>
