@@ -10,11 +10,13 @@
 // Standardeinstellungen
 // =====================================
 
-const STANDARD_MONITOR_EINSTELLUNGEN = {
+const STANDARD_MONITOR_EINSTELLUNGEN = Object.freeze({
     zeitraumMonate: 24,
-    erforderlicheFahrten: 30,
-    erforderlicheLandungen: 40
-};
+    erforderlicheFahrten: 6,
+    erforderlicheLandungen: 10
+});
+
+const MONITOR_SPEICHERSCHLUESSEL = "monitorEinstellungen";
 
 // =====================================
 // Einstellungen laden
@@ -22,10 +24,9 @@ const STANDARD_MONITOR_EINSTELLUNGEN = {
 
 function monitorEinstellungenLaden() {
     try {
-        const gespeichert =
-            localStorage.getItem(
-                "monitorEinstellungen"
-            );
+        const gespeichert = localStorage.getItem(
+            MONITOR_SPEICHERSCHLUESSEL
+        );
 
         if (!gespeichert) {
             return {
@@ -35,27 +36,27 @@ function monitorEinstellungenLaden() {
 
         const daten = JSON.parse(gespeichert);
 
+        if (!daten || typeof daten !== "object") {
+            throw new Error(
+                "Ungültiges Format der gespeicherten Monitoreinstellungen."
+            );
+        }
+
         return {
-            zeitraumMonate:
-                positiveGanzzahl(
-                    daten.zeitraumMonate,
-                    STANDARD_MONITOR_EINSTELLUNGEN
-                        .zeitraumMonate
-                ),
+            zeitraumMonate: positiveGanzzahl(
+                daten.zeitraumMonate,
+                STANDARD_MONITOR_EINSTELLUNGEN.zeitraumMonate
+            ),
 
-            erforderlicheFahrten:
-                nichtNegativeGanzzahl(
-                    daten.erforderlicheFahrten,
-                    STANDARD_MONITOR_EINSTELLUNGEN
-                        .erforderlicheFahrten
-                ),
+            erforderlicheFahrten: nichtNegativeGanzzahl(
+                daten.erforderlicheFahrten,
+                STANDARD_MONITOR_EINSTELLUNGEN.erforderlicheFahrten
+            ),
 
-            erforderlicheLandungen:
-                nichtNegativeGanzzahl(
-                    daten.erforderlicheLandungen,
-                    STANDARD_MONITOR_EINSTELLUNGEN
-                        .erforderlicheLandungen
-                )
+            erforderlicheLandungen: nichtNegativeGanzzahl(
+                daten.erforderlicheLandungen,
+                STANDARD_MONITOR_EINSTELLUNGEN.erforderlicheLandungen
+            )
         };
     } catch (error) {
         console.error(
@@ -74,52 +75,45 @@ function monitorEinstellungenLaden() {
 // =====================================
 
 function monitorEinstellungenSpeichern() {
-    const zeitraumFeld =
-        document.getElementById(
-            "monitorZeitraum"
-        );
+    const zeitraumFeld = document.getElementById(
+        "monitorZeitraum"
+    );
 
-    const fahrtenFeld =
-        document.getElementById(
-            "monitorSollFahrten"
-        );
+    const fahrtenFeld = document.getElementById(
+        "monitorSollFahrten"
+    );
 
-    const landungenFeld =
-        document.getElementById(
-            "monitorSollLandungen"
-        );
+    const landungenFeld = document.getElementById(
+        "monitorSollLandungen"
+    );
 
-    if (
-        !zeitraumFeld ||
-        !fahrtenFeld ||
-        !landungenFeld
-    ) {
+    if (!zeitraumFeld || !fahrtenFeld || !landungenFeld) {
+        console.warn(
+            "Die Eingabefelder für den Aktivitätsmonitor wurden nicht gefunden."
+        );
         return;
     }
 
     const einstellungen = {
-        zeitraumMonate:
-            positiveGanzzahl(
-                zeitraumFeld.value,
-                24
-            ),
+        zeitraumMonate: positiveGanzzahl(
+            zeitraumFeld.value,
+            STANDARD_MONITOR_EINSTELLUNGEN.zeitraumMonate
+        ),
 
-        erforderlicheFahrten:
-            nichtNegativeGanzzahl(
-                fahrtenFeld.value,
-                0
-            ),
+        erforderlicheFahrten: nichtNegativeGanzzahl(
+            fahrtenFeld.value,
+            STANDARD_MONITOR_EINSTELLUNGEN.erforderlicheFahrten
+        ),
 
-        erforderlicheLandungen:
-            nichtNegativeGanzzahl(
-                landungenFeld.value,
-                0
-            )
+        erforderlicheLandungen: nichtNegativeGanzzahl(
+            landungenFeld.value,
+            STANDARD_MONITOR_EINSTELLUNGEN.erforderlicheLandungen
+        )
     };
 
     try {
         localStorage.setItem(
-            "monitorEinstellungen",
+            MONITOR_SPEICHERSCHLUESSEL,
             JSON.stringify(einstellungen)
         );
 
@@ -161,11 +155,15 @@ function monitorEinstellungenZuruecksetzen() {
 
     try {
         localStorage.removeItem(
-            "monitorEinstellungen"
+            MONITOR_SPEICHERSCHLUESSEL
         );
 
+        const standardwerte = {
+            ...STANDARD_MONITOR_EINSTELLUNGEN
+        };
+
         monitorEinstellungenInFormularEintragen(
-            STANDARD_MONITOR_EINSTELLUNGEN
+            standardwerte
         );
 
         aktivitaetsmonitorAktualisieren();
@@ -188,49 +186,68 @@ function monitorEinstellungenZuruecksetzen() {
 }
 
 // =====================================
-// Einstellungen ins Formular schreiben
+// Einstellungen in das Formular schreiben
 // =====================================
 
 function monitorEinstellungenInFormularEintragen(
     einstellungen
 ) {
-    const zeitraumFeld =
-        document.getElementById(
-            "monitorZeitraum"
-        );
+    if (!einstellungen) {
+        return;
+    }
 
-    const fahrtenFeld =
-        document.getElementById(
-            "monitorSollFahrten"
-        );
+    const zeitraumFeld = document.getElementById(
+        "monitorZeitraum"
+    );
 
-    const landungenFeld =
-        document.getElementById(
-            "monitorSollLandungen"
-        );
+    const fahrtenFeld = document.getElementById(
+        "monitorSollFahrten"
+    );
+
+    const landungenFeld = document.getElementById(
+        "monitorSollLandungen"
+    );
 
     if (zeitraumFeld) {
-        zeitraumFeld.value =
-            String(
-                einstellungen.zeitraumMonate
-            );
+        zeitraumFeld.value = String(
+            einstellungen.zeitraumMonate
+        );
     }
 
     if (fahrtenFeld) {
-        fahrtenFeld.value =
-            String(
-                einstellungen
-                    .erforderlicheFahrten
-            );
+        fahrtenFeld.value = String(
+            einstellungen.erforderlicheFahrten
+        );
     }
 
     if (landungenFeld) {
-        landungenFeld.value =
-            String(
-                einstellungen
-                    .erforderlicheLandungen
-            );
+        landungenFeld.value = String(
+            einstellungen.erforderlicheLandungen
+        );
     }
+}
+
+// =====================================
+// Flugliste ermitteln
+// =====================================
+
+function monitorFluegeErmitteln() {
+    if (Array.isArray(window.fluege)) {
+        return window.fluege;
+    }
+
+    /*
+     * Unterstützt auch eine globale Variable "fluege",
+     * sofern sie von einem anderen Skript bereitgestellt wird.
+     */
+    if (
+        typeof fluege !== "undefined" &&
+        Array.isArray(fluege)
+    ) {
+        return fluege;
+    }
+
+    return [];
 }
 
 // =====================================
@@ -238,174 +255,126 @@ function monitorEinstellungenInFormularEintragen(
 // =====================================
 
 function aktivitaetsmonitorBerechnen() {
-    const einstellungen =
-        monitorEinstellungenLaden();
+    const einstellungen = monitorEinstellungenLaden();
 
     const heute = tagesbeginn(
         new Date()
     );
 
-    const beginnZeitraum =
-        monateAbziehen(
-            heute,
-            einstellungen.zeitraumMonate
-        );
+    const beginnZeitraum = monateAbziehen(
+        heute,
+        einstellungen.zeitraumMonate
+    );
 
-    const vorhandeneFluege =
-        Array.isArray(window.fluege)
-            ? window.fluege
-            : (
-                typeof fluege !== "undefined" &&
-                Array.isArray(fluege)
-                    ? fluege
-                    : []
+    const vorhandeneFluege = monitorFluegeErmitteln();
+
+    const relevanteFluege = vorhandeneFluege
+        .map(function (flug, index) {
+            return {
+                flug: flug,
+                index: index,
+                datum: flugDatumErmitteln(flug)
+            };
+        })
+        .filter(function (eintrag) {
+            if (!eintrag.datum) {
+                return false;
+            }
+
+            const flugtag = tagesbeginn(
+                eintrag.datum
             );
 
-    const relevanteFluege =
-        vorhandeneFluege
-            .map(function (flug, index) {
-                return {
-                    flug,
-                    index,
-                    datum:
-                        flugDatumErmitteln(flug)
-                };
-            })
-            .filter(function (eintrag) {
-                if (!eintrag.datum) {
-                    return false;
-                }
+            return (
+                flugtag >= beginnZeitraum &&
+                flugtag <= heute
+            );
+        })
+        .sort(function (a, b) {
+            return (
+                a.datum.getTime() -
+                b.datum.getTime()
+            );
+        });
 
-                const flugtag =
-                    tagesbeginn(
-                        eintrag.datum
-                    );
+    const anzahlFahrten = relevanteFluege.length;
 
-                return (
-                    flugtag >= beginnZeitraum &&
-                    flugtag <= heute
-                );
-            })
-            .sort(function (a, b) {
-                return (
-                    a.datum.getTime() -
-                    b.datum.getTime()
-                );
-            });
+    const anzahlLandungen = relevanteFluege.reduce(
+        function (summe, eintrag) {
+            return (
+                summe +
+                positiveZahlOderNull(
+                    eintrag.flug.landungen
+                )
+            );
+        },
+        0
+    );
 
-    const anzahlFahrten =
-        relevanteFluege.length;
+    const flugzeitMinuten = relevanteFluege.reduce(
+        function (summe, eintrag) {
+            return (
+                summe +
+                positiveZahlOderNull(
+                    eintrag.flug.flugzeit
+                )
+            );
+        },
+        0
+    );
 
-    const anzahlLandungen =
-        relevanteFluege.reduce(
-            function (summe, eintrag) {
-                const landungen =
-                    Number(
-                        eintrag.flug.landungen
-                    );
+    const streckeKm = relevanteFluege.reduce(
+        function (summe, eintrag) {
+            return (
+                summe +
+                positiveZahlOderNull(
+                    eintrag.flug.strecke
+                )
+            );
+        },
+        0
+    );
 
-                return (
-                    summe +
-                    (
-                        Number.isFinite(landungen) &&
-                        landungen > 0
-                            ? landungen
-                            : 0
-                    )
-                );
-            },
-            0
-        );
-
-    const flugzeitMinuten =
-        relevanteFluege.reduce(
-            function (summe, eintrag) {
-                const minuten =
-                    Number(
-                        eintrag.flug.flugzeit
-                    );
-
-                return (
-                    summe +
-                    (
-                        Number.isFinite(minuten) &&
-                        minuten > 0
-                            ? minuten
-                            : 0
-                    )
-                );
-            },
-            0
-        );
-
-    const streckeKm =
-        relevanteFluege.reduce(
-            function (summe, eintrag) {
-                const strecke =
-                    Number(
-                        eintrag.flug.strecke
-                    );
-
-                return (
-                    summe +
-                    (
-                        Number.isFinite(strecke) &&
-                        strecke > 0
-                            ? strecke
-                            : 0
-                    )
-                );
-            },
-            0
-        );
-
-    const fehlendeFahrten =
-        Math.max(
-            0,
-            einstellungen
-                .erforderlicheFahrten -
+    const fehlendeFahrten = Math.max(
+        0,
+        einstellungen.erforderlicheFahrten -
             anzahlFahrten
-        );
+    );
 
-    const fehlendeLandungen =
-        Math.max(
-            0,
-            einstellungen
-                .erforderlicheLandungen -
+    const fehlendeLandungen = Math.max(
+        0,
+        einstellungen.erforderlicheLandungen -
             anzahlLandungen
-        );
+    );
 
-    const fahrtenErfuellt =
-        fehlendeFahrten === 0;
-
-    const landungenErfuellt =
-        fehlendeLandungen === 0;
+    const fahrtenErfuellt = fehlendeFahrten === 0;
+    const landungenErfuellt = fehlendeLandungen === 0;
 
     const allesErfuellt =
         fahrtenErfuellt &&
         landungenErfuellt;
 
-    const naechsterAustritt =
-        naechstenAustrittBerechnen(
-            relevanteFluege,
-            einstellungen.zeitraumMonate
-        );
+    const naechsterAustritt = naechstenAustrittBerechnen(
+        relevanteFluege,
+        einstellungen.zeitraumMonate,
+        heute
+    );
 
     return {
-        einstellungen,
-        heute,
-        beginnZeitraum,
-        relevanteFluege,
-        anzahlFahrten,
-        anzahlLandungen,
-        flugzeitMinuten,
-        streckeKm,
-        fehlendeFahrten,
-        fehlendeLandungen,
-        fahrtenErfuellt,
-        landungenErfuellt,
-        allesErfuellt,
-        naechsterAustritt
+        einstellungen: einstellungen,
+        heute: heute,
+        beginnZeitraum: beginnZeitraum,
+        relevanteFluege: relevanteFluege,
+        anzahlFahrten: anzahlFahrten,
+        anzahlLandungen: anzahlLandungen,
+        flugzeitMinuten: flugzeitMinuten,
+        streckeKm: streckeKm,
+        fehlendeFahrten: fehlendeFahrten,
+        fehlendeLandungen: fehlendeLandungen,
+        fahrtenErfuellt: fahrtenErfuellt,
+        landungenErfuellt: landungenErfuellt,
+        allesErfuellt: allesErfuellt,
+        naechsterAustritt: naechsterAustritt
     };
 }
 
@@ -414,222 +383,180 @@ function aktivitaetsmonitorBerechnen() {
 // =====================================
 
 function aktivitaetsmonitorAktualisieren() {
-    const container =
-        document.getElementById(
-            "aktivitaetsmonitorInhalt"
-        );
+    const container = document.getElementById(
+        "aktivitaetsmonitorInhalt"
+    );
 
     if (!container) {
         return;
     }
 
-    const auswertung =
-        aktivitaetsmonitorBerechnen();
+    try {
+        const auswertung = aktivitaetsmonitorBerechnen();
 
-    const {
-        einstellungen,
-        heute,
-        beginnZeitraum,
-        anzahlFahrten,
-        anzahlLandungen,
-        flugzeitMinuten,
-        streckeKm,
-        fehlendeFahrten,
-        fehlendeLandungen,
-        fahrtenErfuellt,
-        landungenErfuellt,
-        allesErfuellt,
-        naechsterAustritt
-    } = auswertung;
-
-    const fahrtenProzent =
-        prozentBerechnen(
+        const {
+            einstellungen,
+            heute,
+            beginnZeitraum,
             anzahlFahrten,
-            einstellungen
-                .erforderlicheFahrten
-        );
-
-    const landungenProzent =
-        prozentBerechnen(
             anzahlLandungen,
-            einstellungen
-                .erforderlicheLandungen
+            flugzeitMinuten,
+            streckeKm,
+            fehlendeFahrten,
+            fehlendeLandungen,
+            fahrtenErfuellt,
+            landungenErfuellt,
+            allesErfuellt,
+            naechsterAustritt
+        } = auswertung;
+
+        const fahrtenProzent = prozentBerechnen(
+            anzahlFahrten,
+            einstellungen.erforderlicheFahrten
         );
 
-    const statusKlasse =
-        allesErfuellt
+        const landungenProzent = prozentBerechnen(
+            anzahlLandungen,
+            einstellungen.erforderlicheLandungen
+        );
+
+        const statusKlasse = allesErfuellt
             ? "monitor-status-erfuellt"
             : "monitor-status-offen";
 
-    const statusText =
-        allesErfuellt
+        const statusText = allesErfuellt
             ? "🟢 Alle eingestellten Anforderungen sind erfüllt."
             : "🔴 Die eingestellten Anforderungen sind noch nicht vollständig erfüllt.";
 
-    const naechsterAustrittHtml =
-        naechsterAustritt
-            ? `
-                <div class="monitor-hinweis">
+        const naechsterAustrittHtml =
+            monitorNaechsterAustrittHtml(
+                naechsterAustritt
+            );
+
+        container.innerHTML = `
+            <div class="monitor-zeitraum">
+                <div>
+                    <span>Auswertung von</span>
                     <strong>
-                        ⏳ Nächster Flug fällt aus dem Zeitraum:
+                        ${datumFormatieren(beginnZeitraum)}
                     </strong>
+                </div>
 
-                    <span>
-                        ${datumFormatieren(
-                            naechsterAustritt
-                                .austrittsdatum
-                        )}
-                    </span>
+                <div>
+                    <span>bis einschließlich</span>
+                    <strong>
+                        ${datumFormatieren(heute)}
+                    </strong>
+                </div>
 
-                    <small>
-                        Flug vom
-                        ${datumFormatieren(
-                            naechsterAustritt
-                                .flugdatum
-                        )}
-                        mit
+                <div>
+                    <span>Betrachtungszeitraum</span>
+                    <strong>
                         ${zahlFormatieren(
-                            naechsterAustritt
-                                .landungen
-                        )}
-                        Landung(en)
-                    </small>
-                </div>
-            `
-            : `
-                <div class="monitor-hinweis">
-                    <strong>
-                        ⏳ Nächster Austritt:
+                            einstellungen.zeitraumMonate
+                        )} Monate
                     </strong>
-
-                    <span>
-                        Kein relevanter Flug vorhanden
-                    </span>
                 </div>
-            `;
-
-    container.innerHTML = `
-        <div class="monitor-zeitraum">
-
-            <div>
-                <span>Auswertung von</span>
-                <strong>
-                    ${datumFormatieren(
-                        beginnZeitraum
-                    )}
-                </strong>
             </div>
 
-            <div>
-                <span>bis einschließlich</span>
-                <strong>
-                    ${datumFormatieren(heute)}
-                </strong>
+            <div class="monitor-werte">
+                ${monitorWertHtml({
+                    titel: "Fahrten",
+                    symbol: "🎈",
+                    istWert: anzahlFahrten,
+                    sollWert:
+                        einstellungen.erforderlicheFahrten,
+                    fehlend: fehlendeFahrten,
+                    erfuellt: fahrtenErfuellt,
+                    prozent: fahrtenProzent
+                })}
+
+                ${monitorWertHtml({
+                    titel: "Landungen",
+                    symbol: "🛬",
+                    istWert: anzahlLandungen,
+                    sollWert:
+                        einstellungen.erforderlicheLandungen,
+                    fehlend: fehlendeLandungen,
+                    erfuellt: landungenErfuellt,
+                    prozent: landungenProzent
+                })}
             </div>
 
-            <div>
-                <span>Betrachtungszeitraum</span>
-                <strong>
-                    ${zahlFormatieren(
-                        einstellungen
-                            .zeitraumMonate
-                    )}
-                    Monate
-                </strong>
+            <div class="monitor-zusatzwerte">
+                <div>
+                    <span>⏱ Flugzeit</span>
+                    <strong>
+                        ${flugzeitFormatieren(flugzeitMinuten)}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>🗺 Strecke</span>
+                    <strong>
+                        ${zahlFormatieren(streckeKm, 1)} km
+                    </strong>
+                </div>
             </div>
 
-        </div>
-
-        <div class="monitor-werte">
-
-            ${monitorWertHtml({
-                titel: "Fahrten",
-                symbol: "🎈",
-                istWert: anzahlFahrten,
-                sollWert:
-                    einstellungen
-                        .erforderlicheFahrten,
-                fehlend: fehlendeFahrten,
-                erfuellt: fahrtenErfuellt,
-                prozent: fahrtenProzent
-            })}
-
-            ${monitorWertHtml({
-                titel: "Landungen",
-                symbol: "🛬",
-                istWert: anzahlLandungen,
-                sollWert:
-                    einstellungen
-                        .erforderlicheLandungen,
-                fehlend: fehlendeLandungen,
-                erfuellt: landungenErfuellt,
-                prozent: landungenProzent
-            })}
-
-        </div>
-
-        <div class="monitor-zusatzwerte">
-
-            <div>
-                <span>⏱ Flugzeit</span>
-                <strong>
-                    ${flugzeitFormatieren(
-                        flugzeitMinuten
-                    )}
-                </strong>
+            <div
+                class="monitor-status ${statusKlasse}"
+                role="status"
+            >
+                ${statusText}
             </div>
 
-            <div>
-                <span>🗺 Strecke</span>
-                <strong>
-                    ${zahlFormatieren(
-                        streckeKm,
-                        1
-                    )}
-                    km
-                </strong>
+            <div class="monitor-restwerte">
+                <div>
+                    <span>Noch benötigte Fahrten</span>
+                    <strong>
+                        ${
+                            fahrtenErfuellt
+                                ? "0 ✅"
+                                : `${zahlFormatieren(
+                                    fehlendeFahrten
+                                )} ⚠️`
+                        }
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Noch benötigte Landungen</span>
+                    <strong>
+                        ${
+                            landungenErfuellt
+                                ? "0 ✅"
+                                : `${zahlFormatieren(
+                                    fehlendeLandungen
+                                )} ⚠️`
+                        }
+                    </strong>
+                </div>
             </div>
 
-        </div>
+            ${naechsterAustrittHtml}
 
-        <div class="monitor-status ${statusKlasse}">
-            ${statusText}
-        </div>
+            <p class="monitor-rechtshinweis">
+                Die Anzeige basiert ausschließlich auf den im
+                Flugbuch gespeicherten Daten und den von dir
+                eingestellten Sollwerten.
+            </p>
+        `;
+    } catch (error) {
+        console.error(
+            "Der Aktivitätsmonitor konnte nicht aktualisiert werden:",
+            error
+        );
 
-        <div class="monitor-restwerte">
-
-            <div>
-                <span>Noch benötigte Fahrten</span>
-                <strong>
-                    ${
-                        fahrtenErfuellt
-                            ? "0 ✅"
-                            : `${fehlendeFahrten} ⚠️`
-                    }
-                </strong>
+        container.innerHTML = `
+            <div
+                class="monitor-status monitor-status-offen"
+                role="alert"
+            >
+                ❌ Der Aktivitätsmonitor konnte nicht geladen werden.
             </div>
-
-            <div>
-                <span>Noch benötigte Landungen</span>
-                <strong>
-                    ${
-                        landungenErfuellt
-                            ? "0 ✅"
-                            : `${fehlendeLandungen} ⚠️`
-                    }
-                </strong>
-            </div>
-
-        </div>
-
-        ${naechsterAustrittHtml}
-
-        <p class="monitor-rechtshinweis">
-            Die Anzeige basiert ausschließlich auf den im
-            Flugbuch gespeicherten Daten und den von dir
-            eingestellten Sollwerten.
-        </p>
-    `;
+        `;
+    }
 }
 
 // =====================================
@@ -637,62 +564,123 @@ function aktivitaetsmonitorAktualisieren() {
 // =====================================
 
 function monitorWertHtml(daten) {
-    const statusSymbol =
-        daten.erfuellt
-            ? "✅"
-            : "⚠️";
+    const istWert = positiveZahlOderNull(
+        daten.istWert
+    );
 
-    const statusText =
-        daten.erfuellt
-            ? "Anforderung erfüllt"
-            : `Noch ${daten.fehlend} erforderlich`;
+    const sollWert = positiveZahlOderNull(
+        daten.sollWert
+    );
 
-    const klasse =
-        daten.erfuellt
-            ? "monitor-wert-erfuellt"
-            : "monitor-wert-offen";
+    const fehlend = positiveZahlOderNull(
+        daten.fehlend
+    );
+
+    const prozent = Math.min(
+        100,
+        Math.max(
+            0,
+            Number(daten.prozent) || 0
+        )
+    );
+
+    const statusSymbol = daten.erfuellt
+        ? "✅"
+        : "⚠️";
+
+    const statusText = daten.erfuellt
+        ? "Anforderung erfüllt"
+        : `Noch ${zahlFormatieren(fehlend)} erforderlich`;
+
+    const klasse = daten.erfuellt
+        ? "monitor-wert-erfuellt"
+        : "monitor-wert-offen";
 
     return `
         <div class="monitor-wert ${klasse}">
-
             <div class="monitor-wert-kopf">
                 <span>
-                    ${daten.symbol}
-                    ${daten.titel}
+                    ${daten.symbol} ${daten.titel}
                 </span>
 
-                <strong>
+                <strong aria-hidden="true">
                     ${statusSymbol}
                 </strong>
             </div>
 
             <div class="monitor-wert-zahlen">
                 <strong>
-                    ${zahlFormatieren(
-                        daten.istWert
-                    )}
+                    ${zahlFormatieren(istWert)}
                 </strong>
 
                 <span>
-                    von
-                    ${zahlFormatieren(
-                        daten.sollWert
-                    )}
+                    von ${zahlFormatieren(sollWert)}
                 </span>
             </div>
 
             <div
                 class="monitor-fortschritt"
-                aria-label="${daten.titel}: ${daten.prozent} Prozent"
+                role="progressbar"
+                aria-label="${daten.titel}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="${prozent}"
             >
                 <div
                     class="monitor-fortschritt-balken"
-                    style="width: ${daten.prozent}%"
+                    style="width: ${prozent}%"
                 ></div>
             </div>
 
             <p>${statusText}</p>
+        </div>
+    `;
+}
 
+// =====================================
+// Hinweis zum nächsten Austritt erzeugen
+// =====================================
+
+function monitorNaechsterAustrittHtml(
+    naechsterAustritt
+) {
+    if (!naechsterAustritt) {
+        return `
+            <div class="monitor-hinweis">
+                <strong>
+                    ⏳ Nächster Austritt:
+                </strong>
+
+                <span>
+                    Kein relevanter Flug vorhanden
+                </span>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="monitor-hinweis">
+            <strong>
+                ⏳ Nächster Flug fällt aus dem Zeitraum:
+            </strong>
+
+            <span>
+                ${datumFormatieren(
+                    naechsterAustritt.austrittsdatum
+                )}
+            </span>
+
+            <small>
+                Flug vom
+                ${datumFormatieren(
+                    naechsterAustritt.flugdatum
+                )}
+                mit
+                ${zahlFormatieren(
+                    naechsterAustritt.landungen
+                )}
+                Landung(en)
+            </small>
         </div>
     `;
 }
@@ -703,7 +691,8 @@ function monitorWertHtml(daten) {
 
 function naechstenAustrittBerechnen(
     relevanteFluege,
-    monate
+    monate,
+    bezugsdatum = new Date()
 ) {
     if (
         !Array.isArray(relevanteFluege) ||
@@ -713,57 +702,50 @@ function naechstenAustrittBerechnen(
     }
 
     const heute = tagesbeginn(
-        new Date()
+        bezugsdatum
     );
 
-    const austritte =
-        relevanteFluege
-            .map(function (eintrag) {
-                const austrittsdatum =
-                    monateHinzufuegen(
-                        tagesbeginn(
-                            eintrag.datum
-                        ),
-                        monate
-                    );
+    const austritte = relevanteFluege
+        .map(function (eintrag) {
+            const flugdatum = tagesbeginn(
+                eintrag.datum
+            );
 
-                /*
-                 * Die Fahrt bleibt bis zum Ablaufdatum
-                 * einschließlich im Zeitraum.
-                 * Daher fällt sie am folgenden Tag heraus.
-                 */
-                austrittsdatum.setDate(
-                    austrittsdatum.getDate() + 1
+            const austrittsdatum =
+                monateHinzufuegen(
+                    flugdatum,
+                    monate
                 );
 
-                return {
-                    flugdatum:
-                        tagesbeginn(
-                            eintrag.datum
-                        ),
+            /*
+             * Der Flug wird am Beginn des Betrachtungszeitraums
+             * noch mitgezählt und fällt am darauffolgenden Tag
+             * aus dem Zeitraum.
+             */
+            austrittsdatum.setDate(
+                austrittsdatum.getDate() + 1
+            );
 
-                    austrittsdatum,
-
-                    landungen:
-                        nichtNegativeGanzzahl(
-                            eintrag.flug
-                                .landungen,
-                            0
-                        )
-                };
-            })
-            .filter(function (eintrag) {
-                return (
-                    eintrag.austrittsdatum >
-                    heute
-                );
-            })
-            .sort(function (a, b) {
-                return (
-                    a.austrittsdatum.getTime() -
-                    b.austrittsdatum.getTime()
-                );
-            });
+            return {
+                flugdatum: flugdatum,
+                austrittsdatum: tagesbeginn(
+                    austrittsdatum
+                ),
+                landungen: nichtNegativeGanzzahl(
+                    eintrag.flug.landungen,
+                    0
+                )
+            };
+        })
+        .filter(function (eintrag) {
+            return eintrag.austrittsdatum > heute;
+        })
+        .sort(function (a, b) {
+            return (
+                a.austrittsdatum.getTime() -
+                b.austrittsdatum.getTime()
+            );
+        });
 
     return austritte.length > 0
         ? austritte[0]
@@ -779,6 +761,11 @@ function flugDatumErmitteln(flug) {
         return null;
     }
 
+    /*
+     * Zuerst wird "startzeit" geprüft.
+     * Falls dort kein gültiges Datum vorhanden ist,
+     * wird "datum" verwendet.
+     */
     const moeglicheWerte = [
         flug.startzeit,
         flug.datum
@@ -800,40 +787,103 @@ function flugDatumErmitteln(flug) {
 // =====================================
 
 function datumAusWert(wert) {
-    if (!wert) {
+    if (
+        wert === null ||
+        wert === undefined ||
+        wert === ""
+    ) {
         return null;
     }
 
     if (wert instanceof Date) {
-        return Number.isNaN(
-            wert.getTime()
-        )
+        return Number.isNaN(wert.getTime())
             ? null
-            : new Date(wert);
+            : new Date(wert.getTime());
     }
 
     if (typeof wert === "string") {
-        const deutschesDatum =
-            wert.match(
-                /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
-            );
+        const bereinigterWert = wert.trim();
+
+        if (!bereinigterWert) {
+            return null;
+        }
+
+        /*
+         * Unterstützt:
+         * TT.MM.JJJJ
+         * TT.MM.JJJJ HH:MM
+         * TT.MM.JJJJ HH:MM:SS
+         */
+        const deutschesDatum = bereinigterWert.match(
+            /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+        );
 
         if (deutschesDatum) {
-            const tag =
-                Number(deutschesDatum[1]);
+            const tag = Number(
+                deutschesDatum[1]
+            );
 
-            const monat =
-                Number(deutschesDatum[2]) - 1;
+            const monat = Number(
+                deutschesDatum[2]
+            ) - 1;
 
-            const jahr =
-                Number(deutschesDatum[3]);
+            const jahr = Number(
+                deutschesDatum[3]
+            );
 
-            const datum =
-                new Date(
-                    jahr,
-                    monat,
-                    tag
-                );
+            const stunde = Number(
+                deutschesDatum[4] || 0
+            );
+
+            const minute = Number(
+                deutschesDatum[5] || 0
+            );
+
+            const sekunde = Number(
+                deutschesDatum[6] || 0
+            );
+
+            const datum = new Date(
+                jahr,
+                monat,
+                tag,
+                stunde,
+                minute,
+                sekunde
+            );
+
+            if (
+                datum.getFullYear() === jahr &&
+                datum.getMonth() === monat &&
+                datum.getDate() === tag &&
+                datum.getHours() === stunde &&
+                datum.getMinutes() === minute &&
+                datum.getSeconds() === sekunde
+            ) {
+                return datum;
+            }
+
+            return null;
+        }
+
+        /*
+         * ISO-Datumsformat JJJJ-MM-TT wird lokal eingelesen.
+         * Dadurch werden Verschiebungen durch UTC vermieden.
+         */
+        const isoDatum = bereinigterWert.match(
+            /^(\d{4})-(\d{2})-(\d{2})$/
+        );
+
+        if (isoDatum) {
+            const jahr = Number(isoDatum[1]);
+            const monat = Number(isoDatum[2]) - 1;
+            const tag = Number(isoDatum[3]);
+
+            const datum = new Date(
+                jahr,
+                monat,
+                tag
+            );
 
             if (
                 datum.getFullYear() === jahr &&
@@ -845,15 +895,25 @@ function datumAusWert(wert) {
 
             return null;
         }
+
+        const datum = new Date(
+            bereinigterWert
+        );
+
+        return Number.isNaN(datum.getTime())
+            ? null
+            : datum;
     }
 
-    const datum = new Date(wert);
+    if (typeof wert === "number") {
+        const datum = new Date(wert);
 
-    if (Number.isNaN(datum.getTime())) {
-        return null;
+        return Number.isNaN(datum.getTime())
+            ? null
+            : datum;
     }
 
-    return datum;
+    return null;
 }
 
 // =====================================
@@ -861,24 +921,37 @@ function datumAusWert(wert) {
 // =====================================
 
 function tagesbeginn(datum) {
+    const gueltigesDatum =
+        datum instanceof Date
+            ? datum
+            : new Date(datum);
+
+    if (Number.isNaN(gueltigesDatum.getTime())) {
+        return new Date(NaN);
+    }
+
     return new Date(
-        datum.getFullYear(),
-        datum.getMonth(),
-        datum.getDate()
+        gueltigesDatum.getFullYear(),
+        gueltigesDatum.getMonth(),
+        gueltigesDatum.getDate()
     );
 }
 
 function monateAbziehen(datum, monate) {
     return datumMitMonatsverschiebung(
         datum,
-        -Math.abs(monate)
+        -Math.abs(
+            nichtNegativeGanzzahl(monate, 0)
+        )
     );
 }
 
 function monateHinzufuegen(datum, monate) {
     return datumMitMonatsverschiebung(
         datum,
-        Math.abs(monate)
+        Math.abs(
+            nichtNegativeGanzzahl(monate, 0)
+        )
     );
 }
 
@@ -886,30 +959,31 @@ function datumMitMonatsverschiebung(
     datum,
     monatsDifferenz
 ) {
-    const ausgangsdatum =
-        new Date(datum);
+    const ausgangsdatum = new Date(datum);
+
+    if (Number.isNaN(ausgangsdatum.getTime())) {
+        return new Date(NaN);
+    }
 
     const urspruenglicherTag =
         ausgangsdatum.getDate();
 
-    const ergebnis =
-        new Date(
-            ausgangsdatum.getFullYear(),
-            ausgangsdatum.getMonth(),
-            1
-        );
+    const ergebnis = new Date(
+        ausgangsdatum.getFullYear(),
+        ausgangsdatum.getMonth(),
+        1
+    );
 
     ergebnis.setMonth(
         ergebnis.getMonth() +
-        monatsDifferenz
+            Number(monatsDifferenz || 0)
     );
 
-    const letzterTag =
-        new Date(
-            ergebnis.getFullYear(),
-            ergebnis.getMonth() + 1,
-            0
-        ).getDate();
+    const letzterTag = new Date(
+        ergebnis.getFullYear(),
+        ergebnis.getMonth() + 1,
+        0
+    ).getDate();
 
     ergebnis.setDate(
         Math.min(
@@ -929,8 +1003,10 @@ function positiveGanzzahl(
     wert,
     standardwert
 ) {
-    const zahl =
-        Number.parseInt(wert, 10);
+    const zahl = Number.parseInt(
+        wert,
+        10
+    );
 
     return (
         Number.isFinite(zahl) &&
@@ -944,8 +1020,10 @@ function nichtNegativeGanzzahl(
     wert,
     standardwert
 ) {
-    const zahl =
-        Number.parseInt(wert, 10);
+    const zahl = Number.parseInt(
+        wert,
+        10
+    );
 
     return (
         Number.isFinite(zahl) &&
@@ -953,6 +1031,32 @@ function nichtNegativeGanzzahl(
     )
         ? zahl
         : standardwert;
+}
+
+function positiveZahlOderNull(wert) {
+    let normalisierterWert = wert;
+
+    /*
+     * Unterstützt bei Bedarf auch österreichische
+     * Dezimalzahlen wie "12,5".
+     */
+    if (typeof normalisierterWert === "string") {
+        normalisierterWert =
+            normalisierterWert
+                .trim()
+                .replace(",", ".");
+    }
+
+    const zahl = Number(
+        normalisierterWert
+    );
+
+    return (
+        Number.isFinite(zahl) &&
+        zahl > 0
+    )
+        ? zahl
+        : 0;
 }
 
 function prozentBerechnen(
@@ -969,7 +1073,10 @@ function prozentBerechnen(
         return 100;
     }
 
-    if (!Number.isFinite(ist)) {
+    if (
+        !Number.isFinite(ist) ||
+        ist <= 0
+    ) {
         return 0;
     }
 
@@ -978,7 +1085,7 @@ function prozentBerechnen(
         Math.max(
             0,
             Math.round(
-                ist / soll * 100
+                (ist / soll) * 100
             )
         )
     );
@@ -1016,36 +1123,41 @@ function zahlFormatieren(
         return "0";
     }
 
+    const stellen = Math.max(
+        0,
+        nichtNegativeGanzzahl(
+            nachkommastellen,
+            0
+        )
+    );
+
     return zahl.toLocaleString(
         "de-AT",
         {
-            minimumFractionDigits:
-                nachkommastellen,
-
-            maximumFractionDigits:
-                nachkommastellen
+            minimumFractionDigits: stellen,
+            maximumFractionDigits: stellen
         }
     );
 }
 
 function flugzeitFormatieren(minuten) {
-    const gesamtMinuten =
-        Math.max(
-            0,
-            Math.round(
-                Number(minuten) || 0
-            )
-        );
+    const gesamtMinuten = Math.max(
+        0,
+        Math.round(
+            Number(minuten) || 0
+        )
+    );
 
-    const stunden =
-        Math.floor(
-            gesamtMinuten / 60
-        );
+    const stunden = Math.floor(
+        gesamtMinuten / 60
+    );
 
     const restMinuten =
         gesamtMinuten % 60;
 
-    return `${stunden}h ${restMinuten}m`;
+    return `${stunden}h ${String(
+        restMinuten
+    ).padStart(2, "0")}m`;
 }
 
 // =====================================
@@ -1056,16 +1168,17 @@ function monitorMeldungAnzeigen(
     text,
     typ
 ) {
-    const meldung =
-        document.getElementById(
-            "monitorMeldung"
-        );
+    const meldung = document.getElementById(
+        "monitorMeldung"
+    );
 
     if (!meldung) {
         return;
     }
 
-    meldung.textContent = text;
+    meldung.textContent = String(
+        text || ""
+    );
 
     meldung.className =
         `monitor-meldung monitor-meldung-${typ}`;
@@ -1086,6 +1199,50 @@ function monitorMeldungAnzeigen(
 }
 
 // =====================================
+// Ereignisse registrieren
+// =====================================
+
+function monitorEreignisseRegistrieren() {
+    const speichernSchaltflaeche =
+        document.getElementById(
+            "monitorSpeichern"
+        );
+
+    const zuruecksetzenSchaltflaeche =
+        document.getElementById(
+            "monitorZuruecksetzen"
+        );
+
+    if (
+        speichernSchaltflaeche &&
+        speichernSchaltflaeche.dataset
+            .monitorEreignisRegistriert !== "true"
+    ) {
+        speichernSchaltflaeche.addEventListener(
+            "click",
+            monitorEinstellungenSpeichern
+        );
+
+        speichernSchaltflaeche.dataset
+            .monitorEreignisRegistriert = "true";
+    }
+
+    if (
+        zuruecksetzenSchaltflaeche &&
+        zuruecksetzenSchaltflaeche.dataset
+            .monitorEreignisRegistriert !== "true"
+    ) {
+        zuruecksetzenSchaltflaeche.addEventListener(
+            "click",
+            monitorEinstellungenZuruecksetzen
+        );
+
+        zuruecksetzenSchaltflaeche.dataset
+            .monitorEreignisRegistriert = "true";
+    }
+}
+
+// =====================================
 // Initialisierung
 // =====================================
 
@@ -1097,14 +1254,34 @@ function aktivitaetsmonitorInitialisieren() {
         einstellungen
     );
 
+    monitorEreignisseRegistrieren();
     aktivitaetsmonitorAktualisieren();
 }
 
 if (document.readyState === "loading") {
     document.addEventListener(
         "DOMContentLoaded",
-        aktivitaetsmonitorInitialisieren
+        aktivitaetsmonitorInitialisieren,
+        {
+            once: true
+        }
     );
 } else {
     aktivitaetsmonitorInitialisieren();
 }
+
+// =====================================
+// Funktionen bewusst global bereitstellen
+// =====================================
+
+window.monitorEinstellungenSpeichern =
+    monitorEinstellungenSpeichern;
+
+window.monitorEinstellungenZuruecksetzen =
+    monitorEinstellungenZuruecksetzen;
+
+window.aktivitaetsmonitorAktualisieren =
+    aktivitaetsmonitorAktualisieren;
+
+window.aktivitaetsmonitorBerechnen =
+    aktivitaetsmonitorBerechnen;
