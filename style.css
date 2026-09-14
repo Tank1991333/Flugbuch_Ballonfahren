@@ -1,440 +1,642 @@
 /* =====================================
+   Ballonflugbuch Professional V9
+   style.css
+===================================== */
+
+/* =====================================
    RESET
 ===================================== */
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html{
-scroll-behavior:smooth;
+html {
+    scroll-behavior: smooth;
 }
 
-body{
+body {
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
 
-font-family:
-"Segoe UI",
-Arial,
-sans-serif;
+    background:
+        linear-gradient(
+            180deg,
+            #dbeafe 0%,
+            #f8fbff 100%
+        );
 
-background:
-linear-gradient(
-180deg,
-#dbeafe 0%,
-#f8fbff 100%
-);
+    color: #1e293b;
+    padding: 15px;
+    min-height: 100vh;
+    line-height: 1.5;
+}
 
-color:#1e293b;
+button,
+input,
+textarea {
+    font: inherit;
+}
 
-padding:15px;
+main,
+.hero,
+footer {
+    width: 100%;
+    max-width: 1300px;
+    margin-left: auto;
+    margin-right: auto;
+}
 
-min-height:100vh;
+/* =====================================
+   NOSCRIPT
+===================================== */
 
+.noscript-warning {
+    max-width: 1300px;
+    margin: 0 auto 15px;
+    padding: 15px;
+    border-radius: 12px;
+    color: #7f1d1d;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    font-weight: 700;
 }
 
 /* =====================================
    HERO
 ===================================== */
 
-.hero{
+.hero {
+    height: 320px;
+    border-radius: 25px;
+    overflow: hidden;
+    margin-bottom: 25px;
 
-height:320px;
+    background:
+        linear-gradient(
+            rgba(0, 0, 0, 0.45),
+            rgba(0, 0, 0, 0.45)
+        ),
+        url("https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=1600&q=80");
 
-border-radius:25px;
+    background-size: cover;
+    background-position: center;
 
-overflow:hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-margin-bottom:25px;
-
-background:
-linear-gradient(
-rgba(0,0,0,.45),
-rgba(0,0,0,.45)
-),
-url("https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=1600&q=80");
-
-background-size:cover;
-background-position:center;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-box-shadow:
-0 10px 25px rgba(0,0,0,.15);
-
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-.hero-overlay{
-
-text-align:center;
-
-padding:25px;
-
-color:white;
-
+.hero-overlay {
+    text-align: center;
+    padding: 25px;
+    color: white;
 }
 
-.hero h1{
+.hero h1 {
+    font-size: clamp(32px, 6vw, 48px);
+    margin-bottom: 10px;
 
-font-size:48px;
-
-margin-bottom:10px;
-
-text-shadow:
-0 2px 10px rgba(0,0,0,.5);
-
+    text-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-.hero p{
-
-font-size:18px;
-
-opacity:.95;
-
+.hero p {
+    font-size: 18px;
+    opacity: 0.95;
 }
 
 /* =====================================
    DASHBOARD
 ===================================== */
 
-.dashboard{
+.dashboard {
+    display: grid;
 
-display:grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px, 1fr)
+        );
 
-grid-template-columns:
-repeat(auto-fit,minmax(180px,1fr));
-
-gap:15px;
-
-margin-bottom:20px;
-
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
-.stat{
+.stat {
+    background: white;
+    border-radius: 18px;
+    padding: 22px;
+    text-align: center;
 
-background:white;
+    box-shadow:
+        0 6px 15px rgba(0, 0, 0, 0.07);
 
-border-radius:18px;
-
-padding:22px;
-
-text-align:center;
-
-box-shadow:
-0 6px 15px rgba(0,0,0,.07);
-
-transition:.2s;
-
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
 }
 
-.stat:hover{
+.stat:hover {
+    transform: translateY(-3px);
 
-transform:
-translateY(-3px);
-
+    box-shadow:
+        0 10px 22px rgba(0, 0, 0, 0.1);
 }
 
-.stat h3{
-
-font-size:34px;
-
-color:#2563eb;
-
-margin-bottom:5px;
-
+.stat h3 {
+    font-size: 34px;
+    color: #2563eb;
+    margin-bottom: 5px;
 }
 
-.stat p{
-
-font-weight:600;
-
-color:#64748b;
-
+.stat p {
+    font-weight: 600;
+    color: #64748b;
 }
 
 /* =====================================
    KARTEN
 ===================================== */
 
-.card{
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
 
-background:white;
-
-border-radius:20px;
-
-padding:25px;
-
-margin-bottom:20px;
-
-box-shadow:
-0 6px 15px rgba(0,0,0,.07);
-
+    box-shadow:
+        0 6px 15px rgba(0, 0, 0, 0.07);
 }
 
-.card h2{
-
-margin-bottom:15px;
-
-color:#1d4ed8;
-
+.card h2 {
+    margin-bottom: 15px;
+    color: #1d4ed8;
 }
 
 /* =====================================
    WETTER
 ===================================== */
 
-.weather{
+.weather {
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #2563eb
+        );
 
-background:
-linear-gradient(
-135deg,
-#0ea5e9,
-#2563eb
-);
-
-color:white;
-
+    color: white;
 }
 
-.weather h2{
-
-color:white;
-
+.weather h2 {
+    color: white;
 }
 
-.weather-grid{
+.weather-grid {
+    display: grid;
 
-display:grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px, 1fr)
+        );
 
-grid-template-columns:
-repeat(auto-fit,minmax(180px,1fr));
-
-gap:12px;
-
-margin-top:15px;
-
+    gap: 12px;
+    margin-top: 15px;
 }
 
-.weather-grid div{
+.weather-grid div {
+    padding: 15px;
+    border-radius: 12px;
 
-padding:15px;
+    background:
+        rgba(255, 255, 255, 0.15);
 
-border-radius:12px;
-
-background:
-rgba(255,255,255,.15);
-
+    border:
+        1px solid rgba(255, 255, 255, 0.15);
 }
 
-.weather-rating{
+.weather-rating {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    text-align: center;
 
-margin-top:15px;
+    background:
+        rgba(255, 255, 255, 0.15);
+}
 
-padding:15px;
+.weather-good {
+    color: #14532d;
+    background: #dcfce7;
+}
 
-border-radius:12px;
+.weather-warning {
+    color: #713f12;
+    background: #fef3c7;
+}
 
-font-weight:bold;
-
-text-align:center;
-
+.weather-danger {
+    color: #7f1d1d;
+    background: #fee2e2;
 }
 
 /* =====================================
    INPUTS
 ===================================== */
 
-label{
-
-display:block;
-
-font-weight:600;
-
-margin-bottom:5px;
-
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
 }
 
 input,
-textarea{
+textarea {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    font-size: 15px;
+    color: #1e293b;
+    background: white;
 
-width:100%;
-
-padding:14px;
-
-margin-bottom:15px;
-
-border-radius:12px;
-
-border:
-1px solid #cbd5e1;
-
-font-size:15px;
-
-background:white;
-
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
 
 input:focus,
-textarea:focus{
+textarea:focus {
+    outline: none;
+    border-color: #2563eb;
 
-outline:none;
-
-border-color:#2563eb;
-
-box-shadow:
-0 0 0 3px rgba(37,99,235,.15);
-
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-textarea{
-
-resize:vertical;
-
-min-height:120px;
-
+textarea {
+    resize: vertical;
+    min-height: 120px;
 }
 
 /* =====================================
    BUTTONS
 ===================================== */
 
-.button-group{
-
-display:flex;
-
-gap:10px;
-
-flex-wrap:wrap;
-
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-button{
+button {
+    border: none;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
 
-border:none;
-
-border-radius:12px;
-
-padding:14px 18px;
-
-font-size:15px;
-
-font-weight:700;
-
-cursor:pointer;
-
-transition:.2s;
-
+    transition:
+        transform 0.2s,
+        opacity 0.2s,
+        box-shadow 0.2s;
 }
 
-button:hover{
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
 
-transform:
-translateY(-2px);
-
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, 0.15);
 }
 
-.start{
-
-background:#16a34a;
-
-color:white;
-
+button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 2px;
 }
 
-.stop{
-
-background:#dc2626;
-
-color:white;
-
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
 }
 
-.save{
-
-width:100%;
-
-background:#2563eb;
-
-color:white;
-
+.start {
+    color: white;
+    background: #16a34a;
 }
 
-.delete{
+.stop {
+    color: white;
+    background: #dc2626;
+}
 
-background:#64748b;
+.save {
+    width: 100%;
+    color: white;
+    background: #2563eb;
+}
 
-color:white;
+.delete {
+    color: white;
+    background: #dc2626;
+}
 
-margin-top:10px;
-
+.map-button {
+    color: white;
+    background: #2563eb;
 }
 
 /* =====================================
    STATUS
 ===================================== */
 
-#status{
+#status {
+    margin-top: 15px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    background: #f1f5f9;
+}
 
-margin-top:15px;
+.status-working {
+    color: #1e40af;
+    background: #dbeafe !important;
+}
 
-font-weight:700;
+.status-running {
+    color: #14532d;
+    background: #dcfce7 !important;
+}
 
-font-size:16px;
+.status-finished {
+    color: #14532d;
+    background: #dcfce7 !important;
+}
 
+.status-warning {
+    color: #713f12;
+    background: #fef3c7 !important;
+}
+
+.status-error {
+    color: #7f1d1d;
+    background: #fee2e2 !important;
 }
 
 /* =====================================
    KARTE
 ===================================== */
 
-#map{
-
-width:100%;
-
-height:550px;
-
-border-radius:18px;
-
-overflow:hidden;
-
-border:
-2px solid #dbeafe;
-
+#map {
+    width: 100%;
+    height: 550px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 2px solid #dbeafe;
+    background: #e2e8f0;
 }
 
-.leaflet-container{
-
-border-radius:18px;
-
+.leaflet-container {
+    border-radius: 18px;
 }
 
 /* =====================================
    HÖHENPROFIL
 ===================================== */
 
-#heightChart{
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 340px;
+}
 
-width:100%;
-
-background:white;
-
-border-radius:12px;
-
+#heightChart {
+    width: 100% !important;
+    height: 100% !important;
+    background: white;
+    border-radius: 12px;
 }
 
 /* =====================================
    FLUGBUCH
 ===================================== */
 
-.flight{
+.empty-message {
+    padding: 25px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    text-align: center;
+    color: #64748b;
+    background: #f8fafc;
+}
 
-background:#f8fafc;
+.flight {
+    background: #f8fafc;
+    padding: 20px;
+    margin-top: 15px;
+    border-left: 6px solid #2563eb;
+    border-radius: 14px;
 
-padding:18px;
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.06);
+}
 
-margin-top:15px;
+.flight-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 18px;
+}
 
-border-left
+.flight-header h3 {
+    color: #1d4ed8;
+    font-size: 20px;
+}
+
+.flight-subtitle {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.flight-number {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #1d4ed8;
+    background: #dbeafe;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.flight-data {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(230px, 1fr)
+        );
+
+    gap: 10px 20px;
+    padding: 15px;
+    border-radius: 12px;
+    background: white;
+}
+
+.flight-data p {
+    overflow-wrap: anywhere;
+}
+
+.flight-note {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    background: #eff6ff;
+}
+
+.flight-note p {
+    margin-top: 5px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.flight-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* =====================================
+   FOOTER
+===================================== */
+
+footer {
+    padding: 25px 15px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+}
+
+footer p + p {
+    margin-top: 5px;
+}
+
+/* =====================================
+   MOBILE ANSICHT
+===================================== */
+
+@media (max-width: 700px) {
+    body {
+        padding: 10px;
+    }
+
+    .hero {
+        height: 250px;
+        border-radius: 18px;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .card {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .dashboard {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .stat {
+        padding: 16px 10px;
+    }
+
+    .stat h3 {
+        font-size: 27px;
+    }
+
+    #map {
+        height: 400px;
+    }
+
+    .chart-container {
+        height: 280px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .button-group button {
+        width: 100%;
+    }
+
+    .flight-header {
+        flex-direction: column;
+    }
+
+    .flight-actions {
+        flex-direction: column;
+    }
+
+    .flight-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    #map {
+        height: 350px;
+    }
+
+    .chart-container {
+        height: 240px;
+    }
+}
+
+/* =====================================
+   REDUZIERTE BEWEGUNGEN
+===================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
