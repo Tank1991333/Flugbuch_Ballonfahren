@@ -1142,90 +1142,145 @@ function anzeigeAktualisieren() {
                 <article class="flight">
 
                     <div class="flight-header">
+
                         <div>
-                            <h3>${htmlSicher(datum)}</h3>
+                            <h3>
+                                ${htmlSicher(datum)}
+                            </h3>
+
                             <p class="flight-subtitle">
-                                Ende: ${htmlSicher(endezeit)}
+                                Ende:
+                                ${htmlSicher(endezeit)}
                             </p>
                         </div>
 
                         <span class="flight-number">
                             Flug ${index + 1}
                         </span>
+
                     </div>
 
                     <div class="flight-data">
 
                         <p>
                             <strong>👨‍✈️ Pilot:</strong>
-                            ${htmlSicher(flug.pilot || "-")}
+                            ${htmlSicher(
+                                flug.pilot || "-"
+                            )}
                         </p>
 
                         <p>
                             <strong>🎈 Kennzeichen:</strong>
-                            ${htmlSicher(flug.ballon || "-")}
+                            ${htmlSicher(
+                                flug.ballon || "-"
+                            )}
                         </p>
 
                         <p>
                             <strong>🎈 Ballontyp:</strong>
-                            ${htmlSicher(flug.ballontyp || "-")}
+                            ${htmlSicher(
+                                flug.ballontyp || "-"
+                            )}
                         </p>
 
                         <p>
                             <strong>📍 Start:</strong>
-                            ${htmlSicher(flug.startOrt || "-")}
+                            ${htmlSicher(
+                                flug.startOrt || "-"
+                            )}
                         </p>
 
                         <p>
                             <strong>🏁 Landung:</strong>
-                            ${htmlSicher(flug.landeOrt || "-")}
+                            ${htmlSicher(
+                                flug.landeOrt || "-"
+                            )}
                         </p>
 
                         <p>
                             <strong>⏱ Flugzeit:</strong>
-                            ${formatZahl(flug.flugzeit)} Minuten
+                            ${formatZahl(
+                                flug.flugzeit
+                            )}
+                            Minuten
                         </p>
 
                         <p>
                             <strong>🗺 Strecke:</strong>
-                            ${formatZahl(flug.strecke, 1)} km
+                            ${formatZahl(
+                                flug.strecke,
+                                1
+                            )}
+                            km
                         </p>
 
                         <p>
-                            <strong>🚀 Durchschnitt:</strong>
-                            ${formatZahl(flug.avgSpeed)} km/h
+                            <strong>
+                                🚀 Durchschnitt:
+                            </strong>
+
+                            ${formatZahl(
+                                flug.avgSpeed
+                            )}
+                            km/h
                         </p>
 
                         <p>
                             <strong>⚡ Maximum:</strong>
-                            ${formatZahl(flug.maxSpeed)} km/h
+                            ${formatZahl(
+                                flug.maxSpeed
+                            )}
+                            km/h
                         </p>
 
                         <p>
-                            <strong>📈 Maximale Höhe:</strong>
-                            ${formatZahl(flug.maxHoehe)} m
+                            <strong>
+                                📈 Maximale Höhe:
+                            </strong>
+
+                            ${formatZahl(
+                                flug.maxHoehe
+                            )}
+                            m
                         </p>
 
                         <p>
-                            <strong>📉 Minimale Höhe:</strong>
-                            ${formatZahl(flug.minHoehe)} m
+                            <strong>
+                                📉 Minimale Höhe:
+                            </strong>
+
+                            ${formatZahl(
+                                flug.minHoehe
+                            )}
+                            m
                         </p>
 
                         <p>
-                            <strong>📊 Durchschnittshöhe:</strong>
-                            ${formatZahl(flug.avgHoehe)} m
+                            <strong>
+                                📊 Durchschnittshöhe:
+                            </strong>
+
+                            ${formatZahl(
+                                flug.avgHoehe
+                            )}
+                            m
                         </p>
 
                         <p>
                             <strong>🛬 Landungen:</strong>
-                            ${formatZahl(flug.landungen)}
+                            ${formatZahl(
+                                flug.landungen
+                            )}
                         </p>
 
                     </div>
 
                     <div class="flight-note">
+
                         <strong>📝 Bemerkung:</strong>
+
                         <p>${bemerkung}</p>
+
                     </div>
 
                     <div class="flight-actions">
@@ -1287,18 +1342,36 @@ function anzeigeAktualisieren() {
 
     if (countKm) {
         countKm.textContent =
-            formatZahl(gesamtKm, 1);
+            formatZahl(
+                gesamtKm,
+                1
+            );
     }
 
     const stunden =
-        Math.floor(gesamtZeit / 60);
+        Math.floor(
+            gesamtZeit / 60
+        );
 
     const minuten =
-        Math.round(gesamtZeit % 60);
+        Math.round(
+            gesamtZeit % 60
+        );
 
     if (countMinutes) {
         countMinutes.textContent =
             `${stunden}h ${minuten}m`;
+    }
+
+    /*
+     * Aktivitätsmonitor nach jeder Änderung
+     * automatisch aktualisieren.
+     */
+    if (
+        typeof aktivitaetsmonitorAktualisieren
+        === "function"
+    ) {
+        aktivitaetsmonitorAktualisieren();
     }
 }
 
