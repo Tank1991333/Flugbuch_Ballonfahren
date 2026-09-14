@@ -1,11 +1,14 @@
 "use strict";
 
-function weatherSetText(id, text) {
-    const element =
-        document.getElementById(id);
+function wetterElement(id) {
+    return document.getElementById(id);
+}
 
-    if (element) {
-        element.textContent = text;
+function wetterTextSetzen(id, text) {
+    const target = wetterElement(id);
+
+    if (target) {
+        target.textContent = text;
     }
 }
 
@@ -15,6 +18,9 @@ function windRichtungText(degrees) {
     if (!Number.isFinite(value)) {
         return "-";
     }
+
+    const normalized =
+        ((value % 360) + 360) % 360;
 
     const directions = [
         "N",
@@ -27,20 +33,19 @@ function windRichtungText(degrees) {
         "NW"
     ];
 
-    const normalized =
-        ((value % 360) + 360) % 360;
-
     const index =
         Math.round(normalized / 45) % 8;
 
     return directions[index];
 }
 
-function wetterBewerten(wind) {
+function wetterBewerten(windSpeed) {
+    const wind = Number(windSpeed);
+
     if (!Number.isFinite(wind)) {
         return {
             text:
-                "Wetterbewertung nicht möglich",
+                "Wetterbewertung derzeit nicht möglich.",
             className: ""
         };
     }
@@ -65,60 +70,52 @@ function wetterBewerten(wind) {
 
     return {
         text:
-            "🔴 Wind für eine Ballonfahrt kritisch",
+            "🔴 Kritische Windgeschwindigkeit",
         className:
             "weather-danger"
     };
 }
 
-function wetterZahlFormatieren(value) {
-    const number = Number(value);
-
-    if (!Number.isFinite(number)) {
+function uhrzeitAusIso(value) {
+    if (!value) {
         return "--";
     }
 
-    return number.toLocaleString(
-        "de-AT",
-        {
-            maximumFractionDigits: 1
-        }
-    );
+    const match =
+        String(value).match(
+            /T(\d{2}:\d{2})/
+        );
+
+    return match
+        ? match[1]
+        : "--";
 }
 
-async function wetterdatenAbrufen(
-    latitude,
-    longitude
-) {
+async function wetterAbrufen(lat, lon) {
     const parameters =
-        new URLSearchParams(
-            {
-                latitude:
-                    String(latitude),
+        new URLSearchParams({
+            latitude: String(lat),
+            longitude: String(lon),
 
-                longitude:
-                    String(longitude),
+            current:
+                "temperature_2m," +
+                "wind_speed_10m," +
+                "wind_direction_10m," +
+                "relative_humidity_2m," +
+                "surface_pressure",
 
-                current:
-                    "temperature_2m," +
-                    "wind_speed_10m," +
-                    "wind_direction_10m," +
-                    "relative_humidity_2m," +
-                    "surface_pressure",
+            daily:
+                "sunrise,sunset",
 
-                daily:
-                    "sunrise,sunset",
+            wind_speed_unit:
+                "kmh",
 
-                wind_speed_unit:
-                    "kmh",
+            timezone:
+                "auto",
 
-                timezone:
-                    "auto",
-
-                forecast_days:
-                    "1"
-            }
-        );
+            forecast_days:
+                "1"
+        });
 
     const response = await fetch(
         "https://api.open-meteo.com/v1/forecast?" +
@@ -127,8 +124,7 @@ async function wetterdatenAbrufen(
 
     if (!response.ok) {
         throw new Error(
-            "Wetterabfrage fehlgeschlagen: " +
-            response.status
+            `Wetterabfrage fehlgeschlagen: ${response.status}`
         );
     }
 
@@ -137,9 +133,7 @@ async function wetterdatenAbrufen(
 
 function ladeWetter() {
     const rating =
-        document.getElementById(
-            "weatherRating"
-        );
+        wetterElement("weatherRating");
 
     if (!rating) {
         return;
@@ -164,24 +158,21 @@ function ladeWetter() {
     navigator.geolocation.getCurrentPosition(
         async function (position) {
             try {
-                const data =
-                    await wetterdatenAbrufen(
-                        position.coords.latitude,
-                        position.coords.longitude
-                    );
-
-                if (
-                    !data ||
-                    !data.current ||
-                    !data.daily
-                ) {
-                    throw new Error(
-                        "Unvollständige Wetterdaten."
-                    );
-                }
+                const data = await wetterAbrufen(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
 
                 const current =
-                    data.current;
+                    data.current || {};
+
+                const daily =
+                    data.daily || {};
+
+                const temperature =
+                    Number(
+                        current.temperature_2m
+                    );
 
                 const wind =
                     Number(
@@ -193,69 +184,6 @@ function ladeWetter() {
                         current.wind_direction_10m
                     );
 
-                weatherSetText(
-                    "temperature",
-
-                    "🌡 Temperatur: " +
-                    wetterZahlFormatieren(
-                        current.temperature_2m
-                    ) +
-                    " °C"
-                );
-
-                weatherSetText(
-                    "wind",
-
-                    "💨 Wind: " +
-                    wetterZahlFormatieren(wind) +
-                    " km/h"
-                );
-
-                weatherSetText(
-                    "windDirection",
-
-                    "🧭 Richtung: " +
-                    (
-                        Number.isFinite(direction)
-                            ? Math.round(direction)
-                            : "--"
-                    ) +
-                    "° (" +
-                    windRichtungText(direction) +
-                    ")"
-                );
-
-                const sunrise =
-                    data.daily.sunrise?.[0];
-
-                const sunset =
-                    data.daily.sunset?.[0];
-
-                weatherSetText(
-                    "sunrise",
-
-                    "🌅 Sonnenaufgang: " +
-                    (
-                        sunrise
-                            ? sunrise.slice(-5)
-                            : "--"
-                    )
-                );
-
-                weatherSetText(
-                    "sunset",
-
-                    "🌇 Sonnenuntergang: " +
-                    (
-                        sunset
-                            ? sunset.slice(-5)
-                            : "--"
-                    )
-                );
-
-                const result =
-                    wetterBewerten(wind);
-
                 const humidity =
                     Number(
                         current.relative_humidity_2m
@@ -266,25 +194,78 @@ function ladeWetter() {
                         current.surface_pressure
                     );
 
+                const formatNumber =
+                    function (value) {
+                        return Number(value)
+                            .toLocaleString(
+                                "de-AT",
+                                {
+                                    maximumFractionDigits: 1
+                                }
+                            );
+                    };
+
+                wetterTextSetzen(
+                    "temperature",
+                    Number.isFinite(temperature)
+                        ? `🌡 Temperatur: ${formatNumber(temperature)} °C`
+                        : "🌡 Temperatur: --"
+                );
+
+                wetterTextSetzen(
+                    "wind",
+                    Number.isFinite(wind)
+                        ? `💨 Wind: ${formatNumber(wind)} km/h`
+                        : "💨 Wind: --"
+                );
+
+                wetterTextSetzen(
+                    "windDirection",
+                    Number.isFinite(direction)
+                        ? (
+                            `🧭 Windrichtung: ` +
+                            `${Math.round(direction)}° ` +
+                            `(${windRichtungText(direction)})`
+                        )
+                        : "🧭 Windrichtung: --"
+                );
+
+                wetterTextSetzen(
+                    "sunrise",
+                    "🌅 Sonnenaufgang: " +
+                    uhrzeitAusIso(
+                        daily.sunrise?.[0]
+                    )
+                );
+
+                wetterTextSetzen(
+                    "sunset",
+                    "🌇 Sonnenuntergang: " +
+                    uhrzeitAusIso(
+                        daily.sunset?.[0]
+                    )
+                );
+
+                const assessment =
+                    wetterBewerten(wind);
+
+                const humidityText =
+                    Number.isFinite(humidity)
+                        ? `${Math.round(humidity)} %`
+                        : "--";
+
+                const pressureText =
+                    Number.isFinite(pressure)
+                        ? `${Math.round(pressure)} hPa`
+                        : "--";
+
                 rating.textContent =
-                    result.text +
-                    " · Luftfeuchte " +
-                    (
-                        Number.isFinite(humidity)
-                            ? Math.round(humidity)
-                            : "--"
-                    ) +
-                    " % · Luftdruck " +
-                    (
-                        Number.isFinite(pressure)
-                            ? Math.round(pressure)
-                            : "--"
-                    ) +
-                    " hPa";
+                    `${assessment.text} · ` +
+                    `Luftfeuchtigkeit ${humidityText} · ` +
+                    `Luftdruck ${pressureText}`;
 
                 rating.className =
-                    "weather-rating " +
-                    result.className;
+                    `weather-rating ${assessment.className}`.trim();
             } catch (error) {
                 console.error(
                     "Wetterdaten konnten nicht geladen werden:",
@@ -299,12 +280,7 @@ function ladeWetter() {
             }
         },
 
-        function (error) {
-            console.error(
-                "Standort konnte nicht ermittelt werden:",
-                error
-            );
-
+        function () {
             rating.textContent =
                 "Standortfreigabe ist für Wetterdaten erforderlich.";
 
@@ -313,9 +289,9 @@ function ladeWetter() {
         },
 
         {
+            enableHighAccuracy: false,
             maximumAge: 300000,
-            timeout: 15000,
-            enableHighAccuracy: false
+            timeout: 15000
         }
     );
 }
@@ -323,17 +299,11 @@ function ladeWetter() {
 document.addEventListener(
     "DOMContentLoaded",
     function () {
-        const reloadButton =
-            document.getElementById(
-                "weatherReload"
-            );
-
-        if (reloadButton) {
-            reloadButton.addEventListener(
+        wetterElement("weatherReload")
+            ?.addEventListener(
                 "click",
                 ladeWetter
             );
-        }
 
         ladeWetter();
     }
