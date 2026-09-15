@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
 
@@ -27,14 +26,10 @@
         crossorigin=""
     >
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
     <noscript>
         <div class="noscript-warning">
             Diese Anwendung benötigt JavaScript.
@@ -42,61 +37,91 @@
     </noscript>
 
     <div class="app-shell">
-
-        <aside
-            id="sidebar"
-            class="sidebar"
-        >
-
-            #dashboard
-                <span
-                    class="brand-icon"
-                    aria-hidden="true"
-                >
+        <aside id="sidebar" class="sidebar">
+            <button
+                class="brand"
+                type="button"
+                data-page-link="dashboard"
+            >
+                <span class="brand-icon" aria-hidden="true">
                     🎈
                 </span>
 
                 <span class="brand-text">
                     <strong>BALLONFLUGBUCH</strong>
-                    <small>PROFESSIONAL</small>
+                    <small>PROFESSIONAL V10</small>
                 </span>
-            </a>
+            </button>
 
             <nav aria-label="Hauptnavigation">
-
-                #dashboard
+                <button
+                    class="nav-link active"
+                    type="button"
+                    data-page-link="dashboard"
+                >
                     <span aria-hidden="true">⌂</span>
-                    <span>Dashboard</span>
-                </a>
-
-                #flugbuch
-                    <span aria-hidden="true">▤</span>
-                    <span>Flugbuch</span>
-                </a>
-
-                #karte
-                    <span aria-hidden="true">◇</span>
-                    <span>Karte</span>
-                </a>
-
-                #statistiken
-                    <span aria-hidden="true">▥</span>
-                    <span>Statistiken</span>
-                </a>
-
-                #wetter
-                    <span aria-hidden="true">☁</span>
-                    <span>Wetter</span>
-                </a>
-
-                #einstellungen
-                    <span aria-hidden="true">⚙</span>
-                    <span>Einstellungen</span>
-                </a>
+                    <span>Übersicht</span>
+                </button>
 
                 <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="tracking"
+                >
+                    <span aria-hidden="true">●</span>
+                    <span>Fahrt erfassen</span>
+                </button>
+
+                <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="flugbuch"
+                >
+                    <span aria-hidden="true">▤</span>
+                    <span>Flugbuch</span>
+                </button>
+
+                <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="karte"
+                >
+                    <span aria-hidden="true">◇</span>
+                    <span>Karte und Standort</span>
+                </button>
+
+                <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="statistiken"
+                >
+                    <span aria-hidden="true">▥</span>
+                    <span>Statistiken</span>
+                </button>
+
+                <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="wetter"
+                >
+                    <span aria-hidden="true">☁</span>
+                    <span>Wetter</span>
+                </button>
+
+                <button
+                    class="nav-link"
+                    type="button"
+                    data-page-link="einstellungen"
+                >
+                    <span aria-hidden="true">⚙</span>
+                    <span>Einstellungen</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button
                     id="exportButton"
-                    class="nav-link nav-button"
+                    class="nav-link"
                     type="button"
                 >
                     <span aria-hidden="true">⇩</span>
@@ -105,23 +130,16 @@
 
                 <button
                     id="openImportButton"
-                    class="nav-link nav-button"
+                    class="nav-link"
                     type="button"
                 >
                     <span aria-hidden="true">⇧</span>
                     <span>Fahrten importieren</span>
                 </button>
-
-            </nav>
+            </div>
 
             <div class="maintenance">
-
-                <span
-                    class="maintenance-icon"
-                    aria-hidden="true"
-                >
-                    🔧
-                </span>
+                <span aria-hidden="true">🔧</span>
 
                 <span>
                     Nächste Wartung
@@ -130,15 +148,11 @@
                         Nicht festgelegt
                     </strong>
                 </span>
-
             </div>
-
         </aside>
 
         <main class="main">
-
             <header class="topbar">
-
                 <button
                     id="menuButton"
                     class="menu-button"
@@ -150,589 +164,744 @@
                 </button>
 
                 <div>
-                    <h1 id="welcomeTitle">
-                        Willkommen zurück!
-                    </h1>
+                    <h1 id="pageTitle">Übersicht</h1>
 
-                    <p>
-                        Hier ist deine aktuelle Flugübersicht.
+                    <p id="pageDescription">
+                        Die wichtigsten Informationen auf einen Blick.
                     </p>
                 </div>
 
                 <div class="top-meta">
-
                     <span id="currentDate">--</span>
                     <span id="currentTime">--</span>
 
-                    <span
-                        class="avatar"
-                        aria-hidden="true"
-                    >
+                    <span class="avatar" aria-hidden="true">
                         🎈
                     </span>
 
                     <span>
-                        <strong id="pilotHeader">
-                            Pilot
-                        </strong>
-
+                        <strong id="pilotHeader">Pilot</strong>
                         <small>Ballonpilot</small>
                     </span>
-
                 </div>
-
             </header>
 
+            <!-- ÜBERSICHT -->
             <section
-                id="dashboard"
-                class="hero-dashboard"
+                id="page-dashboard"
+                class="app-page active"
+                data-page="dashboard"
             >
-
-                <div class="hero-copy">
-
-                    <span class="eyebrow">
-                        BALLONFLUGBUCH PROFESSIONAL
-                    </span>
-
-                    <h2>
-                        Deine Fahrten.<br>
-                        Deine Daten.<br>
-                        Dein Überblick.
-                    </h2>
-
-                    <p>
-                        GPS-Aufzeichnung, Flugstatistik,
-                        Wetterdaten und digitales Flugbuch
-                        in einer Anwendung.
-                    </p>
-
-                </div>
-
-            </section>
-
-            <section
-                class="kpi-grid"
-                aria-label="Flugstatistik"
-            >
-
-                <article class="kpi kpi-blue">
-
-                    <span class="kpi-icon">🎈</span>
-
-                    <span>
-                        <small>FAHRTEN</small>
-
-                        <strong id="countFlights">
-                            0
-                        </strong>
-
-                        <em>im gewählten Zeitraum</em>
-                    </span>
-
-                </article>
-
-                <article class="kpi kpi-green">
-
-                    <span class="kpi-icon">🛬</span>
-
-                    <span>
-                        <small>LANDUNGEN</small>
-
-                        <strong id="countLandings">
-                            0
-                        </strong>
-
-                        <em>im gewählten Zeitraum</em>
-                    </span>
-
-                </article>
-
-                <article class="kpi kpi-yellow">
-
-                    <span class="kpi-icon">◷</span>
-
-                    <span>
-                        <small>FLUGZEIT</small>
-
-                        <strong id="countMinutes">
-                            0h 00m
-                        </strong>
-
-                        <em>gesamte Flugzeit</em>
-                    </span>
-
-                </article>
-
-                <article class="kpi kpi-purple">
-
-                    <span class="kpi-icon">⌖</span>
-
-                    <span>
-                        <small>KILOMETER</small>
-
-                        <strong id="countKm">
-                            0,0 km
-                        </strong>
-
-                        <em>gesamte Strecke</em>
-                    </span>
-
-                </article>
-
-            </section>
-
-            <section class="dashboard-grid">
-
-                <article class="panel">
-
-                    <div class="panel-title">
-
-                        <h2>
-                            BERECHTIGUNGSMONITOR
-                        </h2>
-
-                        <span id="monitorPeriodLabel">
-                            24 MONATE
+                <section class="hero-dashboard">
+                    <div class="hero-copy">
+                        <span class="eyebrow">
+                            BALLONFLUGBUCH PROFESSIONAL
                         </span>
 
-                    </div>
+                        <h2>
+                            Deine Fahrten.<br>
+                            Deine Daten.<br>
+                            Dein Überblick.
+                        </h2>
 
-                    <div
-                        id="aktivitaetsmonitorInhalt"
-                        aria-live="polite"
-                    >
-                        <p class="empty-message">
-                            Aktivitätsdaten werden berechnet ...
+                        <p>
+                            GPS-Aufzeichnung, Flugstatistik, Wetter,
+                            Flugbuch und aktueller Standort in einer
+                            Anwendung.
                         </p>
-                    </div>
-
-                </article>
-
-                <article class="panel">
-
-                    <div class="panel-title">
-
-                        <h2>
-                            ZUSAMMENFASSUNG
-                        </h2>
-
-                        <span>GESAMT</span>
-
-                    </div>
-
-                    <div
-                        id="summaryList"
-                        class="summary-list"
-                    ></div>
-
-                    <div
-                        id="nextExit"
-                        class="next-exit"
-                    >
-                        Kein relevanter Flug vorhanden.
-                    </div>
-
-                </article>
-
-                <article
-                    id="statistiken"
-                    class="panel monthly-panel"
-                >
-
-                    <div class="panel-title">
-
-                        <h2>
-                            MONATSSTATISTIK
-                        </h2>
-
-                        <span>FAHRTEN</span>
-
-                    </div>
-
-                    <div class="chart-container monthly-chart">
-
-                        <canvas id="monthlyChart"></canvas>
-
-                    </div>
-
-                </article>
-
-                <article class="panel">
-
-                    <div class="panel-title">
-
-                        <h2>REKORDE</h2>
-
-                        <span>PERSÖNLICH</span>
-
-                    </div>
-
-                    <div
-                        id="records"
-                        class="records"
-                    ></div>
-
-                </article>
-
-                <article
-                    id="karte"
-                    class="panel map-panel"
-                >
-
-                    <div class="panel-title">
-
-                        <h2>FLUGKARTE</h2>
-
-                        <span class="map-legend">
-                            <b class="start-color">● Start</b>
-                            <b class="landing-color">● Landung</b>
-                        </span>
-
-                    </div>
-
-                    <div
-                        id="map"
-                        aria-label="Karte der Ballonfahrten"
-                    ></div>
-
-                </article>
-
-            </section>
-
-            <section
-                id="wetter"
-                class="panel section-panel"
-            >
-
-                <div class="panel-title">
-
-                    <h2>AKTUELLES WETTER</h2>
-
-                    <button
-                        id="weatherReload"
-                        class="secondary-button"
-                        type="button"
-                    >
-                        Aktualisieren
-                    </button>
-
-                </div>
-
-                <div class="weather-grid">
-
-                    <div id="temperature">
-                        🌡 Temperatur: --
-                    </div>
-
-                    <div id="wind">
-                        💨 Wind: --
-                    </div>
-
-                    <div id="windDirection">
-                        🧭 Windrichtung: --
-                    </div>
-
-                    <div id="sunrise">
-                        🌅 Sonnenaufgang: --
-                    </div>
-
-                    <div id="sunset">
-                        🌇 Sonnenuntergang: --
-                    </div>
-
-                </div>
-
-                <div
-                    id="weatherRating"
-                    class="weather-rating"
-                    aria-live="polite"
-                >
-                    Wetterdaten werden geladen ...
-                </div>
-
-            </section>
-
-            <section class="form-grid">
-
-                <article
-                    id="einstellungen"
-                    class="panel section-panel"
-                >
-
-                    <div class="panel-title">
-
-                        <h2>PILOT & BALLON</h2>
-
-                        <span>STAMMDATEN</span>
-
-                    </div>
-
-                    <label for="pilot">
-                        Pilot
-
-                        <input
-                            id="pilot"
-                            type="text"
-                            placeholder="Pilotname"
-                            autocomplete="name"
-                        >
-                    </label>
-
-                    <label for="ballon">
-                        Ballon-Kennzeichen
-
-                        <input
-                            id="ballon"
-                            type="text"
-                            placeholder="z. B. OE-BAL"
-                            autocomplete="off"
-                        >
-                    </label>
-
-                    <label for="ballontyp">
-                        Ballontyp
-
-                        <input
-                            id="ballontyp"
-                            type="text"
-                            placeholder="z. B. Kubicek BB45"
-                            autocomplete="off"
-                        >
-                    </label>
-
-                    <label for="maintenanceInput">
-                        Nächste Wartung
-
-                        <input
-                            id="maintenanceInput"
-                            type="date"
-                        >
-                    </label>
-
-                </article>
-
-                <article class="panel section-panel">
-
-                    <div class="panel-title">
-
-                        <h2>TRACKING</h2>
-
-                        <span>GPS</span>
-
-                    </div>
-
-                    <div class="button-group">
 
                         <button
-                            id="startButton"
-                            class="primary-button start-button"
-                            type="button"
-                        >
-                            ▶ Fahrt starten
-                        </button>
-
-                        <button
-                            id="stopButton"
-                            class="primary-button stop-button"
-                            type="button"
-                            disabled
-                        >
-                            ■ Fahrt beenden
-                        </button>
-
-                    </div>
-
-                    <div
-                        id="status"
-                        class="status-message"
-                        aria-live="polite"
-                    >
-                        Kein Flug aktiv
-                    </div>
-
-                    <label for="landungen">
-                        Landungen
-
-                        <input
-                            id="landungen"
-                            type="number"
-                            min="1"
-                            step="1"
-                            value="1"
-                        >
-                    </label>
-
-                    <label for="bemerkung">
-                        Bemerkungen
-
-                        <textarea
-                            id="bemerkung"
-                            rows="4"
-                            placeholder="Bemerkungen zum Flug"
-                        ></textarea>
-                    </label>
-
-                    <button
-                        id="saveButton"
-                        class="primary-button full-button"
-                        type="button"
-                        disabled
-                    >
-                        💾 Flug speichern
-                    </button>
-
-                </article>
-
-                <article class="panel section-panel">
-
-                    <div class="panel-title">
-
-                        <h2>HÖHENPROFIL</h2>
-
-                        <span>METER</span>
-
-                    </div>
-
-                    <div class="chart-container height-chart">
-
-                        <canvas id="heightChart"></canvas>
-
-                    </div>
-
-                </article>
-
-            </section>
-
-            <section
-                id="flugbuch"
-                class="panel section-panel"
-            >
-
-                <div class="panel-title">
-
-                    <h2>FLUGBUCH</h2>
-
-                    <span id="flightbookCount">
-                        0 EINTRÄGE
-                    </span>
-
-                </div>
-
-                <div id="flugliste">
-
-                    <p class="empty-message">
-                        Noch keine Fahrten gespeichert.
-                    </p>
-
-                </div>
-
-            </section>
-
-            <section class="panel section-panel">
-
-                <details>
-
-                    <summary>
-                        ⚙ Anforderungen für den Aktivitätsmonitor
-                    </summary>
-
-                    <div class="settings-grid">
-
-                        <label for="monitorZeitraum">
-                            Zeitraum in Monaten
-
-                            <input
-                                id="monitorZeitraum"
-                                type="number"
-                                min="1"
-                                max="120"
-                                value="24"
-                            >
-                        </label>
-
-                        <label for="monitorSollFahrten">
-                            Erforderliche Fahrten
-
-                            <input
-                                id="monitorSollFahrten"
-                                type="number"
-                                min="0"
-                                value="30"
-                            >
-                        </label>
-
-                        <label for="monitorSollLandungen">
-                            Erforderliche Landungen
-
-                            <input
-                                id="monitorSollLandungen"
-                                type="number"
-                                min="0"
-                                value="40"
-                            >
-                        </label>
-
-                    </div>
-
-                    <div class="button-group">
-
-                        <button
-                            id="monitorSpeichern"
                             class="primary-button"
                             type="button"
+                            data-page-link="tracking"
                         >
-                            Speichern
+                            Neue Fahrt starten
                         </button>
+                    </div>
+                </section>
+
+                <section
+                    class="kpi-grid"
+                    aria-label="Flugstatistik"
+                >
+                    <article class="kpi kpi-blue">
+                        <span class="kpi-icon">🎈</span>
+
+                        <span>
+                            <small>FAHRTEN</small>
+                            <strong id="countFlights">0</strong>
+                            <em>gespeichert</em>
+                        </span>
+                    </article>
+
+                    <article class="kpi kpi-green">
+                        <span class="kpi-icon">🛬</span>
+
+                        <span>
+                            <small>LANDUNGEN</small>
+                            <strong id="countLandings">0</strong>
+                            <em>dokumentiert</em>
+                        </span>
+                    </article>
+
+                    <article class="kpi kpi-yellow">
+                        <span class="kpi-icon">◷</span>
+
+                        <span>
+                            <small>FLUGZEIT</small>
+                            <strong id="countMinutes">0h 00m</strong>
+                            <em>gesamt</em>
+                        </span>
+                    </article>
+
+                    <article class="kpi kpi-purple">
+                        <span class="kpi-icon">⌖</span>
+
+                        <span>
+                            <small>STRECKE</small>
+                            <strong id="countKm">0,0 km</strong>
+                            <em>gesamt</em>
+                        </span>
+                    </article>
+                </section>
+
+                <section class="dashboard-grid">
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>AKTIVITÄTSMONITOR</h2>
+                            <span id="monitorPeriodLabel">
+                                24 MONATE
+                            </span>
+                        </div>
+
+                        <div id="aktivitaetsmonitorInhalt">
+                            <p class="empty-message">
+                                Aktivitätsdaten werden berechnet.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>ZUSAMMENFASSUNG</h2>
+                            <span>GESAMT</span>
+                        </div>
+
+                        <div
+                            id="summaryList"
+                            class="summary-list"
+                        ></div>
+
+                        <div id="nextExit" class="next-exit">
+                            Kein relevanter Flug vorhanden.
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>PERSÖNLICHE REKORDE</h2>
+                            <span>BESTWERTE</span>
+                        </div>
+
+                        <div id="records" class="records"></div>
+                    </article>
+                </section>
+            </section>
+
+            <!-- FAHRT ERFASSEN -->
+            <section
+                id="page-tracking"
+                class="app-page"
+                data-page="tracking"
+                hidden
+            >
+                <section class="tracking-grid">
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>FAHRTDATEN</h2>
+                            <span>GPS</span>
+                        </div>
+
+                        <div class="form-content">
+                            <div class="current-master-data">
+                                <div>
+                                    <small>Pilot</small>
+                                    <strong id="trackingPilot">
+                                        Nicht festgelegt
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <small>Ballon</small>
+                                    <strong id="trackingBallon">
+                                        Nicht festgelegt
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <small>Ballontyp</small>
+                                    <strong id="trackingBallontyp">
+                                        Nicht festgelegt
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div class="button-group">
+                                <button
+                                    id="startButton"
+                                    class="primary-button start-button"
+                                    type="button"
+                                >
+                                    ▶ Fahrt starten
+                                </button>
+
+                                <button
+                                    id="stopButton"
+                                    class="primary-button stop-button"
+                                    type="button"
+                                    disabled
+                                >
+                                    ■ Fahrt beenden
+                                </button>
+                            </div>
+
+                            <div
+                                id="status"
+                                class="status-message"
+                                aria-live="polite"
+                            >
+                                Kein Flug aktiv
+                            </div>
+
+                            <label for="landungen">
+                                Landungen
+
+                                <input
+                                    id="landungen"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value="1"
+                                >
+                            </label>
+
+                            <label for="bemerkung">
+                                Bemerkungen
+
+                                <textarea
+                                    id="bemerkung"
+                                    rows="5"
+                                    placeholder="Bemerkungen zur Fahrt"
+                                ></textarea>
+                            </label>
+
+                            <button
+                                id="saveButton"
+                                class="primary-button full-button"
+                                type="button"
+                                disabled
+                            >
+                                💾 Fahrt speichern
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>AKTUELLER TRACK</h2>
+                            <span>GPS-KARTE</span>
+                        </div>
+
+                        <div class="map-toolbar">
+                            <button
+                                id="centerTrackingLocationButton"
+                                class="primary-button"
+                                type="button"
+                            >
+                                ◎ Standort zentrieren
+                            </button>
+
+                            <a
+                                class="secondary-button link-button"
+                                href="https://maps.austrocontrol.at/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                ✈ VFR/ICAO-Karte öffnen
+                            </a>
+                        </div>
+
+                        <div class="tracking-map-wrapper">
+                            <div id="trackingMap"></div>
+
+                            <div class="tracking-location-display">
+                                <strong>GPS-Standort</strong>
+
+                                <span id="trackingCoordinates">
+                                    Position wird ermittelt
+                                </span>
+
+                                <small id="trackingAltitude">
+                                    GPS-Höhe: --
+                                </small>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="panel full-grid-column">
+                        <div class="panel-title">
+                            <h2>HÖHENPROFIL</h2>
+                            <span>METER</span>
+                        </div>
+
+                        <div class="chart-container height-chart">
+                            <canvas id="heightChart"></canvas>
+                        </div>
+                    </article>
+                </section>
+            </section>
+
+            <!-- FLUGBUCH -->
+            <section
+                id="page-flugbuch"
+                class="app-page"
+                data-page="flugbuch"
+                hidden
+            >
+                <article class="panel">
+                    <div class="panel-title">
+                        <h2>FLUGBUCH</h2>
+
+                        <span id="flightbookCount">
+                            0 EINTRÄGE
+                        </span>
+                    </div>
+
+                    <div id="flugliste">
+                        <p class="empty-message">
+                            Noch keine Fahrten gespeichert.
+                        </p>
+                    </div>
+                </article>
+            </section>
+
+            <!-- KARTE -->
+            <section
+                id="page-karte"
+                class="app-page"
+                data-page="karte"
+                hidden
+            >
+                <section class="map-page-grid">
+                    <article class="panel">
+                        <div class="panel-title map-title">
+                            <div>
+                                <h2>LUFTFAHRT- UND FLUGKARTE</h2>
+
+                                <span>
+                                    Fahrten und aktueller GPS-Standort
+                                </span>
+                            </div>
+
+                            <span class="map-legend">
+                                <b class="location-color">● Standort</b>
+                                <b class="start-color">● Start</b>
+                                <b class="landing-color">● Landung</b>
+                            </span>
+                        </div>
+
+                        <div class="map-toolbar">
+                            <button
+                                id="centerLocationButton"
+                                class="primary-button"
+                                type="button"
+                            >
+                                ◎ Standort zentrieren
+                            </button>
+
+                            <button
+                                id="toggleLocationTrackingButton"
+                                class="secondary-button"
+                                type="button"
+                            >
+                                Standortüberwachung stoppen
+                            </button>
+
+                            <a
+                                class="primary-button link-button"
+                                href="https://maps.austrocontrol.at/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                ✈ Offizielle VFR/ICAO-Karte Österreich
+                            </a>
+                        </div>
+
+                        <div class="main-map-layout">
+                            <div id="map"></div>
+
+                            <aside
+                                class="location-panel"
+                                aria-live="polite"
+                            >
+                                <div class="location-panel-header">
+                                    <span class="location-indicator"></span>
+
+                                    <div>
+                                        <strong>Aktueller Standort</strong>
+
+                                        <small id="locationStatus">
+                                            GPS-Position wird ermittelt
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="location-values">
+                                    <div>
+                                        <small>Breitengrad</small>
+                                        <strong id="currentLatitude">--</strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Längengrad</small>
+                                        <strong id="currentLongitude">--</strong>
+                                    </div>
+
+                                    <div>
+                                        <small>GPS-Höhe</small>
+                                        <strong id="currentAltitude">--</strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Genauigkeit</small>
+                                        <strong id="currentAccuracy">--</strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Geschwindigkeit</small>
+                                        <strong id="currentSpeed">--</strong>
+                                    </div>
+
+                                    <div>
+                                        <small>Aktualisiert</small>
+                                        <strong id="currentLocationTime">--</strong>
+                                    </div>
+                                </div>
+
+                                <button
+                                    id="copyLocationButton"
+                                    class="secondary-button full-button"
+                                    type="button"
+                                >
+                                    Koordinaten kopieren
+                                </button>
+
+                                <p
+                                    id="copyLocationMessage"
+                                    class="form-message"
+                                ></p>
+                            </aside>
+                        </div>
+                    </article>
+
+                    <article class="panel information-panel">
+                        <div class="panel-title">
+                            <h2>OFFIZIELLE LUFTFAHRTINFORMATIONEN</h2>
+                            <span>AUSTRO CONTROL</span>
+                        </div>
+
+                        <div class="information-content">
+                            <p>
+                                Über die Schaltfläche
+                                <strong>
+                                    „Offizielle VFR/ICAO-Karte Österreich“
+                                </strong>
+                                wird die aktuelle Onlinekarte von
+                                Austro Control geöffnet.
+                            </p>
+
+                            <p>
+                                Dort gegebenenfalls zuerst
+                                <strong>Continue to the Application</strong>
+                                und anschließend
+                                <strong>Online Chart VFR Austria</strong>
+                                auswählen.
+                            </p>
+
+                            <div class="safety-warning">
+                                <strong>Wichtiger Sicherheitshinweis</strong>
+
+                                <p>
+                                    Diese Karten- und Standortanzeige ist
+                                    nur eine Zusatzinformation. Sie ersetzt
+                                    keine ordnungsgemäße Flugvorbereitung,
+                                    keine AIP, AIP Supplements, NOTAMs,
+                                    AICs, Wetterbriefings oder örtlichen
+                                    Betriebsinformationen.
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+            </section>
+
+            <!-- STATISTIKEN -->
+            <section
+                id="page-statistiken"
+                class="app-page"
+                data-page="statistiken"
+                hidden
+            >
+                <section class="statistics-grid">
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>MONATSSTATISTIK</h2>
+                            <span>LETZTE 12 MONATE</span>
+                        </div>
+
+                        <div class="chart-container monthly-chart">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>GESAMTWERTE</h2>
+                            <span>STATISTIK</span>
+                        </div>
+
+                        <div
+                            id="statisticsSummary"
+                            class="summary-list"
+                        ></div>
+                    </article>
+                </section>
+            </section>
+
+            <!-- WETTER -->
+            <section
+                id="page-wetter"
+                class="app-page"
+                data-page="wetter"
+                hidden
+            >
+                <article class="panel">
+                    <div class="panel-title">
+                        <h2>AKTUELLES WETTER</h2>
 
                         <button
-                            id="monitorZuruecksetzen"
+                            id="weatherReload"
                             class="secondary-button"
                             type="button"
                         >
-                            Zurücksetzen
+                            Aktualisieren
                         </button>
-
                     </div>
 
-                    <p
-                        id="monitorMeldung"
-                        class="monitor-message"
+                    <div class="weather-grid">
+                        <div id="temperature">
+                            🌡 Temperatur: --
+                        </div>
+
+                        <div id="wind">
+                            💨 Wind: --
+                        </div>
+
+                        <div id="windDirection">
+                            🧭 Windrichtung: --
+                        </div>
+
+                        <div id="sunrise">
+                            🌅 Sonnenaufgang: --
+                        </div>
+
+                        <div id="sunset">
+                            🌇 Sonnenuntergang: --
+                        </div>
+                    </div>
+
+                    <div
+                        id="weatherRating"
+                        class="weather-rating"
                         aria-live="polite"
-                    ></p>
+                    >
+                        Wetterdaten werden geladen.
+                    </div>
 
-                </details>
+                    <div class="safety-warning weather-warning-box">
+                        <strong>Wichtiger Wetterhinweis</strong>
 
+                        <p>
+                            Die Wetteranzeige ist keine flugbetriebliche
+                            Freigabe. Sie berücksichtigt nicht alle für
+                            einen Ballonflug erforderlichen Faktoren.
+                        </p>
+                    </div>
+                </article>
+            </section>
+
+            <!-- EINSTELLUNGEN -->
+            <section
+                id="page-einstellungen"
+                class="app-page"
+                data-page="einstellungen"
+                hidden
+            >
+                <section class="settings-grid">
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>PILOT UND BALLON</h2>
+                            <span>STAMMDATEN</span>
+                        </div>
+
+                        <div class="form-content">
+                            <label for="pilot">
+                                Pilot
+
+                                <input
+                                    id="pilot"
+                                    type="text"
+                                    placeholder="Pilotname"
+                                    autocomplete="name"
+                                >
+                            </label>
+
+                            <label for="ballon">
+                                Ballon-Kennzeichen
+
+                                <input
+                                    id="ballon"
+                                    type="text"
+                                    placeholder="z. B. OE-BAL"
+                                    autocomplete="off"
+                                >
+                            </label>
+
+                            <label for="ballontyp">
+                                Ballontyp
+
+                                <input
+                                    id="ballontyp"
+                                    type="text"
+                                    placeholder="z. B. Kubicek BB45"
+                                    autocomplete="off"
+                                >
+                            </label>
+
+                            <label for="maintenanceInput">
+                                Nächste Wartung
+
+                                <input
+                                    id="maintenanceInput"
+                                    type="date"
+                                >
+                            </label>
+
+                            <button
+                                id="saveMasterDataButton"
+                                class="primary-button full-button"
+                                type="button"
+                            >
+                                Stammdaten speichern
+                            </button>
+
+                            <p
+                                id="masterDataMessage"
+                                class="form-message"
+                            ></p>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-title">
+                            <h2>AKTIVITÄTSMONITOR</h2>
+                            <span>ANFORDERUNGEN</span>
+                        </div>
+
+                        <div class="form-content">
+                            <label for="monitorZeitraum">
+                                Zeitraum in Monaten
+
+                                <input
+                                    id="monitorZeitraum"
+                                    type="number"
+                                    min="1"
+                                    max="120"
+                                    value="24"
+                                >
+                            </label>
+
+                            <label for="monitorSollFahrten">
+                                Erforderliche Fahrten
+
+                                <input
+                                    id="monitorSollFahrten"
+                                    type="number"
+                                    min="0"
+                                    value="30"
+                                >
+                            </label>
+
+                            <label for="monitorSollLandungen">
+                                Erforderliche Landungen
+
+                                <input
+                                    id="monitorSollLandungen"
+                                    type="number"
+                                    min="0"
+                                    value="40"
+                                >
+                            </label>
+
+                            <div class="button-group">
+                                <button
+                                    id="monitorSpeichern"
+                                    class="primary-button"
+                                    type="button"
+                                >
+                                    Speichern
+                                </button>
+
+                                <button
+                                    id="monitorZuruecksetzen"
+                                    class="secondary-button"
+                                    type="button"
+                                >
+                                    Zurücksetzen
+                                </button>
+                            </div>
+
+                            <p
+                                id="monitorMeldung"
+                                class="form-message"
+                            ></p>
+                        </div>
+                    </article>
+                </section>
             </section>
 
             <footer>
-                Ballonflugbuch Professional V10
-                <br>
+                Ballonflugbuch Professional V10<br>
                 Fahrtdaten werden lokal auf diesem Gerät gespeichert.
             </footer>
-
         </main>
-
     </div>
 
+    <!-- IMPORTDIALOG -->
     <div
         id="importDialog"
         class="dialog-backdrop"
         hidden
     >
-
         <section
             class="import-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="importDialogTitle"
         >
-
             <div class="dialog-header">
-
                 <div>
-                    <span class="eyebrow">
-                        DATENÜBERNAHME
-                    </span>
+                    <span class="eyebrow">DATENÜBERNAHME</span>
 
                     <h2 id="importDialogTitle">
                         Fahrten importieren
@@ -747,29 +916,16 @@
                 >
                     ×
                 </button>
-
             </div>
 
             <p class="dialog-description">
                 Unterstützt werden JSON-Backups und CSV-Fluglisten.
             </p>
 
-            <label
-                class="import-dropzone"
-                for="importInput"
-            >
-
-                <span class="import-icon">
-                    ⇧
-                </span>
-
-                <strong>
-                    Importdatei auswählen
-                </strong>
-
-                <small>
-                    JSON oder CSV
-                </small>
+            <label class="import-dropzone" for="importInput">
+                <span class="import-icon">⇧</span>
+                <strong>Importdatei auswählen</strong>
+                <small>JSON oder CSV</small>
 
                 <input
                     id="importInput"
@@ -777,7 +933,6 @@
                     accept=".json,.csv,application/json,text/csv"
                     hidden
                 >
-
             </label>
 
             <div
@@ -788,11 +943,9 @@
             </div>
 
             <fieldset class="import-mode">
-
                 <legend>Importmodus</legend>
 
                 <label>
-
                     <input
                         type="radio"
                         name="importMode"
@@ -801,19 +954,12 @@
                     >
 
                     <span>
-                        <strong>
-                            Zu vorhandenen Fahrten hinzufügen
-                        </strong>
-
-                        <small>
-                            Bereits vorhandene Fahrten bleiben erhalten.
-                        </small>
+                        <strong>Zu bestehenden Fahrten hinzufügen</strong>
+                        <small>Doppelte Einträge werden übersprungen.</small>
                     </span>
-
                 </label>
 
                 <label>
-
                     <input
                         type="radio"
                         name="importMode"
@@ -821,17 +967,10 @@
                     >
 
                     <span>
-                        <strong>
-                            Vorhandene Fahrten ersetzen
-                        </strong>
-
-                        <small>
-                            Das gesamte bestehende Flugbuch wird ersetzt.
-                        </small>
+                        <strong>Vorhandene Fahrten ersetzen</strong>
+                        <small>Das bestehende Flugbuch wird ersetzt.</small>
                     </span>
-
                 </label>
-
             </fieldset>
 
             <div
@@ -847,7 +986,6 @@
             ></div>
 
             <div class="dialog-actions">
-
                 <button
                     id="cancelImportButton"
                     class="secondary-button"
@@ -864,11 +1002,8 @@
                 >
                     Fahrten importieren
                 </button>
-
             </div>
-
         </section>
-
     </div>
 
     <script
@@ -878,11 +1013,6 @@
 
     https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.jsscript>
 
-    <script src="map.js"></script>
-    <script src="weather.js"></script>
-    <script src="monitor.js"></script>
     <script src="app.js"></script>
-
 </body>
-
 </html>
