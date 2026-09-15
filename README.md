@@ -1,14 +1,8 @@
 # 🎈 Ballonflugbuch Professional V10
 
-<br>
-
 Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 
-<br>
-
 ## Ansichten
-
-<br>
 
 - Übersicht
 - Fahrt erfassen
@@ -18,11 +12,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 - Wetter
 - Einstellungen
 
-<br>
-
 ## Funktionen
-
-<br>
 
 - GPS-basierter Start- und Landeort
 - Automatische Aufzeichnung der Flugroute
@@ -50,44 +40,22 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 - Duplikatprüfung beim Import
 - Responsive Ansicht für Desktop, Tablet und Smartphone
 
-<br>
-
 ## Dateien
 
-<br>
-
 Diese Dateien liegen im Hauptverzeichnis:
-
-<br>
 
 - `index.html`
 - `style.css`
 - `app.js`
 - `README.md`
 
-<br>
-
 Der GitHub-Workflow liegt unter:
-
-<br>
 
 - `.github/workflows/validate.yml`
 
-<br>
-
-Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind in `app.js`
-integriert. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js`
-werden nicht benötigt.
-
-<br>
+Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind vollständig in `app.js` integriert. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js` werden nicht benötigt.
 
 ## Externe Bibliotheken und Dienste
-
-<br>
-
-Die Anwendung verwendet folgende externe Bibliotheken und Dienste:
-
-<br>
 
 - Leaflet für die Kartendarstellung
 - Chart.js für Diagramme und Statistiken
@@ -97,39 +65,19 @@ Die Anwendung verwendet folgende externe Bibliotheken und Dienste:
 - Open-Meteo für Wetterdaten
 - Austro Control als externer Verweis zur offiziellen VFR/ICAO-Karte
 
-<br>
-
-Für Kartendarstellung, Wetterdaten und Ortsabfragen wird eine aktive
-Internetverbindung benötigt.
-
-<br>
+Für Kartendarstellung, Wetterdaten und Ortsabfragen wird eine aktive Internetverbindung benötigt.
 
 ## Wichtige Voraussetzungen
 
-<br>
-
 Die Anwendung muss über HTTPS oder über `localhost` geöffnet werden.
 
-<br>
+Beim ersten Start muss die Standortberechtigung im Browser erteilt werden.
 
-Beim ersten Start muss die Standortberechtigung im Browser erteilt
-werden.
+Die GPS-Funktionen stehen normalerweise nicht zur Verfügung, wenn die Datei direkt über eine lokale Adresse wie `file:///` geöffnet wird.
 
-<br>
-
-Die GPS-Funktionen stehen normalerweise nicht zur Verfügung, wenn die
-Datei direkt über eine lokale Adresse wie `file:///` geöffnet wird.
-
-<br>
-
-GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung
-geeignet.
-
-<br>
+GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
 
 ## Installation
-
-<br>
 
 1. Alle Projektdateien in das Hauptverzeichnis des Repositorys kopieren.
 
@@ -140,4 +88,3 @@ index.html
 style.css
 app.js
 README.md
-```
