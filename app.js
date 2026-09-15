@@ -1,5 +1,11 @@
 "use strict";
 
+/* =========================================================
+   BALLONFLUGBUCH PROFESSIONAL V10
+   Teil 1 von 2
+   Teil 2 direkt unter diesem Teil einfügen.
+   ========================================================= */
+
 const FLIGHT_STORAGE_KEY = "fluege";
 const MASTER_DATA_KEY = "stammdaten";
 const MONITOR_STORAGE_KEY = "monitorEinstellungen";
@@ -17,6 +23,7 @@ window.fluege = ladeFluege();
 
 let aktuellerFlug = null;
 let trackpunkte = [];
+
 let flightWatchId = null;
 let locationWatchId = null;
 let flugWirdBeendet = false;
@@ -42,7 +49,13 @@ let trackingRouteLine = null;
 
 let hoehenChart = null;
 let monatsChart = null;
+
 let vorbereiteteImportFluege = [];
+let appWurdeInitialisiert = false;
+
+/* =========================================================
+   ALLGEMEINE HILFSFUNKTIONEN
+   ========================================================= */
 
 function element(id) {
     return document.getElementById(id);
@@ -53,16 +66,27 @@ function textBereinigen(value) {
 }
 
 function htmlSicher(value) {
-    const div = document.createElement("div");
-    div.textContent = String(value ?? "");
-    return div.innerHTML;
+    const container = document.createElement("div");
+    container.textContent = String(value ?? "");
+    return container.innerHTML;
+}
+
+function textSetzen(id, value) {
+    const target = element(id);
+
+    if (target) {
+        target.textContent = String(value ?? "");
+    }
 }
 
 function formatZahl(value, decimalPlaces = 0) {
     const number = Number(value);
 
     if (!Number.isFinite(number)) {
-        return "0";
+        return Number(0).toLocaleString("de-AT", {
+            minimumFractionDigits: decimalPlaces,
+            maximumFractionDigits: decimalPlaces
+        });
     }
 
     return number.toLocaleString("de-AT", {
@@ -80,10 +104,7 @@ function formatFlugzeit(minutes) {
     const hours = Math.floor(total / 60);
     const remainingMinutes = total % 60;
 
-    return (
-        `${hours}h ` +
-        `${String(remainingMinutes).padStart(2, "0")}m`
-    );
+    return `${hours}h ${String(remainingMinutes).padStart(2, "0")}m`;
 }
 
 function formatDatum(value) {
@@ -119,20 +140,41 @@ function mapPointValid(point) {
         return false;
     }
 
-    const lat = Number(point.lat);
-    const lng = Number(point.lng);
+    const latitude = Number(point.lat);
+    const longitude = Number(point.lng);
 
     return (
-        Number.isFinite(lat) &&
-        Number.isFinite(lng) &&
-        lat >= -90 &&
-        lat <= 90 &&
-        lng >= -180 &&
-        lng <= 180
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude) &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180
+    );
+}
+
+function sichereId() {
+    if (
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+    ) {
+        return crypto.randomUUID();
+    }
+
+    return (
+        `flug-${Date.now()}-` +
+        Math.random().toString(16).slice(2)
     );
 }
 
 function entfernung(pointA, pointB) {
+    if (
+        !mapPointValid(pointA) ||
+        !mapPointValid(pointB)
+    ) {
+        return 0;
+    }
+
     const earthRadius = 6371;
     const radians = Math.PI / 180;
 
@@ -144,8 +186,11 @@ function entfernung(pointA, pointB) {
         (Number(pointB.lng) - Number(pointA.lng)) *
         radians;
 
-    const latitudeA = Number(pointA.lat) * radians;
-    const latitudeB = Number(pointB.lat) * radians;
+    const latitudeA =
+        Number(pointA.lat) * radians;
+
+    const latitudeB =
+        Number(pointB.lat) * radians;
 
     const value =
         Math.sin(latDifference / 2) ** 2 +
@@ -164,19 +209,24 @@ function entfernung(pointA, pointB) {
     );
 }
 
-function sichereId() {
-    if (
-        typeof crypto !== "undefined" &&
-        typeof crypto.randomUUID === "function"
-    ) {
-        return crypto.randomUUID();
-    }
+function eventListenerHinzufuegen(
+    id,
+    eventName,
+    handler
+) {
+    const target = element(id);
 
-    return (
-        `flug-${Date.now()}-` +
-        Math.random().toString(16).slice(2)
-    );
+    if (target) {
+        target.addEventListener(
+            eventName,
+            handler
+        );
+    }
 }
+
+/* =========================================================
+   LOKALE SPEICHERUNG
+   ========================================================= */
 
 function ladeFluege() {
     try {
@@ -194,7 +244,7 @@ function ladeFluege() {
             : [];
     } catch (error) {
         console.error(
-            "Flüge konnten nicht geladen werden:",
+            "Fahrten konnten nicht geladen werden:",
             error
         );
 
@@ -212,7 +262,7 @@ function fluegeSpeichern() {
         return true;
     } catch (error) {
         console.error(
-            "Flüge konnten nicht gespeichert werden:",
+            "Fahrten konnten nicht gespeichert werden:",
             error
         );
 
@@ -226,11 +276,28 @@ function fluegeSpeichern() {
 
 function stammdatenLaden() {
     try {
-        return JSON.parse(
-            localStorage.getItem(MASTER_DATA_KEY) ||
-            "{}"
+        const saved =
+            localStorage.getItem(MASTER_DATA_KEY);
+
+        if (!saved) {
+            return {};
+        }
+
+        const data = JSON.parse(saved);
+
+        return (
+            data &&
+            typeof data === "object" &&
+            !Array.isArray(data)
+        )
+            ? data
+            : {};
+    } catch (error) {
+        console.error(
+            "Stammdaten konnten nicht geladen werden:",
+            error
         );
-    } catch {
+
         return {};
     }
 }
@@ -260,24 +327,32 @@ function stammdatenSpeichern() {
         );
 
         if (element("ballon")) {
-            element("ballon").value = data.ballon;
+            element("ballon").value =
+                data.ballon;
         }
 
         kopfbereichAktualisieren();
 
-        if (element("masterDataMessage")) {
-            element("masterDataMessage").textContent =
-                "✓ Stammdaten wurden gespeichert.";
-        }
+        textSetzen(
+            "masterDataMessage",
+            "✓ Stammdaten wurden gespeichert."
+        );
     } catch (error) {
-        console.error(error);
+        console.error(
+            "Stammdaten konnten nicht gespeichert werden:",
+            error
+        );
 
-        if (element("masterDataMessage")) {
-            element("masterDataMessage").textContent =
-                "❌ Stammdaten konnten nicht gespeichert werden.";
-        }
+        textSetzen(
+            "masterDataMessage",
+            "❌ Stammdaten konnten nicht gespeichert werden."
+        );
     }
 }
+
+/* =========================================================
+   SEITENNAVIGATION
+   ========================================================= */
 
 const seiten = {
     dashboard: {
@@ -301,7 +376,7 @@ const seiten = {
     karte: {
         title: "Karte und Standort",
         description:
-            "Flugrouten, Live-Position und offizielle VFR-Karte."
+            "Flugrouten und aktuelle GPS-Position anzeigen."
     },
 
     statistiken: {
@@ -334,7 +409,10 @@ function seiteAnzeigen(pageName) {
                 page.dataset.page === pageName;
 
             page.hidden = !active;
-            page.classList.toggle("active", active);
+            page.classList.toggle(
+                "active",
+                active
+            );
         });
 
     document.querySelectorAll("[data-page-link]")
@@ -345,17 +423,20 @@ function seiteAnzeigen(pageName) {
             );
         });
 
-    if (element("pageTitle")) {
-        element("pageTitle").textContent =
-            seiten[pageName].title;
-    }
+    textSetzen(
+        "pageTitle",
+        seiten[pageName].title
+    );
 
-    if (element("pageDescription")) {
-        element("pageDescription").textContent =
-            seiten[pageName].description;
-    }
+    textSetzen(
+        "pageDescription",
+        seiten[pageName].description
+    );
 
-    if (window.location.hash !== `#${pageName}`) {
+    if (
+        window.location.hash !==
+        `#${pageName}`
+    ) {
         window.history.replaceState(
             null,
             "",
@@ -367,7 +448,10 @@ function seiteAnzeigen(pageName) {
         ?.classList.remove("sidebar-open");
 
     element("menuButton")
-        ?.setAttribute("aria-expanded", "false");
+        ?.setAttribute(
+            "aria-expanded",
+            "false"
+        );
 
     window.scrollTo({
         top: 0,
@@ -378,9 +462,7 @@ function seiteAnzeigen(pageName) {
         window.setTimeout(function () {
             hauptkarteInitialisieren();
 
-            if (hauptkarte) {
-                hauptkarte.invalidateSize();
-            }
+            hauptkarte?.invalidateSize();
 
             alleFluegeAufKarte();
         }, 150);
@@ -390,9 +472,9 @@ function seiteAnzeigen(pageName) {
         window.setTimeout(function () {
             trackingKarteInitialisieren();
 
-            if (trackingKarte) {
-                trackingKarte.invalidateSize();
-            }
+            trackingKarte?.invalidateSize();
+
+            zeichneTrackingTrack(trackpunkte);
         }, 150);
     }
 
@@ -408,7 +490,15 @@ function seiteAnzeigen(pageName) {
     }
 }
 
+/* =========================================================
+   KARTEN
+   ========================================================= */
+
 function kartenEbenen() {
+    if (typeof L === "undefined") {
+        return null;
+    }
+
     const standard = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -423,7 +513,8 @@ function kartenEbenen() {
         "World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
             maxZoom: 19,
-            attribution: "Tiles &copy; Esri"
+            attribution:
+                "Tiles &copy; Esri"
         }
     );
 
@@ -443,6 +534,10 @@ function hauptkarteInitialisieren() {
     }
 
     const layers = kartenEbenen();
+
+    if (!layers) {
+        return;
+    }
 
     hauptkarte = L.map("map", {
         center: DEFAULT_CENTER,
@@ -478,15 +573,25 @@ function trackingKarteInitialisieren() {
 
     const layers = kartenEbenen();
 
-    trackingKarte = L.map("trackingMap", {
-        center: DEFAULT_CENTER,
-        zoom: DEFAULT_ZOOM,
-        layers: [layers.satellite]
-    });
+    if (!layers) {
+        return;
+    }
+
+    trackingKarte = L.map(
+        "trackingMap",
+        {
+            center: DEFAULT_CENTER,
+            zoom: DEFAULT_ZOOM,
+            layers: [layers.satellite]
+        }
+    );
 
     L.control.layers({
-        "🛰 Satellitenkarte": layers.satellite,
-        "🗺 Standardkarte": layers.standard
+        "🛰 Satellitenkarte":
+            layers.satellite,
+
+        "🗺 Standardkarte":
+            layers.standard
     }).addTo(trackingKarte);
 
     L.control.scale({
@@ -522,18 +627,21 @@ function standortAufKartenZeichnen(position) {
 
     if (hauptkarte) {
         if (!mainLocationMarker) {
-            mainLocationMarker = L.circleMarker(
-                coordinates,
-                {
-                    radius: 9,
-                    color: "#ffffff",
-                    weight: 3,
-                    fillColor: "#16a2ff",
-                    fillOpacity: 1
-                }
-            )
-                .addTo(hauptkarte)
-                .bindPopup("Aktueller GPS-Standort");
+            mainLocationMarker =
+                L.circleMarker(
+                    coordinates,
+                    {
+                        radius: 9,
+                        color: "#ffffff",
+                        weight: 3,
+                        fillColor: "#16a2ff",
+                        fillOpacity: 1
+                    }
+                )
+                    .addTo(hauptkarte)
+                    .bindPopup(
+                        "Aktueller GPS-Standort"
+                    );
         } else {
             mainLocationMarker.setLatLng(
                 coordinates
@@ -542,16 +650,17 @@ function standortAufKartenZeichnen(position) {
 
         if (Number.isFinite(accuracy)) {
             if (!mainAccuracyCircle) {
-                mainAccuracyCircle = L.circle(
-                    coordinates,
-                    {
-                        radius: accuracy,
-                        color: "#16a2ff",
-                        weight: 1,
-                        fillColor: "#16a2ff",
-                        fillOpacity: 0.1
-                    }
-                ).addTo(hauptkarte);
+                mainAccuracyCircle =
+                    L.circle(
+                        coordinates,
+                        {
+                            radius: accuracy,
+                            color: "#16a2ff",
+                            weight: 1,
+                            fillColor: "#16a2ff",
+                            fillOpacity: 0.1
+                        }
+                    ).addTo(hauptkarte);
             } else {
                 mainAccuracyCircle
                     .setLatLng(coordinates)
@@ -562,18 +671,21 @@ function standortAufKartenZeichnen(position) {
 
     if (trackingKarte) {
         if (!trackingLocationMarker) {
-            trackingLocationMarker = L.circleMarker(
-                coordinates,
-                {
-                    radius: 8,
-                    color: "#ffffff",
-                    weight: 3,
-                    fillColor: "#16a2ff",
-                    fillOpacity: 1
-                }
-            )
-                .addTo(trackingKarte)
-                .bindPopup("Aktueller GPS-Standort");
+            trackingLocationMarker =
+                L.circleMarker(
+                    coordinates,
+                    {
+                        radius: 8,
+                        color: "#ffffff",
+                        weight: 3,
+                        fillColor: "#16a2ff",
+                        fillOpacity: 1
+                    }
+                )
+                    .addTo(trackingKarte)
+                    .bindPopup(
+                        "Aktueller GPS-Standort"
+                    );
         } else {
             trackingLocationMarker.setLatLng(
                 coordinates
@@ -582,16 +694,17 @@ function standortAufKartenZeichnen(position) {
 
         if (Number.isFinite(accuracy)) {
             if (!trackingAccuracyCircle) {
-                trackingAccuracyCircle = L.circle(
-                    coordinates,
-                    {
-                        radius: accuracy,
-                        color: "#16a2ff",
-                        weight: 1,
-                        fillColor: "#16a2ff",
-                        fillOpacity: 0.1
-                    }
-                ).addTo(trackingKarte);
+                trackingAccuracyCircle =
+                    L.circle(
+                        coordinates,
+                        {
+                            radius: accuracy,
+                            color: "#16a2ff",
+                            weight: 1,
+                            fillColor: "#16a2ff",
+                            fillOpacity: 0.1
+                        }
+                    ).addTo(trackingKarte);
             } else {
                 trackingAccuracyCircle
                     .setLatLng(coordinates)
@@ -624,18 +737,19 @@ function setTrackingStartMarker(lat, lng) {
         );
     }
 
-    trackingStartMarker = L.circleMarker(
-        [latitude, longitude],
-        {
-            radius: 8,
-            color: "#ffffff",
-            weight: 2,
-            fillColor: "#43dd6b",
-            fillOpacity: 1
-        }
-    )
-        .addTo(trackingKarte)
-        .bindPopup("🎈 Startpunkt");
+    trackingStartMarker =
+        L.circleMarker(
+            [latitude, longitude],
+            {
+                radius: 8,
+                color: "#ffffff",
+                weight: 2,
+                fillColor: "#43dd6b",
+                fillOpacity: 1
+            }
+        )
+            .addTo(trackingKarte)
+            .bindPopup("🎈 Startpunkt");
 
     trackingKarte.setView(
         [latitude, longitude],
@@ -666,18 +780,19 @@ function setTrackingLandingMarker(lat, lng) {
         );
     }
 
-    trackingLandingMarker = L.circleMarker(
-        [latitude, longitude],
-        {
-            radius: 8,
-            color: "#ffffff",
-            weight: 2,
-            fillColor: "#ff625b",
-            fillOpacity: 1
-        }
-    )
-        .addTo(trackingKarte)
-        .bindPopup("🏁 Landepunkt");
+    trackingLandingMarker =
+        L.circleMarker(
+            [latitude, longitude],
+            {
+                radius: 8,
+                color: "#ffffff",
+                weight: 2,
+                fillColor: "#ff625b",
+                fillOpacity: 1
+            }
+        )
+            .addTo(trackingKarte)
+            .bindPopup("🏁 Landepunkt");
 }
 
 function zeichneTrackingTrack(track) {
@@ -688,7 +803,9 @@ function zeichneTrackingTrack(track) {
     }
 
     const route = (
-        Array.isArray(track) ? track : []
+        Array.isArray(track)
+            ? track
+            : []
     )
         .filter(mapPointValid)
         .map(function (point) {
@@ -767,82 +884,115 @@ function trackingKarteZuruecksetzen() {
     }
 }
 
+function routeAusFlug(flight) {
+    if (!Array.isArray(flight?.track)) {
+        return [];
+    }
+
+    return flight.track
+        .filter(mapPointValid)
+        .map(function (point) {
+            return [
+                Number(point.lat),
+                Number(point.lng)
+            ];
+        });
+}
+
 function alleFluegeAufKarte() {
     hauptkarteInitialisieren();
 
-    if (!hauptkarte || !allFlightsLayer) {
+    if (
+        !hauptkarte ||
+        !allFlightsLayer
+    ) {
         return;
     }
 
     allFlightsLayer.clearLayers();
 
+    selectedFlightLayer?.clearLayers();
+
     const allCoordinates = [];
 
-    window.fluege.forEach(function (flight) {
-        const route =
-            Array.isArray(flight.track)
-                ? flight.track
-                    .filter(mapPointValid)
-                    .map(function (point) {
-                        return [
-                            Number(point.lat),
-                            Number(point.lng)
-                        ];
-                    })
-                : [];
+    window.fluege.forEach(
+        function (flight) {
+            const route =
+                routeAusFlug(flight);
 
-        if (route.length === 0) {
-            return;
-        }
-
-        if (route.length >= 2) {
-            L.polyline(
-                route,
-                {
-                    color: "#149eff",
-                    weight: 3,
-                    opacity: 0.68
-                }
-            ).addTo(allFlightsLayer);
-        }
-
-        L.circleMarker(
-            route[0],
-            {
-                radius: 5,
-                color: "#ffffff",
-                weight: 1,
-                fillColor: "#43dd6b",
-                fillOpacity: 1
+            if (route.length === 0) {
+                return;
             }
-        ).addTo(allFlightsLayer);
 
-        if (route.length > 1) {
+            if (route.length >= 2) {
+                L.polyline(
+                    route,
+                    {
+                        color: "#149eff",
+                        weight: 3,
+                        opacity: 0.68
+                    }
+                ).addTo(allFlightsLayer);
+            }
+
             L.circleMarker(
-                route[route.length - 1],
+                route[0],
                 {
                     radius: 5,
                     color: "#ffffff",
                     weight: 1,
-                    fillColor: "#ff625b",
+                    fillColor: "#43dd6b",
                     fillOpacity: 1
                 }
-            ).addTo(allFlightsLayer);
+            )
+                .addTo(allFlightsLayer)
+                .bindPopup(
+                    "🎈 Start: " +
+                    htmlSicher(
+                        flight.startOrt ||
+                        "Unbekannt"
+                    )
+                );
+
+            if (route.length > 1) {
+                L.circleMarker(
+                    route[route.length - 1],
+                    {
+                        radius: 5,
+                        color: "#ffffff",
+                        weight: 1,
+                        fillColor: "#ff625b",
+                        fillOpacity: 1
+                    }
+                )
+                    .addTo(allFlightsLayer)
+                    .bindPopup(
+                        "🏁 Landung: " +
+                        htmlSicher(
+                            flight.landeOrt ||
+                            "Unbekannt"
+                        )
+                    );
+            }
+
+            allCoordinates.push(...route);
         }
+    );
 
-        allCoordinates.push(...route);
-    });
-
-    if (
-        allCoordinates.length > 0 &&
-        !letzterStandort
-    ) {
+    if (allCoordinates.length > 0) {
         hauptkarte.fitBounds(
             allCoordinates,
             {
                 padding: [20, 20],
                 maxZoom: 11
             }
+        );
+    } else if (letzterStandort) {
+        standortZentrieren(hauptkarte);
+    } else {
+        hauptkarte.setView(
+            DEFAULT_CENTER,
+            DEFAULT_ZOOM
         );
     }
 }
@@ -859,22 +1009,13 @@ function flugAufKarte(flight) {
     }
 
     const route =
-        Array.isArray(flight.track)
-            ? flight.track
-                .filter(mapPointValid)
-                .map(function (point) {
-                    return [
-                        Number(point.lat),
-                        Number(point.lng)
-                    ];
-                })
-            : [];
+        routeAusFlug(flight);
+
+    selectedFlightLayer.clearLayers();
 
     if (route.length === 0) {
         return;
     }
-
-    selectedFlightLayer.clearLayers();
 
     L.circleMarker(
         route[0],
@@ -890,7 +1031,8 @@ function flugAufKarte(flight) {
         .bindPopup(
             "🎈 Start: " +
             htmlSicher(
-                flight.startOrt || "Unbekannt"
+                flight.startOrt ||
+                "Unbekannt"
             )
         );
 
@@ -918,12 +1060,14 @@ function flugAufKarte(flight) {
             .bindPopup(
                 "🏁 Landung: " +
                 htmlSicher(
-                    flight.landeOrt || "Unbekannt"
+                    flight.landeOrt ||
+                    "Unbekannt"
                 )
             );
     }
 
-    const bounds = L.latLngBounds(route);
+    const bounds =
+        L.latLngBounds(route);
 
     if (bounds.isValid()) {
         hauptkarte.fitBounds(
@@ -935,6 +1079,10 @@ function flugAufKarte(flight) {
         );
     }
 }
+
+/* =========================================================
+   STANDORT UND GPS
+   ========================================================= */
 
 function standortAnzeigeAktualisieren(position) {
     const latitude =
@@ -952,79 +1100,85 @@ function standortAnzeigeAktualisieren(position) {
     const speed =
         position.coords.speed;
 
-    if (element("currentLatitude")) {
-        element("currentLatitude").textContent =
-            formatKoordinate(latitude);
-    }
+    const altitudeAvailable =
+        altitude !== null &&
+        altitude !== undefined &&
+        Number.isFinite(Number(altitude));
 
-    if (element("currentLongitude")) {
-        element("currentLongitude").textContent =
-            formatKoordinate(longitude);
-    }
+    const speedAvailable =
+        speed !== null &&
+        speed !== undefined &&
+        Number.isFinite(Number(speed));
 
-    if (element("currentAltitude")) {
-        element("currentAltitude").textContent =
-            altitude !== null &&
-            altitude !== undefined &&
-            Number.isFinite(Number(altitude))
-                ? `${Math.round(Number(altitude))} m`
-                : "Nicht verfügbar";
-    }
+    textSetzen(
+        "currentLatitude",
+        formatKoordinate(latitude)
+    );
 
-    if (element("currentAccuracy")) {
-        element("currentAccuracy").textContent =
-            Number.isFinite(accuracy)
-                ? `± ${Math.round(accuracy)} m`
-                : "--";
-    }
+    textSetzen(
+        "currentLongitude",
+        formatKoordinate(longitude)
+    );
 
-    if (element("currentSpeed")) {
-        element("currentSpeed").textContent =
-            speed !== null &&
-            speed !== undefined &&
-            Number.isFinite(Number(speed))
-                ? `${(
-                    Math.max(0, Number(speed)) *
-                    3.6
-                ).toFixed(1)} km/h`
-                : "Nicht verfügbar";
-    }
+    textSetzen(
+        "currentAltitude",
+        altitudeAvailable
+            ? `${Math.round(Number(altitude))} m`
+            : "Nicht verfügbar"
+    );
 
-    if (element("currentLocationTime")) {
-        element("currentLocationTime").textContent =
-            new Date(
-                position.timestamp || Date.now()
-            ).toLocaleTimeString(
-                "de-AT",
-                {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit"
-                }
-            );
-    }
+    textSetzen(
+        "currentAccuracy",
+        Number.isFinite(accuracy)
+            ? `± ${Math.round(accuracy)} m`
+            : "--"
+    );
 
-    if (element("locationStatus")) {
-        element("locationStatus").textContent =
-            "GPS-Position aktiv";
-    }
+    textSetzen(
+        "currentSpeed",
+        speedAvailable
+            ? `${(
+                Math.max(0, Number(speed)) *
+                3.6
+            ).toFixed(1)} km/h`
+            : "Nicht verfügbar"
+    );
 
-    if (element("trackingCoordinates")) {
-        element("trackingCoordinates").textContent =
-            `${formatKoordinate(latitude)}, ` +
-            `${formatKoordinate(longitude)}`;
-    }
+    textSetzen(
+        "currentLocationTime",
+        new Date(
+            position.timestamp ||
+            Date.now()
+        ).toLocaleTimeString(
+            "de-AT",
+            {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            }
+        )
+    );
 
-    if (element("trackingAltitude")) {
-        element("trackingAltitude").textContent =
-            altitude !== null &&
-            altitude !== undefined &&
-            Number.isFinite(Number(altitude))
-                ? `GPS-Höhe: ${Math.round(
-                    Number(altitude)
-                )} m`
-                : "GPS-Höhe: nicht verfügbar";
-    }
+    textSetzen(
+        "locationStatus",
+        "GPS-Position aktiv"
+    );
+
+    textSetzen(
+        "trackingCoordinates",
+        `${formatKoordinate(latitude)}, ` +
+        `${formatKoordinate(longitude)}`
+    );
+
+    textSetzen(
+        "trackingAltitude",
+        altitudeAvailable
+            ? (
+                `GPS-Höhe: ` +
+                `${Math.round(Number(altitude))} m`
+            )
+            : "GPS-Höhe: nicht verfügbar"
+    );
 }
 
 function standortErfolgreich(position) {
@@ -1035,27 +1189,30 @@ function standortErfolgreich(position) {
 }
 
 function standortFehler(error) {
-    let text = "GPS-Position nicht verfügbar";
+    let message =
+        "GPS-Position nicht verfügbar";
 
     if (error?.code === 1) {
-        text =
+        message =
             "Standortberechtigung nicht erteilt";
     } else if (error?.code === 2) {
-        text =
+        message =
             "Standort derzeit nicht verfügbar";
     } else if (error?.code === 3) {
-        text =
+        message =
             "Standortabfrage hat zu lange gedauert";
     }
 
-    if (element("locationStatus")) {
-        element("locationStatus").textContent =
-            text;
-    }
+    textSetzen(
+        "locationStatus",
+        message
+    );
 
-    if (element("trackingCoordinates")) {
-        element("trackingCoordinates").textContent =
-            text;
+    if (!letzterStandort) {
+        textSetzen(
+            "trackingCoordinates",
+            message
+        );
     }
 }
 
@@ -1082,12 +1239,10 @@ function standortUeberwachungStarten() {
 
     standortUeberwachungAktiv = true;
 
-    if (element("toggleLocationTrackingButton")) {
-        element(
-            "toggleLocationTrackingButton"
-        ).textContent =
-            "Standortüberwachung stoppen";
-    }
+    textSetzen(
+        "toggleLocationTrackingButton",
+        "Standortüberwachung stoppen"
+    );
 }
 
 function standortUeberwachungStoppen() {
@@ -1104,17 +1259,15 @@ function standortUeberwachungStoppen() {
 
     standortUeberwachungAktiv = false;
 
-    if (element("locationStatus")) {
-        element("locationStatus").textContent =
-            "Standortüberwachung angehalten";
-    }
+    textSetzen(
+        "locationStatus",
+        "Standortüberwachung angehalten"
+    );
 
-    if (element("toggleLocationTrackingButton")) {
-        element(
-            "toggleLocationTrackingButton"
-        ).textContent =
-            "Standortüberwachung starten";
-    }
+    textSetzen(
+        "toggleLocationTrackingButton",
+        "Standortüberwachung starten"
+    );
 }
 
 function standortUeberwachungUmschalten() {
@@ -1126,19 +1279,29 @@ function standortUeberwachungUmschalten() {
 }
 
 function standortZentrieren(map) {
-    if (!letzterStandort) {
-        standortUeberwachungStarten();
+    if (!map) {
         return;
     }
 
-    if (!map) {
+    if (!letzterStandort) {
+        standortUeberwachungStarten();
+
+        textSetzen(
+            "locationStatus",
+            "GPS-Position wird ermittelt ..."
+        );
+
         return;
     }
 
     map.setView(
         [
-            letzterStandort.coords.latitude,
-            letzterStandort.coords.longitude
+            Number(
+                letzterStandort.coords.latitude
+            ),
+            Number(
+                letzterStandort.coords.longitude
+            )
         ],
         14,
         {
@@ -1149,15 +1312,15 @@ function standortZentrieren(map) {
 
 async function standortKopieren() {
     if (!letzterStandort) {
-        if (element("copyLocationMessage")) {
-            element("copyLocationMessage").textContent =
-                "Noch keine GPS-Position verfügbar.";
-        }
+        textSetzen(
+            "copyLocationMessage",
+            "Noch keine GPS-Position verfügbar."
+        );
 
         return;
     }
 
-    const text =
+    const coordinateText =
         `${formatKoordinate(
             letzterStandort.coords.latitude
         )}, ` +
@@ -1166,25 +1329,41 @@ async function standortKopieren() {
         )}`;
 
     try {
-        await navigator.clipboard.writeText(text);
+        if (
+            navigator.clipboard &&
+            window.isSecureContext
+        ) {
+            await navigator.clipboard.writeText(
+                coordinateText
+            );
 
-        element("copyLocationMessage").textContent =
-            "✓ Koordinaten wurden kopiert.";
+            textSetzen(
+                "copyLocationMessage",
+                "✓ Koordinaten wurden kopiert."
+            );
+        } else {
+            throw new Error(
+                "Zwischenablage nicht verfügbar"
+            );
+        }
     } catch {
-        element("copyLocationMessage").textContent =
-            text;
+        textSetzen(
+            "copyLocationMessage",
+            `Koordinaten: ${coordinateText}`
+        );
     }
 }
 
 async function ortName(lat, lng) {
     try {
-        const parameters = new URLSearchParams({
-            format: "jsonv2",
-            lat: String(lat),
-            lon: String(lng),
-            zoom: "10",
-            addressdetails: "1"
-        });
+        const parameters =
+            new URLSearchParams({
+                format: "jsonv2",
+                lat: String(lat),
+                lon: String(lng),
+                zoom: "10",
+                addressdetails: "1"
+            });
 
         const response = await fetch(
             "https://nominatim.openstreetmap.org/reverse?" +
@@ -1212,6 +1391,7 @@ async function ortName(lat, lng) {
             address.village ||
             address.municipality ||
             address.county ||
+            data.display_name ||
             "Unbekannt"
         );
     } catch (error) {
@@ -1221,100 +1401,6 @@ async function ortName(lat, lng) {
         );
 
         return "Unbekannt";
-    }
-}
-
-function trackpunktHinzufuegen(position) {
-    const altitude =
-        position.coords.altitude;
-
-    const speed =
-        position.coords.speed;
-
-    const accuracy =
-        position.coords.accuracy;
-
-    const point = {
-        lat: Number(position.coords.latitude),
-        lng: Number(position.coords.longitude),
-
-        hoehe:
-            altitude !== null &&
-            altitude !== undefined &&
-            Number.isFinite(Number(altitude))
-                ? Number(altitude)
-                : null,
-
-        speed:
-            speed !== null &&
-            speed !== undefined &&
-            Number.isFinite(Number(speed))
-                ? Math.max(0, Number(speed))
-                : null,
-
-        genauigkeit:
-            accuracy !== null &&
-            accuracy !== undefined &&
-            Number.isFinite(Number(accuracy))
-                ? Number(accuracy)
-                : null,
-
-        zeit: new Date(
-            position.timestamp || Date.now()
-        ).toISOString()
-    };
-
-    if (!mapPointValid(point)) {
-        return;
-    }
-
-    const lastPoint =
-        trackpunkte[trackpunkte.length - 1];
-
-    if (
-        lastPoint &&
-        entfernung(lastPoint, point) < 0.003
-    ) {
-        return;
-    }
-
-    trackpunkte.push(point);
-
-    zeichneTrackingTrack(trackpunkte);
-    zeichneHoehenprofil(trackpunkte);
-}
-
-function statusSetzen(text, className = "") {
-    const status = element("status");
-
-    if (!status) {
-        return;
-    }
-
-    status.textContent = text;
-
-    status.className =
-        `status-message ${className}`.trim();
-}
-
-function buttonStatusSetzen(
-    startDisabled,
-    stopDisabled,
-    saveDisabled
-) {
-    if (element("startButton")) {
-        element("startButton").disabled =
-            startDisabled;
-    }
-
-    if (element("stopButton")) {
-        element("stopButton").disabled =
-            stopDisabled;
-    }
-
-    if (element("saveButton")) {
-        element("saveButton").disabled =
-            saveDisabled;
     }
 }
 
@@ -1346,6 +1432,118 @@ function geolocationFehlerText(error) {
     );
 }
 
+function trackpunktHinzufuegen(position) {
+    if (!position?.coords) {
+        return;
+    }
+
+    const altitude =
+        position.coords.altitude;
+
+    const speed =
+        position.coords.speed;
+
+    const accuracy =
+        position.coords.accuracy;
+
+    const point = {
+        lat:
+            Number(position.coords.latitude),
+
+        lng:
+            Number(position.coords.longitude),
+
+        hoehe:
+            altitude !== null &&
+            altitude !== undefined &&
+            Number.isFinite(Number(altitude))
+                ? Number(altitude)
+                : null,
+
+        speed:
+            speed !== null &&
+            speed !== undefined &&
+            Number.isFinite(Number(speed))
+                ? Math.max(0, Number(speed))
+                : null,
+
+        genauigkeit:
+            accuracy !== null &&
+            accuracy !== undefined &&
+            Number.isFinite(Number(accuracy))
+                ? Number(accuracy)
+                : null,
+
+        zeit:
+            new Date(
+                position.timestamp ||
+                Date.now()
+            ).toISOString()
+    };
+
+    if (!mapPointValid(point)) {
+        return;
+    }
+
+    const lastPoint =
+        trackpunkte[
+            trackpunkte.length - 1
+        ];
+
+    if (
+        lastPoint &&
+        entfernung(lastPoint, point) < 0.003
+    ) {
+        return;
+    }
+
+    trackpunkte.push(point);
+
+    zeichneTrackingTrack(trackpunkte);
+    zeichneHoehenprofil(trackpunkte);
+}
+
+/* =========================================================
+   FAHRT STARTEN, BEENDEN UND SPEICHERN
+   ========================================================= */
+
+function statusSetzen(
+    message,
+    className = ""
+) {
+    const status = element("status");
+
+    if (!status) {
+        return;
+    }
+
+    status.textContent = message;
+
+    status.className =
+        `status-message ${className}`.trim();
+}
+
+function buttonStatusSetzen(
+    startDisabled,
+    stopDisabled,
+    saveDisabled
+) {
+    if (element("startButton")) {
+        element("startButton").disabled =
+            startDisabled;
+    }
+
+    if (element("stopButton")) {
+        element("stopButton").disabled =
+            stopDisabled;
+    }
+
+    if (element("saveButton")) {
+        element("saveButton").disabled =
+            saveDisabled;
+    }
+}
+
 function flugStarten() {
     if (aktuellerFlug) {
         window.alert(
@@ -1364,7 +1562,9 @@ function flugStarten() {
     }
 
     const pilot =
-        textBereinigen(element("pilot")?.value);
+        textBereinigen(
+            element("pilot")?.value
+        );
 
     const ballon =
         textBereinigen(
@@ -1391,16 +1591,21 @@ function flugStarten() {
         "status-working"
     );
 
-    buttonStatusSetzen(true, true, true);
+    buttonStatusSetzen(
+        true,
+        true,
+        true
+    );
 
     navigator.geolocation.getCurrentPosition(
         async function (position) {
             const startDate = new Date();
 
-            const startPlace = await ortName(
-                position.coords.latitude,
-                position.coords.longitude
-            );
+            const startPlace =
+                await ortName(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
 
             aktuellerFlug = {
                 id: sichereId(),
@@ -1410,8 +1615,16 @@ function flugStarten() {
                 ballon,
                 ballontyp,
                 startOrt: startPlace,
-                startLat: position.coords.latitude,
-                startLng: position.coords.longitude
+
+                startLat:
+                    Number(
+                        position.coords.latitude
+                    ),
+
+                startLng:
+                    Number(
+                        position.coords.longitude
+                    )
             };
 
             trackpunkte = [];
@@ -1426,11 +1639,37 @@ function flugStarten() {
 
             trackpunktHinzufuegen(position);
 
+            if (flightWatchId !== null) {
+                navigator.geolocation.clearWatch(
+                    flightWatchId
+                );
+            }
+
             flightWatchId =
                 navigator.geolocation.watchPosition(
-                    trackpunktHinzufuegen,
+                    function (newPosition) {
+                        letzterStandort =
+                            newPosition;
 
-                    function () {
+                        standortAnzeigeAktualisieren(
+                            newPosition
+                        );
+
+                        standortAufKartenZeichnen(
+                            newPosition
+                        );
+
+                        trackpunktHinzufuegen(
+                            newPosition
+                        );
+                    },
+
+                    function (error) {
+                        console.warn(
+                            "GPS während der Fahrt:",
+                            error
+                        );
+
                         statusSetzen(
                             "⚠ Fahrt läuft. GPS ist vorübergehend gestört.",
                             "status-working"
@@ -1493,7 +1732,11 @@ function flugBeenden() {
         "status-working"
     );
 
-    buttonStatusSetzen(true, true, true);
+    buttonStatusSetzen(
+        true,
+        true,
+        true
+    );
 
     navigator.geolocation.getCurrentPosition(
         async function (position) {
@@ -1507,10 +1750,11 @@ function flugBeenden() {
 
             trackpunktHinzufuegen(position);
 
-            const landingPlace = await ortName(
-                position.coords.latitude,
-                position.coords.longitude
-            );
+            const landingPlace =
+                await ortName(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
 
             aktuellerFlug.endezeit =
                 new Date().toISOString();
@@ -1519,10 +1763,14 @@ function flugBeenden() {
                 landingPlace;
 
             aktuellerFlug.landeLat =
-                position.coords.latitude;
+                Number(
+                    position.coords.latitude
+                );
 
             aktuellerFlug.landeLng =
-                position.coords.longitude;
+                Number(
+                    position.coords.longitude
+                );
 
             setTrackingLandingMarker(
                 position.coords.latitude,
@@ -1574,10 +1822,26 @@ function flugSpeichern() {
     }
 
     const start =
-        new Date(aktuellerFlug.startzeit);
+        new Date(
+            aktuellerFlug.startzeit
+        );
 
     const end =
-        new Date(aktuellerFlug.endezeit);
+        new Date(
+            aktuellerFlug.endezeit
+        );
+
+    if (
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime())
+    ) {
+        statusSetzen(
+            "❌ Die Fahrtdauer konnte nicht berechnet werden.",
+            "status-error"
+        );
+
+        return;
+    }
 
     const flightMinutes = Math.max(
         1,
@@ -1604,13 +1868,13 @@ function flugSpeichern() {
 
     const heights = trackpunkte
         .map(function (point) {
-            return point.hoehe;
+            return Number(point.hoehe);
         })
         .filter(Number.isFinite);
 
     const speeds = trackpunkte
         .map(function (point) {
-            return point.speed;
+            return Number(point.speed);
         })
         .filter(Number.isFinite);
 
@@ -1621,16 +1885,24 @@ function flugSpeichern() {
         Number(distance.toFixed(1));
 
     aktuellerFlug.track =
-        [...trackpunkte];
+        trackpunkte.map(
+            function (point) {
+                return { ...point };
+            }
+        );
 
     aktuellerFlug.maxHoehe =
         heights.length
-            ? Math.round(Math.max(...heights))
+            ? Math.round(
+                Math.max(...heights)
+            )
             : 0;
 
     aktuellerFlug.minHoehe =
         heights.length
-            ? Math.round(Math.min(...heights))
+            ? Math.round(
+                Math.min(...heights)
+            )
             : 0;
 
     aktuellerFlug.avgHoehe =
@@ -1679,7 +1951,9 @@ function flugSpeichern() {
             element("bemerkung")?.value
         );
 
-    window.fluege.push(aktuellerFlug);
+    window.fluege.push(
+        aktuellerFlug
+    );
 
     if (!fluegeSpeichern()) {
         window.fluege.pop();
@@ -1690,8 +1964,13 @@ function flugSpeichern() {
     trackpunkte = [];
     flugWirdBeendet = false;
 
-    element("landungen").value = "1";
-    element("bemerkung").value = "";
+    if (element("landungen")) {
+        element("landungen").value = "1";
+    }
+
+    if (element("bemerkung")) {
+        element("bemerkung").value = "";
+    }
 
     statusSetzen(
         "✓ Fahrt erfolgreich gespeichert.",
@@ -1708,167 +1987,182 @@ function flugSpeichern() {
     anzeigeAktualisieren();
     seiteAnzeigen("flugbuch");
 }
-function chartOptionen() {
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
+/* =========================================================
+   BALLONFLUGBUCH PROFESSIONAL V10
+   Teil 2 von 2
+   Direkt unter Teil 1 einfügen.
+   ========================================================= */
 
-        plugins: {
+/* =========================================================
+   DIAGRAMME
+   ========================================================= */
+
+function chartOptionen() {
+    *eturn {
+        responsive: true,
+*       maintainAspectRatio: false,*
+        interaction: {
+          * intersect: false,
+            mod*: "index"
+        },
+
+        plug*ns: {
             legend: {
-                labels: {
-                    color: "#b6c5d4"
-                }
+      *         labels: {
+               *    color: "#b6c5d4"
+             *  }
             }
         },
 
-        scales: {
+    *   scales: {
             x: {
-                ticks: {
-                    color: "#91a7ba"
-                },
+    *           ticks: {
+              *     color: "#91a7ba"
+            *   },
 
                 grid: {
-                    color: "#203548"
-                }
+   *                color: "#203548"
+ *              }
             },
 
-            y: {
-                beginAtZero: true,
+  *         y: {
+                begi*AtZero: true,
 
-                ticks: {
-                    color: "#91a7ba"
+                tic*s: {
+                    color: "#*1a7ba"
                 },
 
-                grid: {
-                    color: "#203548"
-                }
+       *        grid: {
+                  * color: "#203548"
+                *
             }
         }
     };
 }
-
-function zeichneHoehenprofil(track) {
+*function zeichneHoehenprofil(track* {
     if (
-        typeof Chart === "undefined" ||
-        !element("heightChart")
+        typeof Chart =*= "undefined" ||
+        !element(*heightChart")
     ) {
-        return;
+        retu*n;
     }
 
     const safeTrack =
-        Array.isArray(track)
-            ? track
+  *     Array.isArray(track)
+        *   ? track
             : [];
 
-    if (hoehenChart) {
-        hoehenChart.destroy();
+    *f (hoehenChart) {
+        hoehenCh*rt.destroy();
+        hoehenChart * null;
     }
 
-    hoehenChart = new Chart(
-        element("heightChart"),
+    hoehenChart = ne* Chart(
+        element("heightCha*t"),
         {
-            type: "line",
+            type: "*ine",
 
             data: {
-                labels: safeTrack.map(
-                    function (_, index) {
-                        return index + 1;
+       *        labels: safeTrack.map(
+   *                function (_, index* {
+                        return *ndex + 1;
                     }
-                ),
+  *             ),
 
-                datasets: [
+                d*tasets: [
                     {
                         label: "Höhe (m)",
 
-                        data: safeTrack.map(
-                            function (point) {
-                                const height =
-                                    Number(point.hoehe);
+                        data* safeTrack.map(
+                  *         function (point) {
+      *                         const hei*ht =
+                             *      Number(
+                    *                   point.hoehe
+   *                                );*
+                                r*turn Number.isFinite(
+            *                       height
+    *                           )
+     *                              ? he*ght
+                              *     : null;
+                     *      }
+                        ),*
+                        borderCol*r: "#168cff",
 
-                                return Number.isFinite(height)
-                                    ? height
-                                    : null;
-                            }
-                        ),
+                   *    backgroundColor:
+             *              "rgba(22, 140, 255, *.13)",
 
-                        borderColor: "#168cff",
+                        fi*l: true,
+                        t*nsion: 0.25,
+                     *  spanGaps: true,
 
-                        backgroundColor:
-                            "rgba(22, 140, 255, 0.13)",
-
-                        fill: true,
-                        tension: 0.25,
-
-                        pointRadius:
-                            safeTrack.length > 80
-                                ? 0
-                                : 2
+               *        pointRadius:
+             *              safeTrack.length > 8*
+                                ?*0
+                                * 2
                     }
-                ]
+         *      ]
             },
 
-            options: chartOptionen()
-        }
+          * options: chartOptionen()
+        *
     );
 }
 
-function zeichneMonatsstatistik() {
+function zeichneMonatss*atistik() {
     if (
-        typeof Chart === "undefined" ||
-        !element("monthlyChart")
+        typeo* Chart === "undefined" ||
+        *element("monthlyChart")
     ) {
-        return;
+  *     return;
     }
 
-    const labels = [];
+    const labe*s = [];
     const values = [];
-    const today = new Date();
+   *const today = new Date();
 
-    for (
+    for*(
         let offset = 11;
-        offset >= 0;
+       *offset >= 0;
         offset -= 1
-    ) {
-        const monthDate = new Date(
-            today.getFullYear(),
-            today.getMonth() - offset,
+ *  ) {
+        const monthDate = ne* Date(
+            today.getFullYe*r(),
+            today.getMonth() * offset,
             1
         );
-
-        labels.push(
-            monthDate.toLocaleDateString(
-                "de-AT",
-                {
-                    month: "short",
-                    year: "2-digit"
+*        labels.push(
+            m*nthDate.toLocaleDateString(
+      *         "de-AT",
+                *
+                    month: "short*,
+                    year: "2-dig*t"
                 }
-            )
-        );
+            )*        );
 
-        const count = window.fluege.filter(
-            function (flight) {
-                const flightDate = new Date(
-                    flight.startzeit ||
-                    flight.datum
-                );
+        const count = *indow.fluege.filter(
+            f*nction (flight) {
+                *onst flightDate =
+                *   new Date(
+                     *  flight.startzeit ||
+            *           flight.datum
+          *         );
 
-                return (
-                    !Number.isNaN(
-                        flightDate.getTime()
-                    ) &&
-                    flightDate.getFullYear() ===
-                        monthDate.getFullYear() &&
-                    flightDate.getMonth() ===
-                        monthDate.getMonth()
-                );
+                retur* (
+                    !Number.isN*N(
+                        flightD*te.getTime()
+                    )*&&
+                    flightDate.*etFullYear() ===
+                 *      monthDate.getFullYear() &&
+ *                  flightDate.getMo*th() ===
+                        m*nthDate.getMonth()
+               *);
             }
-        ).length;
-
+        ).length;*
         values.push(count);
-    }
-
+    }*
     if (monatsChart) {
         monatsChart.destroy();
+        monatsChart = null;
     }
 
     monatsChart = new Chart(
@@ -1901,13 +2195,19 @@ function zeichneMonatsstatistik() {
     );
 }
 
+/* =========================================================
+   AUSWERTUNG UND FLUGBUCH
+   ========================================================= */
+
 function summenBerechnen() {
     return {
         time: window.fluege.reduce(
             function (sum, flight) {
                 return (
                     sum +
-                    (Number(flight.flugzeit) || 0)
+                    (Number(
+                        flight.flugzeit
+                    ) || 0)
                 );
             },
             0
@@ -1917,7 +2217,9 @@ function summenBerechnen() {
             function (sum, flight) {
                 return (
                     sum +
-                    (Number(flight.strecke) || 0)
+                    (Number(
+                        flight.strecke
+                    ) || 0)
                 );
             },
             0
@@ -1927,7 +2229,9 @@ function summenBerechnen() {
             function (sum, flight) {
                 return (
                     sum +
-                    (Number(flight.landungen) || 0)
+                    (Number(
+                        flight.landungen
+                    ) || 0)
                 );
             },
             0
@@ -1938,24 +2242,55 @@ function summenBerechnen() {
 function zusammenfassungAktualisieren() {
     const totals = summenBerechnen();
 
-    element("countFlights").textContent =
-        String(window.fluege.length);
+    textSetzen(
+        "countFlights",
+        window.fluege.length
+    );
 
-    element("countLandings").textContent =
-        String(totals.landings);
+    textSetzen(
+        "countLandings",
+        totals.landings
+    );
 
-    element("countMinutes").textContent =
-        formatFlugzeit(totals.time);
+    textSetzen(
+        "countMinutes",
+        formatFlugzeit(totals.time)
+    );
 
-    element("countKm").textContent =
-        `${formatZahl(totals.distance, 1)} km`;
+    textSetzen(
+        "countKm",
+        `${formatZahl(
+            totals.distance,
+            1
+        )} km`
+    );
 
-    element("flightbookCount").textContent =
-        `${window.fluege.length} EINTRÄGE`;
+    textSetzen(
+        "flightbookCount",
+        `${window.fluege.length} EINTRÄGE`
+    );
+
+    const sortedFlights =
+        [...window.fluege].sort(
+            function (flightA, flightB) {
+                return (
+                    new Date(
+                        flightA.startzeit ||
+                        flightA.datum ||
+                        0
+                    ).getTime() -
+                    new Date(
+                        flightB.startzeit ||
+                        flightB.datum ||
+                        0
+                    ).getTime()
+                );
+            }
+        );
 
     const lastFlight =
-        window.fluege[
-            window.fluege.length - 1
+        sortedFlights[
+            sortedFlights.length - 1
         ];
 
     const rows = [
@@ -1963,14 +2298,17 @@ function zusammenfassungAktualisieren() {
             "Gesamtfahrten",
             window.fluege.length
         ],
+
         [
             "Gesamtlandungen",
             totals.landings
         ],
+
         [
             "Flugzeit",
             formatFlugzeit(totals.time)
         ],
+
         [
             "Strecke",
             `${formatZahl(
@@ -1978,15 +2316,19 @@ function zusammenfassungAktualisieren() {
                 1
             )} km`
         ],
+
         [
             "Durchschnittsdauer",
             formatFlugzeit(
                 window.fluege.length
-                    ? totals.time /
+                    ? (
+                        totals.time /
                         window.fluege.length
+                    )
                     : 0
             )
         ],
+
         [
             "Letzte Fahrt",
             lastFlight
@@ -2009,8 +2351,16 @@ function zusammenfassungAktualisieren() {
         }
     ).join("");
 
-    element("summaryList").innerHTML = html;
-    element("statisticsSummary").innerHTML = html;
+    if (element("summaryList")) {
+        element("summaryList").innerHTML =
+            html;
+    }
+
+    if (element("statisticsSummary")) {
+        element(
+            "statisticsSummary"
+        ).innerHTML = html;
+    }
 }
 
 function rekordeAktualisieren() {
@@ -2019,7 +2369,10 @@ function rekordeAktualisieren() {
             0,
             ...window.fluege.map(
                 function (flight) {
-                    return Number(flight[key]) || 0;
+                    return (
+                        Number(flight[key]) ||
+                        0
+                    );
                 }
             )
         );
@@ -2033,12 +2386,14 @@ function rekordeAktualisieren() {
                 1
             )} km/h`
         ],
+
         [
             "Höchste Höhe",
             `${formatZahl(
                 maxValue("maxHoehe")
             )} m`
         ],
+
         [
             "Längste Strecke",
             `${formatZahl(
@@ -2046,6 +2401,7 @@ function rekordeAktualisieren() {
                 1
             )} km`
         ],
+
         [
             "Längste Dauer",
             formatFlugzeit(
@@ -2054,7 +2410,13 @@ function rekordeAktualisieren() {
         ]
     ];
 
-    element("records").innerHTML = records.map(
+    const target = element("records");
+
+    if (!target) {
+        return;
+    }
+
+    target.innerHTML = records.map(
         function (record) {
             return `
                 <div class="record">
@@ -2070,6 +2432,10 @@ function rekordeAktualisieren() {
 function flugbuchAktualisieren() {
     const list = element("flugliste");
 
+    if (!list) {
+        return;
+    }
+
     if (window.fluege.length === 0) {
         list.innerHTML = `
             <p class="empty-message">
@@ -2081,16 +2447,37 @@ function flugbuchAktualisieren() {
     }
 
     list.innerHTML = [...window.fluege]
-        .reverse()
-        .map(function (flight, reverseIndex) {
-            const index =
-                window.fluege.length -
-                1 -
-                reverseIndex;
+        .map(function (flight, index) {
+            return {
+                flight,
+                index
+            };
+        })
+        .sort(
+            function (itemA, itemB) {
+                return (
+                    new Date(
+                        itemB.flight.startzeit ||
+                        itemB.flight.datum ||
+                        0
+                    ).getTime() -
+                    new Date(
+                        itemA.flight.startzeit ||
+                        itemA.flight.datum ||
+                        0
+                    ).getTime()
+                );
+            }
+        )
+        .map(function (item) {
+            const flight = item.flight;
+            const index = item.index;
 
             const hasTrack =
                 Array.isArray(flight.track) &&
-                flight.track.some(mapPointValid);
+                flight.track.some(
+                    mapPointValid
+                );
 
             return `
                 <article class="flight">
@@ -2114,19 +2501,29 @@ function flugbuchAktualisieren() {
                     <div class="flight-data">
                         <div>
                             <small>Pilot</small>
-                            ${htmlSicher(flight.pilot || "-")}
+                            ${htmlSicher(
+                                flight.pilot || "-"
+                            )}
                         </div>
 
                         <div>
                             <small>Route</small>
-                            ${htmlSicher(flight.startOrt || "-")}
+                            ${htmlSicher(
+                                flight.startOrt || "-"
+                            )}
                             →
-                            ${htmlSicher(flight.landeOrt || "-")}
+                            ${htmlSicher(
+                                flight.landeOrt || "-"
+                            )}
                         </div>
 
                         <div>
                             <small>Dauer</small>
-                            ${formatFlugzeit(flight.flugzeit)}
+                            ${htmlSicher(
+                                formatFlugzeit(
+                                    flight.flugzeit
+                                )
+                            )}
                         </div>
 
                         <div>
@@ -2139,7 +2536,9 @@ function flugbuchAktualisieren() {
 
                         <div>
                             <small>Maximale Höhe</small>
-                            ${formatZahl(flight.maxHoehe)} m
+                            ${formatZahl(
+                                flight.maxHoehe
+                            )} m
                         </div>
 
                         <div>
@@ -2152,13 +2551,16 @@ function flugbuchAktualisieren() {
 
                         <div>
                             <small>Landungen</small>
-                            ${formatZahl(flight.landungen)}
+                            ${formatZahl(
+                                flight.landungen
+                            )}
                         </div>
 
                         <div>
                             <small>Ballontyp</small>
                             ${htmlSicher(
-                                flight.ballontyp || "-"
+                                flight.ballontyp ||
+                                "-"
                             )}
                         </div>
                     </div>
@@ -2203,6 +2605,64 @@ function flugbuchAktualisieren() {
         .join("");
 }
 
+function flugLoeschen(index) {
+    const flight =
+        window.fluege[index];
+
+    if (!flight) {
+        return;
+    }
+
+    if (
+        !window.confirm(
+            "Soll diese Fahrt wirklich gelöscht werden?"
+        )
+    ) {
+        return;
+    }
+
+    const removed =
+        window.fluege.splice(
+            index,
+            1
+        )[0];
+
+    if (!fluegeSpeichern()) {
+        window.fluege.splice(
+            index,
+            0,
+            removed
+        );
+
+        return;
+    }
+
+    anzeigeAktualisieren();
+}
+
+/* =========================================================
+   AKTIVITÄTSMONITOR
+   ========================================================= */
+
+function sichereGanzzahl(
+    value,
+    fallback,
+    minimum = 0,
+    maximum = Number.MAX_SAFE_INTEGER
+) {
+    const parsed =
+        Number.parseInt(value, 10);
+
+    if (!Number.isFinite(parsed)) {
+        return fallback;
+    }
+
+    return Math.min(
+        maximum,
+        Math.max(minimum, parsed)
+    );
+}
+
 function monitorLaden() {
     try {
         const saved = JSON.parse(
@@ -2212,37 +2672,37 @@ function monitorLaden() {
         );
 
         return {
-            zeitraumMonate: Math.min(
-                120,
-                Math.max(
+            zeitraumMonate:
+                sichereGanzzahl(
+                    saved.zeitraumMonate,
+                    MONITOR_DEFAULTS
+                        .zeitraumMonate,
                     1,
-                    Number.parseInt(
-                        saved.zeitraumMonate,
-                        10
-                    ) ||
-                    MONITOR_DEFAULTS.zeitraumMonate
-                )
-            ),
+                    120
+                ),
 
-            erforderlicheFahrten: Math.max(
-                0,
-                Number.parseInt(
+            erforderlicheFahrten:
+                sichereGanzzahl(
                     saved.erforderlicheFahrten,
-                    10
-                ) ??
-                MONITOR_DEFAULTS.erforderlicheFahrten
-            ),
+                    MONITOR_DEFAULTS
+                        .erforderlicheFahrten,
+                    0
+                ),
 
-            erforderlicheLandungen: Math.max(
-                0,
-                Number.parseInt(
+            erforderlicheLandungen:
+                sichereGanzzahl(
                     saved.erforderlicheLandungen,
-                    10
-                ) ??
-                MONITOR_DEFAULTS.erforderlicheLandungen
-            )
+                    MONITOR_DEFAULTS
+                        .erforderlicheLandungen,
+                    0
+                )
         };
-    } catch {
+    } catch (error) {
+        console.error(
+            "Monitoreinstellungen konnten nicht geladen werden:",
+            error
+        );
+
         return {
             ...MONITOR_DEFAULTS
         };
@@ -2250,10 +2710,21 @@ function monitorLaden() {
 }
 
 function monitorAktualisieren() {
+    const target =
+        element(
+            "aktivitaetsmonitorInhalt"
+        );
+
+    if (!target) {
+        return;
+    }
+
     const settings = monitorLaden();
     const cutoff = new Date();
+    const now = new Date();
 
     cutoff.setHours(0, 0, 0, 0);
+
     cutoff.setMonth(
         cutoff.getMonth() -
         settings.zeitraumMonate
@@ -2262,49 +2733,62 @@ function monitorAktualisieren() {
     const relevantFlights =
         window.fluege.filter(
             function (flight) {
-                const date = new Date(
-                    flight.startzeit ||
-                    flight.datum
-                );
+                const date =
+                    new Date(
+                        flight.startzeit ||
+                        flight.datum
+                    );
 
                 return (
-                    !Number.isNaN(date.getTime()) &&
+                    !Number.isNaN(
+                        date.getTime()
+                    ) &&
                     date >= cutoff &&
-                    date <= new Date()
+                    date <= now
                 );
             }
         );
 
-    const landings = relevantFlights.reduce(
-        function (sum, flight) {
-            return (
-                sum +
-                (Number(flight.landungen) || 0)
-            );
-        },
-        0
-    );
+    const landings =
+        relevantFlights.reduce(
+            function (sum, flight) {
+                return (
+                    sum +
+                    (
+                        Number(
+                            flight.landungen
+                        ) || 0
+                    )
+                );
+            },
+            0
+        );
 
     function progressHtml(
         label,
         value,
-        target
+        targetValue
     ) {
         const percentage =
-            target <= 0
+            targetValue <= 0
                 ? 100
                 : Math.min(
                     100,
-                    Math.round(
-                        value / target * 100
+                    Math.max(
+                        0,
+                        Math.round(
+                            value /
+                            targetValue *
+                            100
+                        )
                     )
                 );
 
         return `
             <div class="monitor-progress">
                 <div class="monitor-progress-header">
-                    <strong>${label}</strong>
-                    <span>${value} / ${target}</span>
+                    <strong>${htmlSicher(label)}</strong>
+                    <span>${value} / ${targetValue}</span>
                 </div>
 
                 <div
@@ -2329,7 +2813,7 @@ function monitorAktualisieren() {
         landings >=
             settings.erforderlicheLandungen;
 
-    element("aktivitaetsmonitorInhalt").innerHTML =
+    target.innerHTML =
         progressHtml(
             "Fahrten",
             relevantFlights.length,
@@ -2357,71 +2841,104 @@ function monitorAktualisieren() {
             </div>
         `;
 
-    element("monitorPeriodLabel").textContent =
-        `${settings.zeitraumMonate} MONATE`;
+    textSetzen(
+        "monitorPeriodLabel",
+        `${settings.zeitraumMonate} MONATE`
+    );
 
-    element("nextExit").textContent =
+    textSetzen(
+        "nextExit",
         relevantFlights.length
             ? (
                 `${relevantFlights.length} relevante ` +
-                "Fahrt(en) im Zeitraum."
+                `Fahrt(en) und ${landings} ` +
+                "Landung(en) im Zeitraum."
             )
-            : "Kein relevanter Flug im Zeitraum.";
+            : "Keine relevante Fahrt im Zeitraum."
+    );
 }
 
 function monitorFormularFuellen() {
     const settings = monitorLaden();
 
-    element("monitorZeitraum").value =
-        settings.zeitraumMonate;
+    if (element("monitorZeitraum")) {
+        element("monitorZeitraum").value =
+            settings.zeitraumMonate;
+    }
 
-    element("monitorSollFahrten").value =
-        settings.erforderlicheFahrten;
+    if (element("monitorSollFahrten")) {
+        element(
+            "monitorSollFahrten"
+        ).value =
+            settings.erforderlicheFahrten;
+    }
 
-    element("monitorSollLandungen").value =
-        settings.erforderlicheLandungen;
+    if (element("monitorSollLandungen")) {
+        element(
+            "monitorSollLandungen"
+        ).value =
+            settings.erforderlicheLandungen;
+    }
 }
 
 function monitorSpeichern() {
     const settings = {
-        zeitraumMonate: Math.min(
-            120,
-            Math.max(
+        zeitraumMonate:
+            sichereGanzzahl(
+                element(
+                    "monitorZeitraum"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .zeitraumMonate,
                 1,
-                Number.parseInt(
-                    element("monitorZeitraum").value,
-                    10
-                ) || 24
+                120
+            ),
+
+        erforderlicheFahrten:
+            sichereGanzzahl(
+                element(
+                    "monitorSollFahrten"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .erforderlicheFahrten,
+                0
+            ),
+
+        erforderlicheLandungen:
+            sichereGanzzahl(
+                element(
+                    "monitorSollLandungen"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .erforderlicheLandungen,
+                0
             )
-        ),
-
-        erforderlicheFahrten: Math.max(
-            0,
-            Number.parseInt(
-                element("monitorSollFahrten").value,
-                10
-            ) || 0
-        ),
-
-        erforderlicheLandungen: Math.max(
-            0,
-            Number.parseInt(
-                element("monitorSollLandungen").value,
-                10
-            ) || 0
-        )
     };
 
-    localStorage.setItem(
-        MONITOR_STORAGE_KEY,
-        JSON.stringify(settings)
-    );
+    try {
+        localStorage.setItem(
+            MONITOR_STORAGE_KEY,
+            JSON.stringify(settings)
+        );
 
-    monitorFormularFuellen();
-    monitorAktualisieren();
+        monitorFormularFuellen();
+        monitorAktualisieren();
 
-    element("monitorMeldung").textContent =
-        "✓ Anforderungen wurden gespeichert.";
+        textSetzen(
+            "monitorMeldung",
+            "✓ Anforderungen wurden gespeichert."
+        );
+    } catch (error) {
+        console.error(
+            "Monitoreinstellungen konnten nicht gespeichert werden:",
+            error
+        );
+
+        textSetzen(
+            "monitorMeldung",
+            "❌ Einstellungen konnten nicht gespeichert werden."
+        );
+    }
 }
 
 function monitorZuruecksetzen() {
@@ -2432,9 +2949,15 @@ function monitorZuruecksetzen() {
     monitorFormularFuellen();
     monitorAktualisieren();
 
-    element("monitorMeldung").textContent =
-        "✓ Einstellungen wurden zurückgesetzt.";
+    textSetzen(
+        "monitorMeldung",
+        "✓ Einstellungen wurden zurückgesetzt."
+    );
 }
+
+/* =========================================================
+   WETTER
+   ========================================================= */
 
 function windrichtungText(degrees) {
     const value = Number(degrees);
@@ -2467,6 +2990,18 @@ function isoUhrzeit(value) {
         return "--";
     }
 
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleTimeString(
+            "de-AT",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+    }
+
     const match =
         String(value).match(
             /T(\d{2}:\d{2})/
@@ -2477,7 +3012,220 @@ function isoUhrzeit(value) {
         : "--";
 }
 
-async function ladeWetter() {
+async function wetterAbrufen(
+    latitude,
+    longitude
+) {
+    const parameters =
+        new URLSearchParams({
+            latitude:
+                String(latitude),
+
+            longitude:
+                String(longitude),
+
+            current:
+                "temperature_2m," +
+                "wind_speed_10m," +
+                "wind_direction_10m," +
+                "relative_humidity_2m," +
+                "surface_pressure",
+
+            daily:
+                "sunrise,sunset",
+
+            wind_speed_unit:
+                "kmh",
+
+            timezone:
+                "auto",
+
+            forecast_days:
+                "1"
+        });
+
+    const response = await fetch(
+        "https://api.open-meteo.com/v1/forecast?" +
+        parameters.toString()
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            `HTTP ${response.status}`
+        );
+    }
+
+    return response.json();
+}
+
+async function wetterAnzeigen(
+    latitude,
+    longitude
+) {
+    const rating =
+        element("weatherRating");
+
+    try {
+        const data =
+            await wetterAbrufen(
+                latitude,
+                longitude
+            );
+
+        const current =
+            data.current || {};
+
+        const daily =
+            data.daily || {};
+
+        const temperature =
+            Number(
+                current.temperature_2m
+            );
+
+        const wind =
+            Number(
+                current.wind_speed_10m
+            );
+
+        const direction =
+            Number(
+                current.wind_direction_10m
+            );
+
+        const humidity =
+            Number(
+                current.relative_humidity_2m
+            );
+
+        const pressure =
+            Number(
+                current.surface_pressure
+            );
+
+        textSetzen(
+            "temperature",
+            Number.isFinite(temperature)
+                ? (
+                    "🌡 Temperatur: " +
+                    `${formatZahl(
+                        temperature,
+                        1
+                    )} °C`
+                )
+                : "🌡 Temperatur: --"
+        );
+
+        textSetzen(
+            "wind",
+            Number.isFinite(wind)
+                ? (
+                    "💨 Wind: " +
+                    `${formatZahl(
+                        wind,
+                        1
+                    )} km/h`
+                )
+                : "💨 Wind: --"
+        );
+
+        textSetzen(
+            "windDirection",
+            Number.isFinite(direction)
+                ? (
+                    "🧭 Windrichtung: " +
+                    `${Math.round(direction)}° ` +
+                    `(${windrichtungText(
+                        direction
+                    )})`
+                )
+                : "🧭 Windrichtung: --"
+        );
+
+        textSetzen(
+            "sunrise",
+            "🌅 Sonnenaufgang: " +
+            isoUhrzeit(
+                daily.sunrise?.[0]
+            )
+        );
+
+        textSetzen(
+            "sunset",
+            "🌇 Sonnenuntergang: " +
+            isoUhrzeit(
+                daily.sunset?.[0]
+            )
+        );
+
+        let assessment =
+            "🟢 Geringe Bodenwindgeschwindigkeit.";
+
+        let className =
+            "weather-good";
+
+        if (!Number.isFinite(wind)) {
+            assessment =
+                "Wetterbewertung nicht verfügbar.";
+
+            className =
+                "weather-caution";
+        } else if (wind > 20) {
+            assessment =
+                "🔴 Hohe Bodenwindgeschwindigkeit.";
+
+            className =
+                "weather-danger";
+        } else if (wind > 10) {
+            assessment =
+                "🟡 Erhöhte Bodenwindgeschwindigkeit.";
+
+            className =
+                "weather-caution";
+        }
+
+        if (rating) {
+            rating.textContent =
+                `${assessment} ` +
+                `Luftfeuchtigkeit ${
+                    Number.isFinite(humidity)
+                        ? (
+                            `${Math.round(
+                                humidity
+                            )} %`
+                        )
+                        : "--"
+                }. ` +
+                `Luftdruck ${
+                    Number.isFinite(pressure)
+                        ? (
+                            `${Math.round(
+                                pressure
+                            )} hPa`
+                        )
+                        : "--"
+                }. Keine flugbetriebliche Freigabe.`;
+
+            rating.className =
+                `weather-rating ${className}`;
+        }
+    } catch (error) {
+        console.error(
+            "Wetterdaten konnten nicht geladen werden:",
+            error
+        );
+
+        if (rating) {
+            rating.textContent =
+                "❌ Wetterdaten konnten nicht geladen werden.";
+
+            rating.className =
+                "weather-rating weather-danger";
+        }
+    }
+}
+
+function ladeWetter() {
     const rating =
         element("weatherRating");
 
@@ -2501,159 +3249,31 @@ async function ladeWetter() {
     rating.className =
         "weather-rating";
 
+    if (letzterStandort) {
+        wetterAnzeigen(
+            letzterStandort.coords.latitude,
+            letzterStandort.coords.longitude
+        );
+
+        return;
+    }
+
     navigator.geolocation.getCurrentPosition(
-        async function (position) {
-            try {
-                const parameters =
-                    new URLSearchParams({
-                        latitude:
-                            String(
-                                position.coords.latitude
-                            ),
+        function (position) {
+            letzterStandort = position;
 
-                        longitude:
-                            String(
-                                position.coords.longitude
-                            ),
+            standortAnzeigeAktualisieren(
+                position
+            );
 
-                        current:
-                            "temperature_2m," +
-                            "wind_speed_10m," +
-                            "wind_direction_10m," +
-                            "relative_humidity_2m," +
-                            "surface_pressure",
+            standortAufKartenZeichnen(
+                position
+            );
 
-                        daily: "sunrise,sunset",
-                        wind_speed_unit: "kmh",
-                        timezone: "auto",
-                        forecast_days: "1"
-                    });
-
-                const response = await fetch(
-                    "https://api.open-meteo.com/v1/forecast?" +
-                    parameters.toString()
-                );
-
-                if (!response.ok) {
-                    throw new Error(
-                        `HTTP ${response.status}`
-                    );
-                }
-
-                const data = await response.json();
-                const current = data.current || {};
-                const daily = data.daily || {};
-
-                const temperature =
-                    Number(current.temperature_2m);
-
-                const wind =
-                    Number(current.wind_speed_10m);
-
-                const direction =
-                    Number(current.wind_direction_10m);
-
-                const humidity =
-                    Number(
-                        current.relative_humidity_2m
-                    );
-
-                const pressure =
-                    Number(current.surface_pressure);
-
-                element("temperature").textContent =
-                    Number.isFinite(temperature)
-                        ? (
-                            "🌡 Temperatur: " +
-                            `${formatZahl(
-                                temperature,
-                                1
-                            )} °C`
-                        )
-                        : "🌡 Temperatur: --";
-
-                element("wind").textContent =
-                    Number.isFinite(wind)
-                        ? (
-                            "💨 Wind: " +
-                            `${formatZahl(
-                                wind,
-                                1
-                            )} km/h`
-                        )
-                        : "💨 Wind: --";
-
-                element("windDirection").textContent =
-                    Number.isFinite(direction)
-                        ? (
-                            "🧭 Windrichtung: " +
-                            `${Math.round(direction)}° ` +
-                            `(${windrichtungText(direction)})`
-                        )
-                        : "🧭 Windrichtung: --";
-
-                element("sunrise").textContent =
-                    "🌅 Sonnenaufgang: " +
-                    isoUhrzeit(
-                        daily.sunrise?.[0]
-                    );
-
-                element("sunset").textContent =
-                    "🌇 Sonnenuntergang: " +
-                    isoUhrzeit(
-                        daily.sunset?.[0]
-                    );
-
-                let assessment =
-                    "🟢 Geringe Bodenwindgeschwindigkeit.";
-
-                let className =
-                    "weather-good";
-
-                if (!Number.isFinite(wind)) {
-                    assessment =
-                        "Wetterbewertung nicht verfügbar.";
-
-                    className =
-                        "weather-caution";
-                } else if (wind > 20) {
-                    assessment =
-                        "🔴 Hohe Bodenwindgeschwindigkeit.";
-
-                    className =
-                        "weather-danger";
-                } else if (wind > 10) {
-                    assessment =
-                        "🟡 Erhöhte Bodenwindgeschwindigkeit.";
-
-                    className =
-                        "weather-caution";
-                }
-
-                rating.textContent =
-                    `${assessment} ` +
-                    `Luftfeuchtigkeit ${
-                        Number.isFinite(humidity)
-                            ? `${Math.round(humidity)} %`
-                            : "--"
-                    }. ` +
-                    `Luftdruck ${
-                        Number.isFinite(pressure)
-                            ? `${Math.round(pressure)} hPa`
-                            : "--"
-                    }. Keine flugbetriebliche Freigabe.`;
-
-                rating.className =
-                    `weather-rating ${className}`;
-            } catch (error) {
-                console.error(error);
-
-                rating.textContent =
-                    "❌ Wetterdaten konnten nicht geladen werden.";
-
-                rating.className =
-                    "weather-rating weather-danger";
-            }
+            wetterAnzeigen(
+                position.coords.latitude,
+                position.coords.longitude
+            );
         },
 
         function () {
@@ -2672,12 +3292,18 @@ async function ladeWetter() {
     );
 }
 
+/* =========================================================
+   BACKUP UND IMPORT
+   ========================================================= */
+
 function backupExportieren() {
     const backup = {
         version: 10,
         exportedAt:
             new Date().toISOString(),
-        fluege: window.fluege
+
+        fluege:
+            window.fluege
     };
 
     const blob = new Blob(
@@ -2693,8 +3319,11 @@ function backupExportieren() {
         }
     );
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
 
     link.href = url;
 
@@ -2706,6 +3335,7 @@ function backupExportieren() {
         ".json";
 
     document.body.appendChild(link);
+
     link.click();
     link.remove();
 
@@ -2717,59 +3347,53 @@ function backupExportieren() {
     );
 }
 
-function flugLoeschen(index) {
-    const flight =
-        window.fluege[index];
-
-    if (!flight) {
-        return;
-    }
-
-    if (
-        !window.confirm(
-            "Soll diese Fahrt wirklich gelöscht werden?"
-        )
-    ) {
-        return;
-    }
-
-    const removed =
-        window.fluege.splice(index, 1)[0];
-
-    if (!fluegeSpeichern()) {
-        window.fluege.splice(
-            index,
-            0,
-            removed
-        );
-
-        return;
-    }
-
-    anzeigeAktualisieren();
-}
-
 function importDialogOeffnen() {
     vorbereiteteImportFluege = [];
 
-    element("importInput").value = "";
+    if (element("importInput")) {
+        element("importInput").value = "";
+    }
 
-    element("importFileInformation").textContent =
-        "Noch keine Datei ausgewählt.";
+    textSetzen(
+        "importFileInformation",
+        "Noch keine Datei ausgewählt."
+    );
 
-    element("importPreview").hidden = true;
-    element("importPreview").innerHTML = "";
+    if (element("importPreview")) {
+        element("importPreview").hidden =
+            true;
 
-    element("importMessage").textContent = "";
+        element("importPreview").innerHTML =
+            "";
+    }
 
-    element("executeImportButton").disabled =
-        true;
+    const message =
+        element("importMessage");
 
-    element("importDialog").hidden = false;
+    if (message) {
+        message.textContent = "";
+        message.className =
+            "import-message";
+    }
+
+    if (element("executeImportButton")) {
+        element(
+            "executeImportButton"
+        ).disabled = true;
+    }
+
+    if (element("importDialog")) {
+        element("importDialog").hidden =
+            false;
+    }
 }
 
 function importDialogSchliessen() {
-    element("importDialog").hidden = true;
+    if (element("importDialog")) {
+        element("importDialog").hidden =
+            true;
+    }
+
     vorbereiteteImportFluege = [];
 }
 
@@ -2805,7 +3429,8 @@ function importZahl(
         }
     }
 
-    const number = Number(normalized);
+    const number =
+        Number(normalized);
 
     return Number.isFinite(number)
         ? number
@@ -2817,18 +3442,28 @@ function importDatum(value) {
         return null;
     }
 
-    const text = String(value).trim();
+    const text =
+        String(value).trim();
 
     const match = text.match(
         /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/
     );
 
     if (match) {
-        const year = Number(match[3]);
-        const month = Number(match[2]) - 1;
-        const day = Number(match[1]);
-        const hour = Number(match[4] || 0);
-        const minute = Number(match[5] || 0);
+        const year =
+            Number(match[3]);
+
+        const month =
+            Number(match[2]) - 1;
+
+        const day =
+            Number(match[1]);
+
+        const hour =
+            Number(match[4] || 0);
+
+        const minute =
+            Number(match[5] || 0);
 
         const date = new Date(
             year,
@@ -2849,9 +3484,12 @@ function importDatum(value) {
         return date.toISOString();
     }
 
-    const date = new Date(text);
+    const date =
+        new Date(text);
 
-    return Number.isNaN(date.getTime())
+    return Number.isNaN(
+        date.getTime()
+    )
         ? null
         : date.toISOString();
 }
@@ -2870,7 +3508,8 @@ function csvZeileAufteilen(
         index < line.length;
         index += 1
     ) {
-        const character = line[index];
+        const character =
+            line[index];
 
         if (character === "\"") {
             if (
@@ -2901,7 +3540,9 @@ function csvZeileAufteilen(
         currentValue += character;
     }
 
-    values.push(currentValue.trim());
+    values.push(
+        currentValue.trim()
+    );
 
     return values;
 }
@@ -2924,44 +3565,52 @@ function csvEinlesen(text) {
     const firstLine = lines[0];
 
     const semicolonCount =
-        (firstLine.match(/;/g) || []).length;
+        (firstLine.match(/;/g) || [])
+            .length;
 
     const commaCount =
-        (firstLine.match(/,/g) || []).length;
+        (firstLine.match(/,/g) || [])
+            .length;
 
     const separator =
         semicolonCount >= commaCount
             ? ";"
             : ",";
 
-    const headers = csvZeileAufteilen(
-        lines.shift(),
-        separator
-    ).map(function (header) {
-        return header
-            .toLowerCase()
-            .replace(/\s+/g, "")
-            .replace(/ä/g, "ae")
-            .replace(/ö/g, "oe")
-            .replace(/ü/g, "ue")
-            .replace(/ß/g, "ss");
-    });
+    const headers =
+        csvZeileAufteilen(
+            lines.shift(),
+            separator
+        ).map(function (header) {
+            return header
+                .toLowerCase()
+                .replace(/\s+/g, "")
+                .replace(/ä/g, "ae")
+                .replace(/ö/g, "oe")
+                .replace(/ü/g, "ue")
+                .replace(/ß/g, "ss");
+        });
 
-    return lines.map(function (line) {
-        const values =
-            csvZeileAufteilen(line, separator);
+    return lines.map(
+        function (line) {
+            const values =
+                csvZeileAufteilen(
+                    line,
+                    separator
+                );
 
-        const row = {};
+            const row = {};
 
-        headers.forEach(
-            function (header, index) {
-                row[header] =
-                    values[index] || "";
-            }
-        );
+            headers.forEach(
+                function (header, index) {
+                    row[header] =
+                        values[index] || "";
+                }
+            );
 
-        return row;
-    });
+            return row;
+        }
+    );
 }
 
 function importFlugNormalisieren(
@@ -2989,14 +3638,15 @@ function importFlugNormalisieren(
         return "";
     }
 
-    const startTime = importDatum(
-        getValue(
-            "startzeit",
-            "startZeit",
-            "datum",
-            "date"
-        )
-    );
+    const startTime =
+        importDatum(
+            getValue(
+                "startzeit",
+                "startZeit",
+                "datum",
+                "date"
+            )
+        );
 
     if (!startTime) {
         return null;
@@ -3029,45 +3679,44 @@ function importFlugNormalisieren(
                 return null;
             }
 
-            const lat = importZahl(
-                point.lat ?? point.latitude,
-                null
-            );
-
-            const lng = importZahl(
-                point.lng ??
-                point.lon ??
-                point.longitude,
-                null
-            );
-
-            if (
-                !Number.isFinite(lat) ||
-                !Number.isFinite(lng)
-            ) {
-                return null;
-            }
-
-            return {
-                lat,
-                lng,
-
-                hoehe: importZahl(
-                    point.hoehe ??
-                    point.altitude,
+            const latitude =
+                importZahl(
+                    point.lat ??
+                    point.latitude,
                     null
-                ),
+                );
 
-                speed: importZahl(
-                    point.speed,
+            const longitude =
+                importZahl(
+                    point.lng ??
+                    point.lon ??
+                    point.longitude,
                     null
-                ),
+                );
 
-                genauigkeit: importZahl(
-                    point.genauigkeit ??
-                    point.accuracy,
-                    null
-                ),
+            const normalizedPoint = {
+                lat: latitude,
+                lng: longitude,
+
+                hoehe:
+                    importZahl(
+                        point.hoehe ??
+                        point.altitude,
+                        null
+                    ),
+
+                speed:
+                    importZahl(
+                        point.speed,
+                        null
+                    ),
+
+                genauigkeit:
+                    importZahl(
+                        point.genauigkeit ??
+                        point.accuracy,
+                        null
+                    ),
 
                 zeit:
                     importDatum(
@@ -3076,23 +3725,32 @@ function importFlugNormalisieren(
                     ) ||
                     startTime
             };
+
+            return mapPointValid(
+                normalizedPoint
+            )
+                ? normalizedPoint
+                : null;
         })
         .filter(Boolean);
 
     return {
         id:
-            getValue("id") ||
+            textBereinigen(
+                getValue("id")
+            ) ||
             `import-${Date.now()}-${index}`,
 
         datum: startTime,
         startzeit: startTime,
 
-        endezeit: importDatum(
-            getValue(
-                "endezeit",
-                "endeZeit"
-            )
-        ),
+        endezeit:
+            importDatum(
+                getValue(
+                    "endezeit",
+                    "endeZeit"
+                )
+            ),
 
         pilot:
             textBereinigen(
@@ -3110,13 +3768,14 @@ function importFlugNormalisieren(
             ).toUpperCase() ||
             "UNBEKANNT",
 
-        ballontyp: textBereinigen(
-            getValue(
-                "ballontyp",
-                "ballonTyp",
-                "type"
-            )
-        ),
+        ballontyp:
+            textBereinigen(
+                getValue(
+                    "ballontyp",
+                    "ballonTyp",
+                    "type"
+                )
+            ),
 
         startOrt:
             textBereinigen(
@@ -3138,85 +3797,97 @@ function importFlugNormalisieren(
             ) ||
             "Unbekannt",
 
-        flugzeit: Math.max(
-            0,
-            importZahl(
-                getValue(
-                    "flugzeit",
-                    "dauer"
-                )
-            )
-        ),
-
-        strecke: Math.max(
-            0,
-            importZahl(
-                getValue(
-                    "strecke",
-                    "kilometer"
-                )
-            )
-        ),
-
-        avgSpeed: Math.max(
-            0,
-            importZahl(
-                getValue(
-                    "avgSpeed",
-                    "avgspeed"
-                )
-            )
-        ),
-
-        maxSpeed: Math.max(
-            0,
-            importZahl(
-                getValue(
-                    "maxSpeed",
-                    "maxspeed"
-                )
-            )
-        ),
-
-        maxHoehe: importZahl(
-            getValue(
-                "maxHoehe",
-                "maxhoehe"
-            )
-        ),
-
-        minHoehe: importZahl(
-            getValue(
-                "minHoehe",
-                "minhoehe"
-            )
-        ),
-
-        avgHoehe: importZahl(
-            getValue(
-                "avgHoehe",
-                "avghoehe"
-            )
-        ),
-
-        landungen: Math.max(
-            1,
-            Math.round(
+        flugzeit:
+            Math.max(
+                0,
                 importZahl(
-                    getValue("landungen"),
-                    1
+                    getValue(
+                        "flugzeit",
+                        "dauer"
+                    )
                 )
-            )
-        ),
+            ),
 
-        bemerkung: textBereinigen(
-            getValue(
-                "bemerkung",
-                "notiz"
-            )
-        ),
+        strecke:
+            Math.max(
+                0,
+                importZahl(
+                    getValue(
+                        "strecke",
+                        "kilometer"
+                    )
+                )
+            ),
 
-        track: normalizedTrack
+        avgSpeed:
+            Math.max(
+                0,
+                importZahl(
+                    getValue(
+                        "avgSpeed",
+                        "avgspeed"
+                    )
+                )
+            ),
+
+        maxSpeed:
+            Math.max(
+                0,
+                importZahl(
+                    getValue(
+                        "maxSpeed",
+                        "maxspeed"
+                    )
+                )
+            ),
+
+        maxHoehe:
+            importZahl(
+                getValue(
+                    "maxHoehe",
+                    "maxhoehe"
+                )
+            ),
+
+        minHoehe:
+            importZahl(
+                getValue(
+                    "minHoehe",
+                    "minhoehe"
+                )
+            ),
+
+        avgHoehe:
+            importZahl(
+                getValue(
+                    "avgHoehe",
+                    "avghoehe"
+                )
+            ),
+
+        landungen:
+            Math.max(
+                1,
+                Math.round(
+                    importZahl(
+                        getValue(
+                            "landungen"
+                        ),
+                        1
+                    )
+                )
+            ),
+
+        bemerkung:
+            textBereinigen(
+                getValue(
+                    "bemerkung",
+                    "notiz"
+                )
+            ),
+
+        track:
+            normalizedTrack
     };
 }
 
@@ -3226,17 +3897,24 @@ async function importDateiAuswaehlen(event) {
 
     vorbereiteteImportFluege = [];
 
-    element("executeImportButton").disabled =
-        true;
+    if (element("executeImportButton")) {
+        element(
+            "executeImportButton"
+        ).disabled = true;
+    }
 
-    element("importPreview").hidden = true;
+    if (element("importPreview")) {
+        element("importPreview").hidden =
+            true;
+    }
 
     if (!file) {
         return;
     }
 
     try {
-        const text = await file.text();
+        const text =
+            await file.text();
 
         let rawFlights;
 
@@ -3245,20 +3923,24 @@ async function importDateiAuswaehlen(event) {
                 .toLowerCase()
                 .endsWith(".csv")
         ) {
-            rawFlights = csvEinlesen(text);
+            rawFlights =
+                csvEinlesen(text);
         } else {
-            const json = JSON.parse(text);
+            const json =
+                JSON.parse(text);
 
             if (Array.isArray(json)) {
                 rawFlights = json;
             } else if (
                 Array.isArray(json.fluege)
             ) {
-                rawFlights = json.fluege;
+                rawFlights =
+                    json.fluege;
             } else if (
                 Array.isArray(json.fahrten)
             ) {
-                rawFlights = json.fahrten;
+                rawFlights =
+                    json.fahrten;
             } else {
                 throw new Error(
                     "Die JSON-Datei enthält keine Flugliste."
@@ -3268,10 +3950,14 @@ async function importDateiAuswaehlen(event) {
 
         const normalizedFlights =
             rawFlights
-                .map(importFlugNormalisieren)
+                .map(
+                    importFlugNormalisieren
+                )
                 .filter(Boolean);
 
-        if (normalizedFlights.length === 0) {
+        if (
+            normalizedFlights.length === 0
+        ) {
             throw new Error(
                 "Keine gültigen Fahrten gefunden."
             );
@@ -3285,55 +3971,79 @@ async function importDateiAuswaehlen(event) {
                 function (sum, flight) {
                     return (
                         sum +
-                        Number(flight.landungen)
+                        Number(
+                            flight.landungen
+                        )
                     );
                 },
                 0
             );
 
-        element("importFileInformation").textContent =
+        textSetzen(
+            "importFileInformation",
             `${file.name} · ` +
-            `${normalizedFlights.length} Fahrt(en)`;
+            `${normalizedFlights.length} Fahrt(en)`
+        );
 
-        element("importPreview").innerHTML = `
-            <strong>
-                ✓ Datei erfolgreich geprüft
-            </strong>
+        if (element("importPreview")) {
+            element(
+                "importPreview"
+            ).innerHTML = `
+                <strong>
+                    ✓ Datei erfolgreich geprüft
+                </strong>
 
-            <p>
-                ${normalizedFlights.length}
-                Fahrt(en) und
-                ${landingCount}
-                Landung(en) gefunden.
-            </p>
-        `;
+                <p>
+                    ${normalizedFlights.length}
+                    Fahrt(en) und
+                    ${landingCount}
+                    Landung(en) gefunden.
+                </p>
+            `;
 
-        element("importPreview").hidden =
-            false;
+            element(
+                "importPreview"
+            ).hidden = false;
+        }
 
-        element("executeImportButton").disabled =
-            false;
+        if (element("executeImportButton")) {
+            element(
+                "executeImportButton"
+            ).disabled = false;
+        }
 
-        element("importMessage").textContent =
-            "Die Datei kann importiert werden.";
+        const message =
+            element("importMessage");
 
-        element("importMessage").className =
-            "import-message import-message-success";
+        if (message) {
+            message.textContent =
+                "Die Datei kann importiert werden.";
+
+            message.className =
+                "import-message " +
+                "import-message-success";
+        }
     } catch (error) {
         console.error(
             "Import fehlgeschlagen:",
             error
         );
 
-        element("importMessage").textContent =
-            "❌ " +
-            (
-                error.message ||
-                "Importdatei ist ungültig."
-            );
+        const message =
+            element("importMessage");
 
-        element("importMessage").className =
-            "import-message import-message-error";
+        if (message) {
+            message.textContent =
+                "❌ " +
+                (
+                    error.message ||
+                    "Importdatei ist ungültig."
+                );
+
+            message.className =
+                "import-message " +
+                "import-message-error";
+        }
     }
 }
 
@@ -3385,16 +4095,19 @@ function importAusfuehren() {
         neueFluege =
             [...window.fluege];
 
-        const existingKeys = new Set(
-            neueFluege.map(
-                duplikatSchluessel
-            )
-        );
+        const existingKeys =
+            new Set(
+                neueFluege.map(
+                    duplikatSchluessel
+                )
+            );
 
         vorbereiteteImportFluege.forEach(
             function (flight) {
                 const key =
-                    duplikatSchluessel(flight);
+                    duplikatSchluessel(
+                        flight
+                    );
 
                 if (!existingKeys.has(key)) {
                     neueFluege.push(flight);
@@ -3407,7 +4120,9 @@ function importAusfuehren() {
     window.fluege = neueFluege;
 
     if (!fluegeSpeichern()) {
-        window.fluege = bisherigeFluege;
+        window.fluege =
+            bisherigeFluege;
+
         return;
     }
 
@@ -3416,17 +4131,9 @@ function importAusfuehren() {
     seiteAnzeigen("flugbuch");
 }
 
-function anzeigeAktualisieren() {
-    zusammenfassungAktualisieren();
-    rekordeAktualisieren();
-    flugbuchAktualisieren();
-    zeichneMonatsstatistik();
-    monitorAktualisieren();
-
-    if (hauptkarte) {
-        alleFluegeAufKarte();
-    }
-}
+/* =========================================================
+   KOPFBEREICH UND GESAMTANZEIGE
+   ========================================================= */
 
 function kopfbereichAktualisieren() {
     const pilot =
@@ -3444,70 +4151,127 @@ function kopfbereichAktualisieren() {
             element("ballontyp")?.value
         );
 
-    element("pilotHeader").textContent =
-        pilot || "Pilot";
+    textSetzen(
+        "pilotHeader",
+        pilot || "Pilot"
+    );
 
-    element("trackingPilot").textContent =
-        pilot || "Nicht festgelegt";
+    textSetzen(
+        "trackingPilot",
+        pilot || "Nicht festgelegt"
+    );
 
-    element("trackingBallon").textContent =
-        ballon || "Nicht festgelegt";
+    textSetzen(
+        "trackingBallon",
+        ballon || "Nicht festgelegt"
+    );
 
-    element("trackingBallontyp").textContent =
-        ballontyp || "Nicht festgelegt";
+    textSetzen(
+        "trackingBallontyp",
+        ballontyp || "Nicht festgelegt"
+    );
 
     const maintenance =
-        element("maintenanceInput")?.value;
+        element(
+            "maintenanceInput"
+        )?.value;
 
-    element("maintenanceDate").textContent =
-        maintenance
-            ? new Date(
+    let maintenanceText =
+        "Nicht festgelegt";
+
+    if (maintenance) {
+        const date =
+            new Date(
                 `${maintenance}T12:00:00`
-            ).toLocaleDateString("de-AT")
-            : "Nicht festgelegt";
+            );
+
+        if (
+            !Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            maintenanceText =
+                date.toLocaleDateString(
+                    "de-AT"
+                );
+        }
+    }
+
+    textSetzen(
+        "maintenanceDate",
+        maintenanceText
+    );
 }
 
 function aktuelleZeitAktualisieren() {
     const now = new Date();
 
-    element("currentDate").textContent =
-        now.toLocaleDateString("de-AT");
+    textSetzen(
+        "currentDate",
+        now.toLocaleDateString(
+            "de-AT"
+        )
+    );
 
-    element("currentTime").textContent =
+    textSetzen(
+        "currentTime",
         now.toLocaleTimeString(
             "de-AT",
             {
                 hour: "2-digit",
                 minute: "2-digit"
             }
-        );
-}
-
-function eventListenerHinzufuegen(
-    id,
-    eventName,
-    handler
-) {
-    element(id)?.addEventListener(
-        eventName,
-        handler
+        )
     );
 }
 
+function anzeigeAktualisieren() {
+    zusammenfassungAktualisieren();
+    rekordeAktualisieren();
+    flugbuchAktualisieren();
+    zeichneMonatsstatistik();
+    monitorAktualisieren();
+
+    if (hauptkarte) {
+        alleFluegeAufKarte();
+    }
+}
+
+/* =========================================================
+   APP INITIALISIEREN
+   ========================================================= */
+
 function appInitialisieren() {
-    const masterData = stammdatenLaden();
+    if (appWurdeInitialisiert) {
+        return;
+    }
 
-    element("pilot").value =
-        masterData.pilot || "";
+    appWurdeInitialisiert = true;
 
-    element("ballon").value =
-        masterData.ballon || "";
+    const masterData =
+        stammdatenLaden();
 
-    element("ballontyp").value =
-        masterData.ballontyp || "";
+    if (element("pilot")) {
+        element("pilot").value =
+            masterData.pilot || "";
+    }
 
-    element("maintenanceInput").value =
-        masterData.maintenance || "";
+    if (element("ballon")) {
+        element("ballon").value =
+            masterData.ballon || "";
+    }
+
+    if (element("ballontyp")) {
+        element("ballontyp").value =
+            masterData.ballontyp || "";
+    }
+
+    if (element("maintenanceInput")) {
+        element(
+            "maintenanceInput"
+        ).value =
+            masterData.maintenance || "";
+    }
 
     monitorFormularFuellen();
     kopfbereichAktualisieren();
@@ -3533,18 +4297,23 @@ function appInitialisieren() {
             const sidebar =
                 element("sidebar");
 
+            if (!sidebar) {
+                return;
+            }
+
             sidebar.classList.toggle(
                 "sidebar-open"
             );
 
-            element("menuButton").setAttribute(
-                "aria-expanded",
-                sidebar.classList.contains(
-                    "sidebar-open"
-                )
-                    ? "true"
-                    : "false"
-            );
+            element("menuButton")
+                ?.setAttribute(
+                    "aria-expanded",
+                    sidebar.classList.contains(
+                        "sidebar-open"
+                    )
+                        ? "true"
+                        : "false"
+                );
         }
     );
 
@@ -3595,7 +4364,9 @@ function appInitialisieren() {
         "click",
         function () {
             hauptkarteInitialisieren();
-            standortZentrieren(hauptkarte);
+            standortZentrieren(
+                hauptkarte
+            );
         }
     );
 
@@ -3604,8 +4375,16 @@ function appInitialisieren() {
         "click",
         function () {
             trackingKarteInitialisieren();
-            standortZentrieren(trackingKarte);
+            standortZentrieren(
+                trackingKarte
+            );
         }
+    );
+
+    eventListenerHinzufuegen(
+        "showAllFlightsButton",
+        "click",
+        alleFluegeAufKarte
     );
 
     eventListenerHinzufuegen(
@@ -3674,19 +4453,25 @@ function appInitialisieren() {
         "click",
         function (event) {
             const button =
-                event.target.closest("button");
+                event.target.closest(
+                    "button"
+                );
 
             if (!button) {
                 return;
             }
 
             const deleteIndex =
-                button.dataset.flightDelete;
+                button.dataset
+                    .flightDelete;
 
             const mapIndex =
-                button.dataset.flightMap;
+                button.dataset
+                    .flightMap;
 
-            if (deleteIndex !== undefined) {
+            if (
+                deleteIndex !== undefined
+            ) {
                 flugLoeschen(
                     Number(deleteIndex)
                 );
@@ -3694,7 +4479,9 @@ function appInitialisieren() {
                 return;
             }
 
-            if (mapIndex !== undefined) {
+            if (
+                mapIndex !== undefined
+            ) {
                 const flight =
                     window.fluege[
                         Number(mapIndex)
@@ -3708,7 +4495,9 @@ function appInitialisieren() {
 
                 window.setTimeout(
                     function () {
-                        flugAufKarte(flight);
+                        flugAufKarte(
+                            flight
+                        );
                     },
                     200
                 );
@@ -3721,7 +4510,10 @@ function appInitialisieren() {
         function (event) {
             if (
                 event.key === "Escape" &&
-                !element("importDialog").hidden
+                element("importDialog") &&
+                !element(
+                    "importDialog"
+                ).hidden
             ) {
                 importDialogSchliessen();
             }
@@ -3744,10 +4536,12 @@ function appInitialisieren() {
 
     zeichneHoehenprofil([]);
     anzeigeAktualisieren();
+
     standortUeberwachungStarten();
 
     const requestedPage =
-        window.location.hash.slice(1);
+        window.location.hash
+            .slice(1);
 
     seiteAnzeigen(
         seiten[requestedPage]
@@ -3756,25 +4550,41 @@ function appInitialisieren() {
     );
 }
 
-if (document.readyState === "loading") {
+if (
+    document.readyState ===
+    "loading"
+) {
     document.addEventListener(
         "DOMContentLoaded",
-        appInitialisieren
+        appInitialisieren,
+        {
+            once: true
+        }
     );
 } else {
     appInitialisieren();
 }
 
 window.addEventListener(
+    "hashchange",
+    function () {
+        const requestedPage =
+            window.location.hash
+                .slice(1);
+
+        if (seiten[requestedPage]) {
+            seiteAnzeigen(
+                requestedPage
+            );
+        }
+    }
+);
+
+window.addEventListener(
     "resize",
     function () {
-        if (hauptkarte) {
-            hauptkarte.invalidateSize();
-        }
-
-        if (trackingKarte) {
-            trackingKarte.invalidateSize();
-        }
+        hauptkarte?.invalidateSize();
+        trackingKarte?.invalidateSize();
     }
 );
 
