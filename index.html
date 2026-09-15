@@ -201,9 +201,7 @@
                 </button>
 
                 <div>
-                    <h1 id="pageTitle">
-                        Übersicht
-                    </h1>
+                    <h1 id="pageTitle">Übersicht</h1>
 
                     <p id="pageDescription">
                         Die wichtigsten Informationen auf einen Blick.
@@ -223,10 +221,7 @@
                     </span>
 
                     <span>
-                        <strong id="pilotHeader">
-                            Pilot
-                        </strong>
-
+                        <strong id="pilotHeader">Pilot</strong>
                         <small>Ballonpilot</small>
                     </span>
 
@@ -279,43 +274,71 @@
                 >
 
                     <article class="kpi kpi-blue">
-                        <span class="kpi-icon">🎈</span>
+
+                        <span
+                            class="kpi-icon"
+                            aria-hidden="true"
+                        >
+                            🎈
+                        </span>
 
                         <span>
                             <small>FAHRTEN</small>
                             <strong id="countFlights">0</strong>
                             <em>gespeicherte Fahrten</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-green">
-                        <span class="kpi-icon">🛬</span>
+
+                        <span
+                            class="kpi-icon"
+                            aria-hidden="true"
+                        >
+                            🛬
+                        </span>
 
                         <span>
                             <small>LANDUNGEN</small>
                             <strong id="countLandings">0</strong>
                             <em>gesamte Landungen</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-yellow">
-                        <span class="kpi-icon">◷</span>
+
+                        <span
+                            class="kpi-icon"
+                            aria-hidden="true"
+                        >
+                            ◷
+                        </span>
 
                         <span>
                             <small>FLUGZEIT</small>
                             <strong id="countMinutes">0h 00m</strong>
                             <em>gesamte Flugzeit</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-purple">
-                        <span class="kpi-icon">⌖</span>
+
+                        <span
+                            class="kpi-icon"
+                            aria-hidden="true"
+                        >
+                            ⌖
+                        </span>
 
                         <span>
                             <small>KILOMETER</small>
                             <strong id="countKm">0,0 km</strong>
                             <em>gesamte Strecke</em>
                         </span>
+
                     </article>
 
                 </section>
@@ -359,7 +382,7 @@
                             id="nextExit"
                             class="next-exit"
                         >
-                            Kein relevanter Flug vorhanden.
+                            Keine relevante Fahrt vorhanden.
                         </div>
 
                     </article>
@@ -396,11 +419,13 @@
                     <article class="panel">
 
                         <div class="panel-title">
+
                             <h2 id="trackingTitle">
                                 FAHRT ERFASSEN
                             </h2>
 
                             <span>GPS-TRACKING</span>
+
                         </div>
 
                         <div class="form-content">
@@ -495,6 +520,7 @@
                             </button>
 
                             <div class="safety-warning">
+
                                 <strong>Hinweis</strong>
 
                                 <p>
@@ -502,6 +528,7 @@
                                     Anwendung geöffnet bleiben. Energiesparmodi
                                     können die GPS-Aufzeichnung unterbrechen.
                                 </p>
+
                             </div>
 
                         </div>
@@ -511,6 +538,7 @@
                     <article class="panel">
 
                         <div class="panel-title">
+
                             <h2>LIVE-TRACK</h2>
 
                             <button
@@ -520,6 +548,7 @@
                             >
                                 Standort zentrieren
                             </button>
+
                         </div>
 
                         <div class="tracking-map-wrapper">
@@ -558,10 +587,12 @@
                     </div>
 
                     <div class="chart-container height-chart">
+
                         <canvas
                             id="heightChart"
                             aria-label="Höhenprofil der aktuellen Fahrt"
                         ></canvas>
+
                     </div>
 
                 </article>
@@ -578,6 +609,7 @@
             >
 
                 <div class="panel-title">
+
                     <h2 id="flightbookTitle">
                         FLUGBUCH
                     </h2>
@@ -585,6 +617,7 @@
                     <span id="flightbookCount">
                         0 EINTRÄGE
                     </span>
+
                 </div>
 
                 <div id="flugliste">
@@ -611,9 +644,7 @@
                     <div class="panel-title map-title">
 
                         <div>
-                            <h2 id="mapTitle">
-                                FLUGKARTE
-                            </h2>
+                            <h2 id="mapTitle">FLUGKARTE</h2>
 
                             <span>
                                 GESPEICHERTE FAHRTEN UND LIVE-STANDORT
@@ -700,10 +731,7 @@
 
                                 <span>
                                     <strong>Live-Standort</strong>
-
-                                    <small>
-                                        GPS-Daten des Geräts
-                                    </small>
+                                    <small>GPS-Daten des Geräts</small>
                                 </span>
 
                             </div>
@@ -772,8 +800,7 @@
                 </div>
 
             </section>
-
-            <!-- STATISTIKEN -->
+                        <!-- STATISTIKEN -->
 
             <section
                 class="app-page statistics-grid"
@@ -785,11 +812,13 @@
                 <article class="panel full-grid-column">
 
                     <div class="panel-title">
+
                         <h2 id="statisticsTitle">
                             MONATSSTATISTIK
                         </h2>
 
                         <span>LETZTE 12 MONATE</span>
+
                     </div>
 
                     <div class="chart-container monthly-chart">
@@ -1282,13 +1311,15 @@
 
     </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-></script>
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
 
-https://cdn.jsdelivr.net/npm/chart.jsscript>
-<script src="app.js"></script>
+    https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.jsscript>
+
+    <script src="app.js"></script>
+
 </body>
 </html>
