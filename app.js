@@ -1998,43 +1998,44 @@ function flugSpeichern() {
    ========================================================= */
 
 function chartOptionen() {
-    *eturn {
+    return {
         responsive: true,
-*       maintainAspectRatio: false,*
+        maintainAspectRatio: false,
+
         interaction: {
-          * intersect: false,
-            mod*: "index"
+            intersect: false,
+            mode: "index"
         },
 
-        plug*ns: {
+        plugins: {
             legend: {
-      *         labels: {
-               *    color: "#b6c5d4"
-             *  }
+                labels: {
+                    color: "#b6c5d4"
+                }
             }
         },
 
-    *   scales: {
+        scales: {
             x: {
-    *           ticks: {
-              *     color: "#91a7ba"
-            *   },
-
-                grid: {
-   *                color: "#203548"
- *              }
-            },
-
-  *         y: {
-                begi*AtZero: true,
-
-                tic*s: {
-                    color: "#*1a7ba"
+                ticks: {
+                    color: "#91a7ba"
                 },
 
-       *        grid: {
-                  * color: "#203548"
-                *
+                grid: {
+                    color: "#203548"
+                }
+            },
+
+            y: {
+                beginAtZero: true,
+
+                ticks: {
+                    color: "#91a7ba"
+                },
+
+                grid: {
+                    color: "#203548"
+                }
             }
         }
     };
