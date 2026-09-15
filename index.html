@@ -27,6 +27,7 @@
         type="image/svg+xml"
     >
 
+    <!-- Leaflet CSS -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -34,6 +35,7 @@
         crossorigin=""
     >
 
+    <!-- Eigene CSS-Datei -->
     <link
         rel="stylesheet"
         href="style.css"
@@ -51,16 +53,18 @@
 
     <div class="app-shell">
 
+        <!-- Seitennavigation -->
+
         <aside
             id="sidebar"
             class="sidebar"
             aria-label="Seitennavigation"
         >
-
             <button
                 class="brand"
                 data-page-link="dashboard"
                 type="button"
+                aria-label="Zur Übersicht wechseln"
             >
                 <span
                     class="brand-icon"
@@ -88,7 +92,7 @@
 
                 <button
                     class="nav-link"
-                    data-page-link="tracking"
+                    data-page-link="fahrt-erfassen"
                     type="button"
                 >
                     <span aria-hidden="true">▶</span>
@@ -165,7 +169,6 @@
             </div>
 
             <div class="maintenance">
-
                 <span
                     class="maintenance-icon"
                     aria-hidden="true"
@@ -180,10 +183,10 @@
                         Nicht festgelegt
                     </strong>
                 </span>
-
             </div>
-
         </aside>
+
+        <!-- Hauptbereich -->
 
         <main class="main">
 
@@ -201,15 +204,16 @@
                 </button>
 
                 <div>
-                    <h1 id="pageTitle">Übersicht</h1>
+                    <h1 id="pageTitle">
+                        Ballonflugbuch
+                    </h1>
 
                     <p id="pageDescription">
-                        Die wichtigsten Informationen auf einen Blick.
+                        Deine Fahrten und Flugdaten auf einen Blick.
                     </p>
                 </div>
 
                 <div class="top-meta">
-
                     <span id="currentDate">--</span>
                     <span id="currentTime">--</span>
 
@@ -221,26 +225,26 @@
                     </span>
 
                     <span>
-                        <strong id="pilotHeader">Pilot</strong>
+                        <strong id="pilotHeader">
+                            Pilot
+                        </strong>
+
                         <small>Ballonpilot</small>
                     </span>
-
                 </div>
 
             </header>
 
-            <!-- ÜBERSICHT -->
+            <!-- Übersicht -->
 
             <section
+                id="dashboard"
                 class="app-page active"
-                data-page="dashboard"
                 aria-labelledby="dashboardTitle"
             >
-
                 <div class="hero-dashboard">
 
                     <div class="hero-copy">
-
                         <span class="eyebrow">
                             BALLONFLUGBUCH PROFESSIONAL
                         </span>
@@ -256,7 +260,6 @@
                             Wetterdaten und digitales Flugbuch
                             in einer Anwendung.
                         </p>
-
                     </div>
 
                     <div
@@ -272,9 +275,7 @@
                     class="kpi-grid"
                     aria-label="Gesamte Flugstatistik"
                 >
-
                     <article class="kpi kpi-blue">
-
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -287,11 +288,9 @@
                             <strong id="countFlights">0</strong>
                             <em>gespeicherte Fahrten</em>
                         </span>
-
                     </article>
 
                     <article class="kpi kpi-green">
-
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -304,11 +303,9 @@
                             <strong id="countLandings">0</strong>
                             <em>gesamte Landungen</em>
                         </span>
-
                     </article>
 
                     <article class="kpi kpi-yellow">
-
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -321,11 +318,9 @@
                             <strong id="countMinutes">0h 00m</strong>
                             <em>gesamte Flugzeit</em>
                         </span>
-
                     </article>
 
                     <article class="kpi kpi-purple">
-
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -338,15 +333,12 @@
                             <strong id="countKm">0,0 km</strong>
                             <em>gesamte Strecke</em>
                         </span>
-
                     </article>
-
                 </section>
 
                 <section class="dashboard-grid">
 
                     <article class="panel">
-
                         <div class="panel-title">
                             <h2>BERECHTIGUNGSMONITOR</h2>
 
@@ -363,11 +355,9 @@
                                 Aktivitätsdaten werden berechnet ...
                             </p>
                         </div>
-
                     </article>
 
                     <article class="panel">
-
                         <div class="panel-title">
                             <h2>ZUSAMMENFASSUNG</h2>
                             <span>GESAMT</span>
@@ -382,13 +372,11 @@
                             id="nextExit"
                             class="next-exit"
                         >
-                            Keine relevante Fahrt vorhanden.
+                            Kein relevanter Flug vorhanden.
                         </div>
-
                     </article>
 
                     <article class="panel">
-
                         <div class="panel-title">
                             <h2>REKORDE</h2>
                             <span>PERSÖNLICH</span>
@@ -398,34 +386,29 @@
                             id="records"
                             class="records"
                         ></div>
-
                     </article>
 
                 </section>
-
             </section>
 
-            <!-- FAHRT ERFASSEN -->
+            <!-- Fahrt erfassen -->
 
             <section
+                id="fahrt-erfassen"
                 class="app-page"
-                data-page="tracking"
                 aria-labelledby="trackingTitle"
                 hidden
             >
-
                 <div class="tracking-grid">
 
                     <article class="panel">
 
                         <div class="panel-title">
-
                             <h2 id="trackingTitle">
                                 FAHRT ERFASSEN
                             </h2>
 
                             <span>GPS-TRACKING</span>
-
                         </div>
 
                         <div class="form-content">
@@ -435,7 +418,7 @@
                                 <div>
                                     <small>Pilot</small>
 
-                                    <strong id="trackingPilot">
+                                    <strong id="trackingPilotDisplay">
                                         Nicht festgelegt
                                     </strong>
                                 </div>
@@ -443,7 +426,7 @@
                                 <div>
                                     <small>Ballon</small>
 
-                                    <strong id="trackingBallon">
+                                    <strong id="trackingBallonDisplay">
                                         Nicht festgelegt
                                     </strong>
                                 </div>
@@ -451,7 +434,7 @@
                                 <div>
                                     <small>Ballontyp</small>
 
-                                    <strong id="trackingBallontyp">
+                                    <strong id="trackingTypeDisplay">
                                         Nicht festgelegt
                                     </strong>
                                 </div>
@@ -482,6 +465,7 @@
                             <div
                                 id="status"
                                 class="status-message"
+                                role="status"
                                 aria-live="polite"
                             >
                                 Keine Fahrt aktiv
@@ -520,7 +504,6 @@
                             </button>
 
                             <div class="safety-warning">
-
                                 <strong>Hinweis</strong>
 
                                 <p>
@@ -528,33 +511,23 @@
                                     Anwendung geöffnet bleiben. Energiesparmodi
                                     können die GPS-Aufzeichnung unterbrechen.
                                 </p>
-
                             </div>
 
                         </div>
-
                     </article>
 
                     <article class="panel">
 
                         <div class="panel-title">
-
                             <h2>LIVE-TRACK</h2>
-
-                            <button
-                                id="centerTrackingLocationButton"
-                                class="secondary-button"
-                                type="button"
-                            >
-                                Standort zentrieren
-                            </button>
-
+                            <span>AKTUELLE FAHRT</span>
                         </div>
 
                         <div class="tracking-map-wrapper">
 
                             <div
                                 id="trackingMap"
+                                role="region"
                                 aria-label="Live-Karte der aktuellen Fahrt"
                             ></div>
 
@@ -568,13 +541,12 @@
                                     --, --
                                 </span>
 
-                                <small id="trackingAltitude">
-                                    GPS-Höhe: nicht verfügbar
+                                <small id="trackingAccuracy">
+                                    GPS-Genauigkeit: --
                                 </small>
                             </div>
 
                         </div>
-
                     </article>
 
                 </div>
@@ -587,29 +559,25 @@
                     </div>
 
                     <div class="chart-container height-chart">
-
                         <canvas
                             id="heightChart"
+                            role="img"
                             aria-label="Höhenprofil der aktuellen Fahrt"
                         ></canvas>
-
                     </div>
 
                 </article>
-
             </section>
 
-            <!-- FLUGBUCH -->
+            <!-- Flugbuch -->
 
             <section
+                id="flugbuch"
                 class="app-page panel"
-                data-page="flugbuch"
                 aria-labelledby="flightbookTitle"
                 hidden
             >
-
                 <div class="panel-title">
-
                     <h2 id="flightbookTitle">
                         FLUGBUCH
                     </h2>
@@ -617,34 +585,31 @@
                     <span id="flightbookCount">
                         0 EINTRÄGE
                     </span>
-
                 </div>
 
                 <div id="flugliste">
-
                     <p class="empty-message">
                         Noch keine Fahrten gespeichert.
                     </p>
-
                 </div>
-
             </section>
 
-            <!-- KARTE -->
+            <!-- Karte -->
 
             <section
+                id="karte"
                 class="app-page map-page-grid"
-                data-page="karte"
                 aria-labelledby="mapTitle"
                 hidden
             >
-
                 <article class="panel">
 
                     <div class="panel-title map-title">
 
                         <div>
-                            <h2 id="mapTitle">FLUGKARTE</h2>
+                            <h2 id="mapTitle">
+                                FLUGKARTE
+                            </h2>
 
                             <span>
                                 GESPEICHERTE FAHRTEN UND LIVE-STANDORT
@@ -652,9 +617,17 @@
                         </div>
 
                         <span class="map-legend">
-                            <b class="location-color">● Standort</b>
-                            <b class="start-color">● Start</b>
-                            <b class="landing-color">● Landung</b>
+                            <b class="location-color">
+                                ● Standort
+                            </b>
+
+                            <b class="start-color">
+                                ● Start
+                            </b>
+
+                            <b class="landing-color">
+                                ● Landung
+                            </b>
                         </span>
 
                     </div>
@@ -662,11 +635,11 @@
                     <div class="map-toolbar">
 
                         <button
-                            id="centerLocationButton"
+                            id="showCurrentLocationButton"
                             class="primary-button"
                             type="button"
                         >
-                            ◎ Standort anzeigen
+                            ◎ Aktuellen Standort anzeigen
                         </button>
 
                         <button
@@ -675,22 +648,6 @@
                             type="button"
                         >
                             ◇ Alle Fahrten anzeigen
-                        </button>
-
-                        <button
-                            id="toggleLocationTrackingButton"
-                            class="secondary-button"
-                            type="button"
-                        >
-                            Standortüberwachung stoppen
-                        </button>
-
-                        <button
-                            id="copyLocationButton"
-                            class="secondary-button"
-                            type="button"
-                        >
-                            Koordinaten kopieren
                         </button>
 
                         <a
@@ -704,16 +661,11 @@
 
                     </div>
 
-                    <div
-                        id="copyLocationMessage"
-                        class="form-message map-message"
-                        aria-live="polite"
-                    ></div>
-
                     <div class="main-map-layout">
 
                         <div
                             id="map"
+                            role="region"
                             aria-label="Karte der Ballonfahrten"
                         ></div>
 
@@ -721,7 +673,6 @@
                             class="location-panel"
                             aria-label="Aktuelle Standortdaten"
                         >
-
                             <div class="location-panel-header">
 
                                 <span
@@ -731,7 +682,10 @@
 
                                 <span>
                                     <strong>Live-Standort</strong>
-                                    <small>GPS-Daten des Geräts</small>
+
+                                    <small>
+                                        GPS-Daten des Geräts
+                                    </small>
                                 </span>
 
                             </div>
@@ -740,32 +694,50 @@
 
                                 <div>
                                     <small>BREITENGRAD</small>
-                                    <strong id="currentLatitude">--</strong>
+
+                                    <strong id="currentLatitude">
+                                        --
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <small>LÄNGENGRAD</small>
-                                    <strong id="currentLongitude">--</strong>
+
+                                    <strong id="currentLongitude">
+                                        --
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <small>GPS-HÖHE</small>
-                                    <strong id="currentAltitude">--</strong>
+
+                                    <strong id="currentAltitude">
+                                        --
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <small>GENAUIGKEIT</small>
-                                    <strong id="currentAccuracy">--</strong>
+
+                                    <strong id="currentAccuracy">
+                                        --
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <small>GESCHWINDIGKEIT</small>
-                                    <strong id="currentSpeed">--</strong>
+
+                                    <strong id="currentSpeed">
+                                        --
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <small>AKTUALISIERT</small>
-                                    <strong id="currentLocationTime">--</strong>
+
+                                    <strong id="locationUpdatedAt">
+                                        --
+                                    </strong>
                                 </div>
 
                             </div>
@@ -773,6 +745,7 @@
                             <div
                                 id="locationStatus"
                                 class="status-message"
+                                role="status"
                                 aria-live="polite"
                             >
                                 Standort wurde noch nicht abgefragt.
@@ -781,7 +754,6 @@
                         </aside>
 
                     </div>
-
                 </article>
 
                 <div class="safety-warning external-warning">
@@ -798,36 +770,32 @@
                     </p>
 
                 </div>
-
             </section>
-                        <!-- STATISTIKEN -->
+
+            <!-- Statistiken -->
 
             <section
+                id="statistiken"
                 class="app-page statistics-grid"
-                data-page="statistiken"
                 aria-labelledby="statisticsTitle"
                 hidden
             >
-
                 <article class="panel full-grid-column">
 
                     <div class="panel-title">
-
                         <h2 id="statisticsTitle">
                             MONATSSTATISTIK
                         </h2>
 
                         <span>LETZTE 12 MONATE</span>
-
                     </div>
 
                     <div class="chart-container monthly-chart">
-
                         <canvas
                             id="monthlyChart"
+                            role="img"
                             aria-label="Monatsstatistik der Fahrten"
                         ></canvas>
-
                     </div>
 
                 </article>
@@ -835,26 +803,33 @@
                 <article class="panel">
 
                     <div class="panel-title">
-                        <h2>GESAMTAUSWERTUNG</h2>
-                        <span>ALLE FAHRTEN</span>
+                        <h2>AKTIVITÄTSMONITOR</h2>
+                        <span>BERECHTIGUNG</span>
                     </div>
 
-                    <div
-                        id="statisticsSummary"
-                        class="summary-list"
-                    ></div>
+                    <div class="information-content">
+                        <p>
+                            Die Aktivitätsauswertung berücksichtigt die
+                            gespeicherten Fahrten innerhalb des eingestellten
+                            Zeitraums.
+                        </p>
+
+                        <p>
+                            Die erforderliche Anzahl an Fahrten und Landungen
+                            kann in den Einstellungen angepasst werden.
+                        </p>
+                    </div>
 
                 </article>
 
                 <article class="panel">
 
                     <div class="panel-title">
-                        <h2>INFORMATION</h2>
+                        <h2>HINWEIS</h2>
                         <span>AUSWERTUNG</span>
                     </div>
 
                     <div class="information-content">
-
                         <p>
                             Die Statistiken werden aus den lokal im Browser
                             gespeicherten Fahrten berechnet.
@@ -864,22 +839,19 @@
                             Importierte Fahrten werden nach erfolgreichem
                             Speichern ebenfalls berücksichtigt.
                         </p>
-
                     </div>
 
                 </article>
-
             </section>
 
-            <!-- WETTER -->
+            <!-- Wetter -->
 
             <section
+                id="wetter"
                 class="app-page panel"
-                data-page="wetter"
                 aria-labelledby="weatherTitle"
                 hidden
             >
-
                 <div class="panel-title">
 
                     <h2 id="weatherTitle">
@@ -923,6 +895,7 @@
                 <div
                     id="weatherRating"
                     class="weather-rating"
+                    role="status"
                     aria-live="polite"
                 >
                     Wetterdaten werden geladen ...
@@ -937,33 +910,29 @@
                     <p>
                         Diese Wetteranzeige dient ausschließlich der
                         allgemeinen Information. Sie ersetzt keine offizielle
-                        Flugwetterberatung und keine verantwortliche
+                        Flugwetterberatung und keine verantwortungsvolle
                         Flugvorbereitung.
                     </p>
 
                 </div>
-
             </section>
 
-            <!-- EINSTELLUNGEN -->
+            <!-- Einstellungen -->
 
             <section
+                id="einstellungen"
                 class="app-page settings-grid"
-                data-page="einstellungen"
                 aria-labelledby="settingsTitle"
                 hidden
             >
-
                 <article class="panel">
 
                     <div class="panel-title">
-
                         <h2 id="settingsTitle">
-                            PILOT &amp; BALLON
+                            PILOT UND BALLON
                         </h2>
 
                         <span>STAMMDATEN</span>
-
                     </div>
 
                     <div class="form-content">
@@ -1010,32 +979,26 @@
                             >
                         </label>
 
-                        <button
-                            id="saveMasterDataButton"
-                            class="primary-button full-button"
-                            type="button"
-                        >
-                            Stammdaten speichern
-                        </button>
+                        <p class="settings-hint">
+                            Die Stammdaten werden automatisch gespeichert,
+                            sobald ein Eingabefeld verlassen oder geändert wird.
+                        </p>
 
                         <p
                             id="masterDataMessage"
                             class="form-message"
+                            role="status"
                             aria-live="polite"
                         ></p>
 
                     </div>
-
                 </article>
 
                 <article class="panel">
 
                     <div class="panel-title">
-
                         <h2>AKTIVITÄTSMONITOR</h2>
-
                         <span>ANFORDERUNGEN</span>
-
                     </div>
 
                     <div class="form-content">
@@ -1050,6 +1013,7 @@
                                 max="120"
                                 step="1"
                                 value="24"
+                                inputmode="numeric"
                             >
                         </label>
 
@@ -1061,7 +1025,8 @@
                                 type="number"
                                 min="0"
                                 step="1"
-                                value="30"
+                                value="6"
+                                inputmode="numeric"
                             >
                         </label>
 
@@ -1073,7 +1038,8 @@
                                 type="number"
                                 min="0"
                                 step="1"
-                                value="40"
+                                value="10"
+                                inputmode="numeric"
                             >
                         </label>
 
@@ -1100,11 +1066,11 @@
                         <p
                             id="monitorMeldung"
                             class="form-message"
+                            role="status"
                             aria-live="polite"
                         ></p>
 
                     </div>
-
                 </article>
 
                 <article class="panel full-grid-column">
@@ -1115,7 +1081,6 @@
                     </div>
 
                     <div class="information-content">
-
                         <p>
                             Die Fahrtdaten werden lokal im Browser gespeichert.
                             Erstelle regelmäßig ein JSON-Backup, damit deine
@@ -1127,11 +1092,9 @@
                             Backup und Import können über die Schaltflächen in
                             der linken Navigation gestartet werden.
                         </p>
-
                     </div>
 
                 </article>
-
             </section>
 
             <footer>
@@ -1141,17 +1104,15 @@
             </footer>
 
         </main>
-
     </div>
 
-    <!-- IMPORTDIALOG -->
+    <!-- Importdialog -->
 
     <div
         id="importDialog"
         class="dialog-backdrop"
         hidden
     >
-
         <section
             class="import-dialog"
             role="dialog"
@@ -1159,7 +1120,6 @@
             aria-labelledby="importDialogTitle"
             aria-describedby="importDialogDescription"
         >
-
             <div class="dialog-header">
 
                 <div>
@@ -1194,7 +1154,6 @@
                 class="import-dropzone"
                 for="importInput"
             >
-
                 <span
                     class="import-icon"
                     aria-hidden="true"
@@ -1216,7 +1175,6 @@
                     accept=".json,.csv,application/json,text/csv"
                     hidden
                 >
-
             </label>
 
             <div
@@ -1228,10 +1186,11 @@
 
             <fieldset class="import-mode">
 
-                <legend>Importmodus</legend>
+                <legend>
+                    Importmodus
+                </legend>
 
                 <label>
-
                     <input
                         type="radio"
                         name="importMode"
@@ -1245,15 +1204,13 @@
                         </strong>
 
                         <small>
-                            Bestehende Fahrten bleiben erhalten.
+                            Bereits vorhandene Fahrten bleiben erhalten.
                             Duplikate werden übersprungen.
                         </small>
                     </span>
-
                 </label>
 
                 <label>
-
                     <input
                         type="radio"
                         name="importMode"
@@ -1269,7 +1226,6 @@
                             Das gesamte bestehende Flugbuch wird ersetzt.
                         </small>
                     </span>
-
                 </label>
 
             </fieldset>
@@ -1283,6 +1239,7 @@
             <div
                 id="importMessage"
                 class="import-message"
+                role="status"
                 aria-live="polite"
             ></div>
 
@@ -1306,10 +1263,16 @@
                 </button>
 
             </div>
-
         </section>
-
     </div>
+
+    <!--
+        Reihenfolge der JavaScript-Dateien:
+
+        1. Leaflet
+        2. Chart.js
+        3. app.js
+    -->
 
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -1322,4 +1285,5 @@
     <script src="app.js"></script>
 
 </body>
+
 </html>
