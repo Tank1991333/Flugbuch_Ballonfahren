@@ -2,73 +2,73 @@
 
 Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 
+## Ansichten
+
+- Übersicht
+- Fahrt erfassen
+- Flugbuch
+- Karte und Live-Standort
+- Statistiken
+- Wetter
+- Einstellungen
+
 ## Funktionen
 
 - GPS-basierter Start- und Landeort
-- Automatische Aufzeichnung der Flugroute
-- Anzeige der Flugroute auf einer Leaflet-Karte
+- automatische Aufzeichnung der Flugroute
+- Live-Anzeige des aktuellen Standorts
+- Anzeige von Breitengrad und Längengrad
+- GPS-Höhe
+- GPS-Genauigkeit
+- aktuelle GPS-Geschwindigkeit
 - Standardkarte und Satellitenkarte
-- Berechnung der zurückgelegten Strecke
-- Berechnung der durchschnittlichen Geschwindigkeit
-- Berechnung der maximalen Geschwindigkeit
-- Höhenprofil mit Chart.js
-- Maximale, minimale und durchschnittliche Höhe
-- Monatsstatistik der Fahrten
+- Link zur offiziellen VFR/ICAO-Karte von Austro Control
+- Berechnung der Strecke
+- durchschnittliche Geschwindigkeit
+- maximale Geschwindigkeit
+- Höhenprofil
+- Monatsstatistik
+- Aktivitätsmonitor
+- persönliche Rekorde
 - Wetterdaten über Open-Meteo
-- Sonnenaufgang und Sonnenuntergang
-- Windrichtung und Windgeschwindigkeit
-- Lokale Speicherung im Browser
-- Aktivitätsmonitor für Fahrten und Landungen
-- Persönliche Rekorde
-- Anzeige aller gespeicherten Fahrten auf der Karte
 - JSON-Backup
 - JSON-Import
 - CSV-Import
-- Duplikatprüfung beim Import
-- Responsive Ansicht für Desktop, Tablet und Smartphone
+- Duplikatprüfung
+- responsive Ansicht
 
 ## Dateien
+
+Diese Dateien liegen im Hauptverzeichnis:
 
 - `index.html`
 - `style.css`
 - `app.js`
-- `map.js`
-- `weather.js`
-- `monitor.js`
 - `README.md`
 
-## Installation
+Der GitHub-Workflow liegt unter:
 
-Alle sieben Dateien müssen gemeinsam im Hauptverzeichnis der Anwendung liegen.
+- `.github/workflows/validate.yml`
 
-Die Anwendung muss über HTTPS oder über `localhost` geöffnet werden, damit die Browser-Standortfunktionen verwendet werden können.
+## Wichtige Voraussetzung
 
-GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
+Die Anwendung muss über HTTPS oder über `localhost` geöffnet werden.
+
+Beim ersten Start muss die Standortberechtigung im Browser erteilt
+werden.
 
 ## GitHub Pages aktivieren
 
 1. Repository auf GitHub öffnen.
 2. `Settings` auswählen.
 3. `Pages` auswählen.
-4. Unter `Build and deployment` die Option `Deploy from a branch` auswählen.
-5. Als Branch `main` auswählen.
-6. Als Ordner `/ (root)` auswählen.
-7. Auf `Save` klicken.
+4. Unter `Build and deployment` die Option `Deploy from a branch`
+   auswählen.
+5. Branch `main` auswählen.
+6. Ordner `/ (root)` auswählen.
+7. `Save` auswählen.
 
-## Fahrtenimport
-
-Die Anwendung unterstützt:
-
-- JSON-Dateien mit einem Array aus Fahrten
-- JSON-Backups mit dem Feld `fluege`
-- JSON-Dateien mit dem Feld `fahrten`
-- CSV-Dateien mit Semikolon
-- CSV-Dateien mit Komma
-- Deutsche Datumsangaben
-- ISO-Datumsangaben
-- Österreichische Dezimalzahlen mit Komma
-
-## Beispiel für eine CSV-Datei
+## CSV-Beispiel
 
 ```csv
 Startzeit;Endezeit;Pilot;Kennzeichen;Ballontyp;Startort;Landeort;Flugzeit;Strecke;Landungen;Bemerkung
