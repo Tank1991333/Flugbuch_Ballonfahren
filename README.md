@@ -88,3 +88,10 @@ index.html
 style.css
 app.js
 README.md
+```
+
+3. Projekt auf GitHub hochladen oder lokal über einen Webserver starten.
+
+4. Standortberechtigung im Browser erlauben.
+
+5. Anwendung verwenden.
