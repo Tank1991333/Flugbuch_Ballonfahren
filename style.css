@@ -1343,3 +1343,39 @@ footer {
         display: none;
     }
 }
+.link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 11px 15px;
+
+    border-radius: 8px;
+
+    color: #ffffff;
+    background: #34495d;
+
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.link-button:hover {
+    background: #425c75;
+}
+
+.app-page[hidden] {
+    display: none !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #158cff;
+    outline-offset: 2px;
+}
+
+.tracking-location-display {
+    min-width: 220px;
+    backdrop-filter: blur(8px);
+}
