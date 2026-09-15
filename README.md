@@ -15,12 +15,12 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 ## Funktionen
 
 - GPS-basierter Start- und Landeort
-- automatische Aufzeichnung der Flugroute
+- Automatische Aufzeichnung der Flugroute
 - Live-Anzeige des aktuellen Standorts
 - Anzeige von Breitengrad und Längengrad
-- GPS-Höhe
-- GPS-Genauigkeit
-- aktuelle GPS-Geschwindigkeit
+- Anzeige der GPS-Höhe
+- Anzeige der GPS-Genauigkeit
+- Anzeige der aktuellen GPS-Geschwindigkeit
 - Standardkarte und Satellitenkarte
 - Link zur offiziellen VFR/ICAO-Karte von Austro Control
 - Berechnung der zurückgelegten Strecke
@@ -29,43 +29,69 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 - Höhenprofil mit Chart.js
 - Monatsstatistik
 - Aktivitätsmonitor
-- persönliche Rekorde
+- Persönliche Rekorde
 - Wetterdaten über Open-Meteo
 - Sonnenaufgang und Sonnenuntergang
+- Windgeschwindigkeit und Windrichtung
+- Lokale Speicherung im Browser
 - JSON-Backup
 - JSON-Import
 - CSV-Import
 - Duplikatprüfung beim Import
-- responsive Darstellung
+- Responsive Ansicht für Desktop, Tablet und Smartphone
 
 ## Dateien
 
-Folgende Dateien müssen gemeinsam im Hauptverzeichnis liegen:
+Diese Dateien liegen im Hauptverzeichnis:
 
 - `index.html`
 - `style.css`
 - `app.js`
 - `README.md`
 
-## Voraussetzungen
+Der GitHub-Workflow liegt unter:
+
+- `.github/workflows/validate.yml`
+
+Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind in `app.js`
+integriert. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js`
+werden nicht benötigt.
+
+## Externe Bibliotheken und Dienste
+
+Die Anwendung verwendet folgende externe Bibliotheken und Dienste:
+
+- Leaflet für die Kartendarstellung
+- Chart.js für Diagramme und Statistiken
+- OpenStreetMap für die Standardkarte
+- Esri World Imagery für die Satellitenkarte
+- Nominatim für die Ermittlung von Ortsnamen
+- Open-Meteo für Wetterdaten
+- Austro Control als externer Verweis zur offiziellen VFR/ICAO-Karte
+
+Für Kartendarstellung, Wetterdaten und Ortsabfragen wird eine aktive
+Internetverbindung benötigt.
+
+## Wichtige Voraussetzungen
 
 Die Anwendung muss über HTTPS oder über `localhost` geöffnet werden.
-
-Die Standortfunktionen funktionieren normalerweise nicht, wenn die
-Datei direkt über `file://` geöffnet wird.
 
 Beim ersten Start muss die Standortberechtigung im Browser erteilt
 werden.
 
-## GitHub Pages aktivieren
+Die GPS-Funktionen stehen normalerweise nicht zur Verfügung, wenn die
+Datei direkt über eine lokale Adresse wie `file:///` geöffnet wird.
 
-1. Repository auf GitHub öffnen.
-2. `Settings` auswählen.
-3. `Pages` auswählen.
-4. Unter `Build and deployment` die Option `Deploy from a branch`
-   auswählen.
-5. Als Branch `main` auswählen.
-6. Als Ordner `/ (root)` auswählen.
-7. `Save` auswählen.
+GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung
+geeignet.
 
-## CSV-Beispiel
+## Installation
+
+1. Alle Projektdateien in das Hauptverzeichnis des Repositorys kopieren.
+2. Sicherstellen, dass mindestens folgende Dateien vorhanden sind:
+
+   ```text
+   index.html
+   style.css
+   app.js
+   README.md
