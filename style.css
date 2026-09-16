@@ -2156,7 +2156,9 @@ a.secondary-button,
     background:
         rgba(32, 152, 232, 0.16);
 
-    transform: translateY
+    transform: translateY(-2px);
+}
+`
 
 /* =========================================================
    SMARTPHONE / TABLET
