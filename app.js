@@ -2308,21 +2308,11 @@ function monitorLaden() {
         {}
     );
 
-    /*
-     * Alte gespeicherte Einstellungen werden berücksichtigt.
-     *
-     * Falls bisher erforderlicheFahrten gespeichert war,
-     * wird beim ersten Laden der Standardwert für Stunden
-     * verwendet. Beim nächsten Speichern wird automatisch
-     * erforderlicheStunden gespeichert.
-     */
-
     return {
         zeitraumMonate:
             sichereGanzzahl(
                 saved.zeitraumMonate,
-                MONITOR_DEFAULTS
-                    .zeitraumMonate,
+                MONITOR_DEFAULTS.zeitraumMonate,
                 1,
                 120
             ),
@@ -2330,8 +2320,7 @@ function monitorLaden() {
         erforderlicheStunden:
             sichereDezimalzahl(
                 saved.erforderlicheStunden,
-                MONITOR_DEFAULTS
-                    .erforderlicheStunden,
+                MONITOR_DEFAULTS.erforderlicheStunden,
                 0,
                 10000
             ),
@@ -2339,13 +2328,12 @@ function monitorLaden() {
         erforderlicheLandungen:
             sichereGanzzahl(
                 saved.erforderlicheLandungen,
-                MONITOR_DEFAULTS
-                    .erforderlicheLandungen,
+                MONITOR_DEFAULTS.erforderlicheLandungen,
                 0,
                 10000
             )
     };
-}
+}}
 
 function monitorAktualisieren() {
     const target =
@@ -2667,9 +2655,7 @@ function monitorZuruecksetzen() {
 
 function monitorAktualisieren() {
     const target =
-        element(
-            "aktivitaetsmonitorInhalt"
-        );
+        element("aktivitaetsmonitorInhalt");
 
     if (!target) {
         return;
@@ -2695,25 +2681,33 @@ function monitorAktualisieren() {
                 );
 
                 return (
-                    !Number.isNaN(
-                        date.getTime()
-                    ) &&
+                    !Number.isNaN(date.getTime()) &&
                     date >= cutoff &&
                     date <= now
                 );
             }
         );
 
+    const flightMinutes =
+        relevantFlights.reduce(
+            function (sum, flight) {
+                return (
+                    sum +
+                    (Number(flight.flugzeit) || 0)
+                );
+            },
+            0
+        );
+
+    const flightHours =
+        flightMinutes / 60;
+
     const landings =
         relevantFlights.reduce(
             function (sum, flight) {
                 return (
                     sum +
-                    (
-                        Number(
-                            flight.landungen
-                        ) || 0
-                    )
+                    (Number(flight.landungen) || 0)
                 );
             },
             0
@@ -2722,17 +2716,28 @@ function monitorAktualisieren() {
     function progressHtml(
         label,
         value,
-        targetValue
+        targetValue,
+        displayValue,
+        displayTarget
     ) {
+        const numericValue =
+            Number(value) || 0;
+
+        const numericTarget =
+            Number(targetValue) || 0;
+
         const percentage =
-            targetValue <= 0
+            numericTarget <= 0
                 ? 100
                 : Math.min(
                     100,
-                    Math.round(
-                        value /
-                        targetValue *
-                        100
+                    Math.max(
+                        0,
+                        Math.round(
+                            numericValue /
+                            numericTarget *
+                            100
+                        )
                     )
                 );
 
@@ -2744,13 +2749,16 @@ function monitorAktualisieren() {
                     </strong>
 
                     <span>
-                        ${value} / ${targetValue}
+                        ${htmlSicher(displayValue)}
+                        /
+                        ${htmlSicher(displayTarget)}
                     </span>
                 </div>
 
                 <div
                     class="monitor-progress-bar"
                     role="progressbar"
+                    aria-label="${htmlSicher(label)}"
                     aria-valuemin="0"
                     aria-valuemax="100"
                     aria-valuenow="${percentage}"
@@ -2764,22 +2772,37 @@ function monitorAktualisieren() {
         `;
     }
 
+    const formattedFlightHours =
+        `${formatZahl(flightHours, 1)} h`;
+
+    const formattedRequiredHours =
+        `${formatZahl(
+            settings.erforderlicheStunden,
+            1
+        )} h`;
+
     const fulfilled =
-        relevantFlights.length >=
-            settings.erforderlicheFahrten &&
+        flightHours >=
+            settings.erforderlicheStunden &&
         landings >=
             settings.erforderlicheLandungen;
 
     target.innerHTML =
         progressHtml(
-            "Fahrten",
-            relevantFlights.length,
-            settings.erforderlicheFahrten
+            "Flugstunden",
+            flightHours,
+            settings.erforderlicheStunden,
+            formattedFlightHours,
+            formattedRequiredHours
         ) +
         progressHtml(
             "Landungen",
             landings,
-            settings.erforderlicheLandungen
+            settings.erforderlicheLandungen,
+            String(landings),
+            String(
+                settings.erforderlicheLandungen
+            )
         ) +
         `
             <div class="monitor-state ${
@@ -2804,9 +2827,10 @@ function monitorAktualisieren() {
         "nextExit",
         relevantFlights.length
             ? (
-                `${relevantFlights.length} relevante ` +
-                `Fahrt(en) und ${landings} ` +
-                "Landung(en) im Zeitraum."
+                `${formattedFlightHours} Flugzeit, ` +
+                `${landings} Landung(en) und ` +
+                `${relevantFlights.length} Fahrt(en) ` +
+                "im Zeitraum."
             )
             : "Keine relevante Fahrt im Zeitraum."
     );
