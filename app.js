@@ -19,7 +19,7 @@ const PAGE_IDS = [
 
 const MONITOR_DEFAULTS = Object.freeze({
     zeitraumMonate: 24,
-    erforderlicheFahrten: 6,
+    erforderlicheZeit: 6,
     erforderlicheLandungen: 10
 });
 
