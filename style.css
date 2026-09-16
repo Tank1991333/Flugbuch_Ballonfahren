@@ -2159,43 +2159,88 @@ a.secondary-button,
     transform: translateY
 
 /* =========================================================
-   SMARTPHONE / TABLET
+   SMARTPHONE / TABLET OPTIMIERT
    ========================================================= */
 
 @media (max-width: 768px) {
 
-    /* Sidebar ausblenden */
-    .app-shell {
-        grid-template-columns: 1fr;
+    html,
+    body {
+        overflow-x: hidden;
     }
 
+    /* Layout */
+
+    .app-shell {
+        display: block;
+        width: 100%;
+    }
+
+    .main {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 12px;
+    }
+
+    /* Sidebar */
+
     .sidebar {
-        display: none;
+        position: fixed;
+        top: 0;
+        left: -100%;
+
+        width: 280px;
+        max-width: 85vw;
+        height: 100vh;
+
+        z-index: 5000;
+
+        display: flex;
+
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.sidebar-open {
+        left: 0;
     }
 
     .menu-button {
         display: block;
     }
 
-    .main {
-        padding: 15px;
-    }
-
     /* Kopfbereich */
+
     .topbar {
         flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .topbar h1 {
+        font-size: 22px;
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .topbar p {
+        font-size: 13px;
     }
 
     .top-meta {
         width: 100%;
         margin-left: 0;
+        flex-wrap: wrap;
+        gap: 8px;
+        white-space: normal;
     }
 
     /* Hero */
+
     .hero-dashboard {
         flex-direction: column;
-        min-height: auto;
+        justify-content: center;
         text-align: center;
+        min-height: auto;
     }
 
     .hero-copy {
@@ -2203,67 +2248,160 @@ a.secondary-button,
     }
 
     .hero-copy h2 {
-        font-size: 32px;
+        font-size: 28px;
+        line-height: 1.15;
+    }
+
+    .hero-copy p {
+        font-size: 14px;
     }
 
     .hero-balloon {
-        margin: 0 0 20px 0;
+        margin: 0 0 20px;
         font-size: 90px;
     }
 
-    /* KPI Karten */
+    /* KPI */
+
     .kpi-grid {
         grid-template-columns: 1fr;
     }
 
-    /* Dashboard Panels */
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
+    /* Grids */
 
-    /* Tracking */
-    .tracking-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Statistik */
+    .dashboard-grid,
+    .tracking-grid,
     .statistics-grid,
     .settings-grid {
         grid-template-columns: 1fr;
     }
 
-    /* Rekorde */
     .records {
         grid-template-columns: 1fr;
     }
 
-    /* Wetter */
-    .weather-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Flugbuch */
-    .flight-data {
-        grid-template-columns: 1fr;
-    }
-
-    /* Stammdaten */
     .current-master-data {
         grid-template-columns: 1fr;
     }
 
+    .flight-data {
+        grid-template-columns: 1fr;
+    }
+
+    .location-values {
+        grid-template-columns: 1fr;
+    }
+
+    .weather-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Panels */
+
+    .panel {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Buttons */
+
+    .button-group,
+    .map-toolbar,
+    .flight-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .button-group button,
+    .map-toolbar button,
+    .map-toolbar a,
+    .flight-actions button {
+        width: 100%;
+    }
+
     /* Karte */
+
     .main-map-layout {
         grid-template-columns: 1fr;
     }
 
     .location-panel {
         border-left: none;
-        border-top: 1px solid rgba(72,120,150,.5);
+        border-top: 1px solid rgba(72, 120, 150, 0.5);
     }
 
     #map,
     #trackingMap {
+        width: 100%;
         height: 350px;
     }
+
+    .tracking-location-display {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+    }
+
+    /* Diagramme */
+
+    .chart-container {
+        overflow: hidden;
+    }
+
+    canvas {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .monthly-chart {
+        height: 300px;
+        padding: 10px;
+    }
+
+    .height-chart {
+        height: 260px;
+        padding: 10px;
+    }
+
+    /* Flugbuch */
+
+    .flight-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Wetter */
+
+    .weather-grid > div {
+        width: 100%;
+    }
+
+    /* Dialog */
+
+    .import-dialog {
+        width: 100%;
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .dialog-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dialog-actions button {
+        width: 100%;
+    }
+
+    /* Lange Texte */
+
+    .record strong,
+    .flight-data strong,
+    .location-values strong,
+    .current-master-data strong {
+        word-break: break-word;
+    }
 }
+``
