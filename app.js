@@ -2844,12 +2844,12 @@ function monitorFormularFuellen() {
             settings.zeitraumMonate;
     }
 
-    if (element("monitorSollFahrten")) {
-        element(
-            "monitorSollFahrten"
-        ).value =
-            settings.erforderlicheFahrten;
-    }
+if (element("monitorSollStunden")) {
+    element(
+        "monitorSollStunden"
+    ).value =
+        settings.erforderlicheStunden;
+}
 
     if (element("monitorSollLandungen")) {
         element(
@@ -2871,13 +2871,15 @@ function monitorSpeichern() {
                 120
             ),
 
-        erforderlicheFahrten:
-            sichereGanzzahl(
-                element(
-                    "monitorSollFahrten"
-                )?.value,
-                6
-            ),
+       erforderlicheStunden:
+    sichereDezimalzahl(
+        element(
+            "monitorSollStunden"
+        )?.value,
+        6,
+        0,
+        10000
+    ),
 
         erforderlicheLandungen:
             sichereGanzzahl(
