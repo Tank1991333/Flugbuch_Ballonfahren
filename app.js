@@ -4035,3 +4035,23 @@ window.addEventListener(
         }
     }
 );
+// Bildschirm aktiv halten
+let wakeLock = null;
+
+async function aktivBleiben() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    console.log('Wake Lock aktiv');
+  } catch (err) {
+    console.error('Wake Lock Fehler:', err);
+  }
+}
+
+window.addEventListener('load', aktivBleiben);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    aktivBleiben();
+  }
+});
+``
