@@ -2333,7 +2333,7 @@ function monitorLaden() {
                 10000
             )
     };
-}}
+}
 
 function monitorAktualisieren() {
     const target =
