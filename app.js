@@ -4471,7 +4471,6 @@ function appInitialisieren() {
         )
             ? requestedPage
             : "dashboard"
-    );
 }
 
 if (
