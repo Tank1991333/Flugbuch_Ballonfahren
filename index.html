@@ -32,9 +32,46 @@
 
 <body>
 
-</div>
+    <div id="login-container">
+        <h2>Ballonflugbuch Login</h2>
 
-<div id="app-container" style="display:none;">
+        <label for="email">
+            E-Mail-Adresse
+        </label>
+
+        <input
+            type="email"
+            id="email"
+            placeholder="E-Mail"
+            autocomplete="email"
+        >
+
+        <label for="password">
+            Passwort
+        </label>
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Passwort"
+            autocomplete="current-password"
+        >
+
+        <button
+            id="loginButton"
+            type="button"
+        >
+            Anmelden
+        </button>
+
+        <p
+            id="loginMessage"
+            role="status"
+            aria-live="polite"
+        ></p>
+    </div>
+
+    <div id="app-container" style="display: none;">
 
     <noscript>
         <div class="noscript-warning">
@@ -1255,30 +1292,25 @@
 
 </div>
 
-</section>
+        </section>
+    </div>
 
-</div>
+        <!-- Ende app-container -->
+    </div>
 
-<!--
-    Reihenfolge der JavaScript-Dateien:
+    <!-- JavaScript-Bibliotheken -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
 
-    1. Leaflet
-    2. Chart.js
-    3. Supabase
-    4. app.js
--->
+    <script src="chart.js"></script>
 
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase
 
-<script src="chart.js"></script>
-
-https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>
-
-<script src="app.js"></script>
+    <script src="app.js"></script>
 
 </body>
 </html>
