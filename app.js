@@ -1,5 +1,11 @@
 "use strict";
 
+const supabaseClient =
+    window.supabase.createClient(
+        "https://yswbobxtlqkkjnrrpyfy.supabase.co",
+        "sb_publishable_-R4MbnlI7k2a3L8GY_aCOg_9KHVIxaA"
+    );
+
 const FLIGHT_STORAGE_KEY = "fluege";
 const MASTER_DATA_KEY = "stammdaten";
 const MONITOR_STORAGE_KEY = "monitorEinstellungen";
