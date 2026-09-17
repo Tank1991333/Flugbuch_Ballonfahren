@@ -1,114 +1,5 @@
 "use strict";
 
-const SUPABASE_URL =
-    "https://yswbobxtlqkkjnrrpyfy.supabase.co";
-const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2JvYnh0bHFra2pucnJweWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDUyMDUsImV4cCI6MjEwNTE4MTIwNX0.GcqK2b3OfmdL_AQVKTk2wQFFhpUBFMZppp3lgUhcp18";
-
-if (!window.supabase) {
-throw new Error(
-"Supabase-Bibliothek wurde nicht geladen."
-);
-}
-
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
-
-function loginMeldung(text, istFehler = false) {
-    const message = document.getElementById(
-        "loginMessage"
-    );
-
-    if (!message) {
-        return;
-    }
-
-    message.textContent = text;
-    message.style.color = istFehler
-        ? "#ff625b"
-        : "#43dd6b";
-}
-
-function angemeldetenBereichAnzeigen() {
-    const loginContainer = document.getElementById(
-        "login-container"
-    );
-
-    const appContainer = document.getElementById(
-        "app-container"
-    );
-
-    if (loginContainer) {
-        loginContainer.style.display = "none";
-    }
-
-    if (appContainer) {
-        appContainer.style.display = "block";
-    }
-}
-
-function loginBereichAnzeigen() {
-    const loginContainer = document.getElementById(
-        "login-container"
-    );
-
-    const appContainer = document.getElementById(
-        "app-container"
-    );
-
-    if (loginContainer) {
-        loginContainer.style.display = "block";
-    }
-
-    if (appContainer) {
-        appContainer.style.display = "none";
-    }
-}
-
-async function login() {
-    const email = document
-        .getElementById("email")
-        ?.value
-        .trim();
-
-    const password = document
-        .getElementById("password")
-        ?.value;
-
-    if (!email || !password) {
-        loginMeldung(
-            "Bitte E-Mail und Passwort eingeben.",
-            true
-        );
-        return;
-    }
-
-    loginMeldung("Anmeldung läuft ...");
-
-    const { error } =
-        await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-        });
-
-    if (error) {
-        console.error(error);
-
-        loginMeldung(
-            "Anmeldung fehlgeschlagen: " +
-                error.message,
-            true
-        );
-
-        return;
-    }
-
-    loginMeldung("");
-    angemeldetenBereichAnzeigen();
-}
-
 const FLIGHT_STORAGE_KEY = "fluege";
 const MASTER_DATA_KEY = "stammdaten";
 const MONITOR_STORAGE_KEY = "monitorEinstellungen";
@@ -2659,6 +2550,296 @@ function monitorFormularFuellen() {
     const settings = monitorLaden();
 
     if (element("monitorZeitraum")) {
+        element(
+            "monitorZeitraum"
+        ).value =
+            settings.zeitraumMonate;
+    }
+
+    if (element("monitorSollStunden")) {
+        element(
+            "monitorSollStunden"
+        ).value =
+            settings.erforderlicheStunden;
+    }
+
+    if (element("monitorSollLandungen")) {
+        element(
+            "monitorSollLandungen"
+        ).value =
+            settings.erforderlicheLandungen;
+    }
+}
+
+function monitorSpeichern() {
+    const settings = {
+        zeitraumMonate:
+            sichereGanzzahl(
+                element(
+                    "monitorZeitraum"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .zeitraumMonate,
+                1,
+                120
+            ),
+
+        erforderlicheStunden:
+            sichereDezimalzahl(
+                element(
+                    "monitorSollStunden"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .erforderlicheStunden,
+                0,
+                10000
+            ),
+
+        erforderlicheLandungen:
+            sichereGanzzahl(
+                element(
+                    "monitorSollLandungen"
+                )?.value,
+                MONITOR_DEFAULTS
+                    .erforderlicheLandungen,
+                0,
+                10000
+            )
+    };
+
+    try {
+        localStorage.setItem(
+            MONITOR_STORAGE_KEY,
+            JSON.stringify(settings)
+        );
+
+        monitorFormularFuellen();
+        monitorAktualisieren();
+
+        textSetzen(
+            "monitorMeldung",
+            "✓ Anforderungen wurden gespeichert."
+        );
+    } catch (error) {
+        console.error(error);
+
+        textSetzen(
+            "monitorMeldung",
+            "❌ Anforderungen konnten nicht gespeichert werden."
+        );
+    }
+}
+
+function monitorZuruecksetzen() {
+    try {
+        localStorage.removeItem(
+            MONITOR_STORAGE_KEY
+        );
+
+        monitorFormularFuellen();
+        monitorAktualisieren();
+
+        textSetzen(
+            "monitorMeldung",
+            "✓ Einstellungen wurden zurückgesetzt."
+        );
+    } catch (error) {
+        console.error(error);
+
+        textSetzen(
+            "monitorMeldung",
+            "❌ Einstellungen konnten nicht zurückgesetzt werden."
+        );
+    }
+}
+
+function monitorAktualisieren() {
+    const target =
+        element("aktivitaetsmonitorInhalt");
+
+    if (!target) {
+        return;
+    }
+
+    const settings = monitorLaden();
+    const cutoff = new Date();
+    const now = new Date();
+
+    cutoff.setHours(0, 0, 0, 0);
+
+    cutoff.setMonth(
+        cutoff.getMonth() -
+        settings.zeitraumMonate
+    );
+
+    const relevantFlights =
+        fluege.filter(
+            function (flight) {
+                const date = new Date(
+                    flight.startzeit ||
+                    flight.datum
+                );
+
+                return (
+                    !Number.isNaN(date.getTime()) &&
+                    date >= cutoff &&
+                    date <= now
+                );
+            }
+        );
+
+    const flightMinutes =
+        relevantFlights.reduce(
+            function (sum, flight) {
+                return (
+                    sum +
+                    (Number(flight.flugzeit) || 0)
+                );
+            },
+            0
+        );
+
+    const flightHours =
+        flightMinutes / 60;
+
+    const landings =
+        relevantFlights.reduce(
+            function (sum, flight) {
+                return (
+                    sum +
+                    (Number(flight.landungen) || 0)
+                );
+            },
+            0
+        );
+
+    function progressHtml(
+        label,
+        value,
+        targetValue,
+        displayValue,
+        displayTarget
+    ) {
+        const numericValue =
+            Number(value) || 0;
+
+        const numericTarget =
+            Number(targetValue) || 0;
+
+        const percentage =
+            numericTarget <= 0
+                ? 100
+                : Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        Math.round(
+                            numericValue /
+                            numericTarget *
+                            100
+                        )
+                    )
+                );
+
+        return `
+            <div class="monitor-progress">
+                <div class="monitor-progress-header">
+                    <strong>
+                        ${htmlSicher(label)}
+                    </strong>
+
+                    <span>
+                        ${htmlSicher(displayValue)}
+                        /
+                        ${htmlSicher(displayTarget)}
+                    </span>
+                </div>
+
+                <div
+                    class="monitor-progress-bar"
+                    role="progressbar"
+                    aria-label="${htmlSicher(label)}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="${percentage}"
+                >
+                    <span
+                        class="monitor-progress-value"
+                        style="width: ${percentage}%"
+                    ></span>
+                </div>
+            </div>
+        `;
+    }
+
+    const formattedFlightHours =
+        `${formatZahl(flightHours, 1)} h`;
+
+    const formattedRequiredHours =
+        `${formatZahl(
+            settings.erforderlicheStunden,
+            1
+        )} h`;
+
+    const fulfilled =
+        flightHours >=
+            settings.erforderlicheStunden &&
+        landings >=
+            settings.erforderlicheLandungen;
+
+    target.innerHTML =
+        progressHtml(
+            "Flugstunden",
+            flightHours,
+            settings.erforderlicheStunden,
+            formattedFlightHours,
+            formattedRequiredHours
+        ) +
+        progressHtml(
+            "Landungen",
+            landings,
+            settings.erforderlicheLandungen,
+            String(landings),
+            String(
+                settings.erforderlicheLandungen
+            )
+        ) +
+        `
+            <div class="monitor-state ${
+                fulfilled
+                    ? "monitor-state-good"
+                    : "monitor-state-open"
+            }">
+                ${
+                    fulfilled
+                        ? "✓ EINGESTELLTE ANFORDERUNGEN ERFÜLLT"
+                        : "! ANFORDERUNGEN NOCH OFFEN"
+                }
+            </div>
+        `;
+
+    textSetzen(
+        "monitorPeriodLabel",
+        `${settings.zeitraumMonate} MONATE`
+    );
+
+    textSetzen(
+        "nextExit",
+        relevantFlights.length
+            ? (
+                `${formattedFlightHours} Flugzeit, ` +
+                `${landings} Landung(en) und ` +
+                `${relevantFlights.length} Fahrt(en) ` +
+                "im Zeitraum."
+            )
+            : "Keine relevante Fahrt im Zeitraum."
+    );
+}
+
+function monitorFormularFuellen() {
+    const settings = monitorLaden();
+
+    if (element("monitorZeitraum")) {
         element("monitorZeitraum").value =
             settings.zeitraumMonate;
     }
@@ -3894,23 +4075,6 @@ function eventHinzufuegen(
 }
 
 function appInitialisieren() {
-
-    eventHinzufuegen(
-        "loginButton",
-        "click",
-        login
-    );
-
-    supabaseClient.auth
-        .getSession()
-        .then(function ({ data }) {
-            if (data.session) {
-                angemeldetenBereichAnzeigen();
-            } else {
-                loginBereichAnzeigen();
-            }
-        });
-
     const masterData =
         stammdatenLaden();
 
@@ -4153,7 +4317,9 @@ function appInitialisieren() {
         function (event) {
             if (
                 event.key === "Escape" &&
-                !element("importDialog")?.hidden
+                !element(
+                    "importDialog"
+                )?.hidden
             ) {
                 importDialogSchliessen();
             }
@@ -4184,8 +4350,8 @@ function appInitialisieren() {
         )
             ? requestedPage
             : "dashboard"
-);
-    }
+    );
+}
 
 if (
     document.readyState === "loading"
@@ -4263,13 +4429,9 @@ async function aktivBleiben() {
 
 window.addEventListener('load', aktivBleiben);
 
-document.addEventListener(
-    "visibilitychange",
-    () => {
-        if (
-            document.visibilityState === "visible"
-        ) {
-            aktivBleiben();
-        }
-    }
-);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    aktivBleiben();
+  }
+});
+``
