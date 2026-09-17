@@ -43,23 +43,28 @@
 </head>
 
 <body>
-<div id="login-container">
+async function login() {
 
-    <h2>Ballonflugbuch Login</h2>
+    const email =
+        document.getElementById("email").value;
 
-    <input
-        type="email"
-        id="email"
-        placeholder="E-Mail">
+    const password =
+        document.getElementById("password").value;
 
-    <input
-        type="password"
-        id="password"
-        placeholder="Passwort">
+    const { data, error } =
+        await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
 
-    <button onclick="login()">
-        Anmelden
-    </button>
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    document.getElementById("login-container").style.display = "none";
+    document.getElementById("app-container").style.display = "block";
+}
 
 </div>
 
