@@ -1,7 +1,15 @@
 "use strict";
 
-const SUPABASE_URL = "https://yswbobxtlqkkjnrrpyfy.supabase.co/rest/v1/";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2JvYnh0bHFra2pucnJweWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDUyMDUsImV4cCI6MjEwNTE4MTIwNX0.GcqK2b3OfmdL_AQVKTk2wQFFhpUBFMZppp3lgUhcp18";
+const SUPABASE_URL =
+    "https://yswbobxtlqkkjnrrpyfy.supabase.co";
+const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2JvYnh0bHFra2pucnJweWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDUyMDUsImV4cCI6MjEwNTE4MTIwNX0.GcqK2b3OfmdL_AQVKTk2wQFFhpUBFMZppp3lgUhcp18";
+
+if (!window.supabase) {
+throw new Error(
+"Supabase-Bibliothek wurde nicht geladen."
+);
+}
 
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
@@ -100,7 +108,6 @@ async function login() {
     loginMeldung("");
     angemeldetenBereichAnzeigen();
 }
-``
 
 const FLIGHT_STORAGE_KEY = "fluege";
 const MASTER_DATA_KEY = "stammdaten";
@@ -2755,189 +2762,6 @@ function monitorZuruecksetzen() {
     }
 }
 
-function monitorAktualisieren() {
-    const target =
-        element("aktivitaetsmonitorInhalt");
-
-    if (!target) {
-        return;
-    }
-
-    const settings = monitorLaden();
-    const cutoff = new Date();
-    const now = new Date();
-
-    cutoff.setHours(0, 0, 0, 0);
-
-    cutoff.setMonth(
-        cutoff.getMonth() -
-        settings.zeitraumMonate
-    );
-
-    const relevantFlights =
-        fluege.filter(
-            function (flight) {
-                const date = new Date(
-                    flight.startzeit ||
-                    flight.datum
-                );
-
-                return (
-                    !Number.isNaN(date.getTime()) &&
-                    date >= cutoff &&
-                    date <= now
-                );
-            }
-        );
-
-    const flightMinutes =
-        relevantFlights.reduce(
-            function (sum, flight) {
-                return (
-                    sum +
-                    (Number(flight.flugzeit) || 0)
-                );
-            },
-            0
-        );
-
-    const flightHours =
-        flightMinutes / 60;
-
-    const landings =
-        relevantFlights.reduce(
-            function (sum, flight) {
-                return (
-                    sum +
-                    (Number(flight.landungen) || 0)
-                );
-            },
-            0
-        );
-
-    function progressHtml(
-        label,
-        value,
-        targetValue,
-        displayValue,
-        displayTarget
-    ) {
-        const numericValue =
-            Number(value) || 0;
-
-        const numericTarget =
-            Number(targetValue) || 0;
-
-        const percentage =
-            numericTarget <= 0
-                ? 100
-                : Math.min(
-                    100,
-                    Math.max(
-                        0,
-                        Math.round(
-                            numericValue /
-                            numericTarget *
-                            100
-                        )
-                    )
-                );
-
-        return `
-            <div class="monitor-progress">
-                <div class="monitor-progress-header">
-                    <strong>
-                        ${htmlSicher(label)}
-                    </strong>
-
-                    <span>
-                        ${htmlSicher(displayValue)}
-                        /
-                        ${htmlSicher(displayTarget)}
-                    </span>
-                </div>
-
-                <div
-                    class="monitor-progress-bar"
-                    role="progressbar"
-                    aria-label="${htmlSicher(label)}"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="${percentage}"
-                >
-                    <span
-                        class="monitor-progress-value"
-                        style="width: ${percentage}%"
-                    ></span>
-                </div>
-            </div>
-        `;
-    }
-
-    const formattedFlightHours =
-        `${formatZahl(flightHours, 1)} h`;
-
-    const formattedRequiredHours =
-        `${formatZahl(
-            settings.erforderlicheStunden,
-            1
-        )} h`;
-
-    const fulfilled =
-        flightHours >=
-            settings.erforderlicheStunden &&
-        landings >=
-            settings.erforderlicheLandungen;
-
-    target.innerHTML =
-        progressHtml(
-            "Flugstunden",
-            flightHours,
-            settings.erforderlicheStunden,
-            formattedFlightHours,
-            formattedRequiredHours
-        ) +
-        progressHtml(
-            "Landungen",
-            landings,
-            settings.erforderlicheLandungen,
-            String(landings),
-            String(
-                settings.erforderlicheLandungen
-            )
-        ) +
-        `
-            <div class="monitor-state ${
-                fulfilled
-                    ? "monitor-state-good"
-                    : "monitor-state-open"
-            }">
-                ${
-                    fulfilled
-                        ? "✓ EINGESTELLTE ANFORDERUNGEN ERFÜLLT"
-                        : "! ANFORDERUNGEN NOCH OFFEN"
-                }
-            </div>
-        `;
-
-    textSetzen(
-        "monitorPeriodLabel",
-        `${settings.zeitraumMonate} MONATE`
-    );
-
-    textSetzen(
-        "nextExit",
-        relevantFlights.length
-            ? (
-                `${formattedFlightHours} Flugzeit, ` +
-                `${landings} Landung(en) und ` +
-                `${relevantFlights.length} Fahrt(en) ` +
-                "im Zeitraum."
-            )
-            : "Keine relevante Fahrt im Zeitraum."
-    );
-}
-
 function monitorFormularFuellen() {
     const settings = monitorLaden();
 
@@ -4234,8 +4058,6 @@ function appInitialisieren() {
             );
         });
 
-}
-
     eventHinzufuegen(
         "menuButton",
         "click",
@@ -4438,9 +4260,7 @@ function appInitialisieren() {
         function (event) {
             if (
                 event.key === "Escape" &&
-                !element(
-                    "importDialog"
-                )?.hidden
+                !element("importDialog")?.hidden
             ) {
                 importDialogSchliessen();
             }
@@ -4471,7 +4291,8 @@ function appInitialisieren() {
         )
             ? requestedPage
             : "dashboard"
-}
+);
+    }
 
 if (
     document.readyState === "loading"
@@ -4549,9 +4370,13 @@ async function aktivBleiben() {
 
 window.addEventListener('load', aktivBleiben);
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    aktivBleiben();
-  }
-});
-``
+document.addEventListener(
+    "visibilitychange",
+    () => {
+        if (
+            document.visibilityState === "visible"
+        ) {
+            aktivBleiben();
+        }
+    }
+);
