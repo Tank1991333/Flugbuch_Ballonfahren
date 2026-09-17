@@ -2269,3 +2269,24 @@ a.secondary-button,
         height: 350px;
     }
 }
+
+#login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+}
+
+#login-container input {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+}
+
+#login-container button {
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+}
