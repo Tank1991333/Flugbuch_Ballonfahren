@@ -1,5 +1,107 @@
 "use strict";
 
+const SUPABASE_URL = "https://yswbobxtlqkkjnrrpyfy.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2JvYnh0bHFra2pucnJweWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDUyMDUsImV4cCI6MjEwNTE4MTIwNX0.GcqK2b3OfmdL_AQVKTk2wQFFhpUBFMZppp3lgUhcp18";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+function loginMeldung(text, istFehler = false) {
+    const message = document.getElementById(
+        "loginMessage"
+    );
+
+    if (!message) {
+        return;
+    }
+
+    message.textContent = text;
+    message.style.color = istFehler
+        ? "#ff625b"
+        : "#43dd6b";
+}
+
+function angemeldetenBereichAnzeigen() {
+    const loginContainer = document.getElementById(
+        "login-container"
+    );
+
+    const appContainer = document.getElementById(
+        "app-container"
+    );
+
+    if (loginContainer) {
+        loginContainer.style.display = "none";
+    }
+
+    if (appContainer) {
+        appContainer.style.display = "block";
+    }
+}
+
+function loginBereichAnzeigen() {
+    const loginContainer = document.getElementById(
+        "login-container"
+    );
+
+    const appContainer = document.getElementById(
+        "app-container"
+    );
+
+    if (loginContainer) {
+        loginContainer.style.display = "block";
+    }
+
+    if (appContainer) {
+        appContainer.style.display = "none";
+    }
+}
+
+async function login() {
+    const email = document
+        .getElementById("email")
+        ?.value
+        .trim();
+
+    const password = document
+        .getElementById("password")
+        ?.value;
+
+    if (!email || !password) {
+        loginMeldung(
+            "Bitte E-Mail und Passwort eingeben.",
+            true
+        );
+        return;
+    }
+
+    loginMeldung("Anmeldung läuft ...");
+
+    const { error } =
+        await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+    if (error) {
+        console.error(error);
+
+        loginMeldung(
+            "Anmeldung fehlgeschlagen: " +
+                error.message,
+            true
+        );
+
+        return;
+    }
+
+    loginMeldung("");
+    angemeldetenBereichAnzeigen();
+}
+``
+
 const FLIGHT_STORAGE_KEY = "fluege";
 const MASTER_DATA_KEY = "stammdaten";
 const MONITOR_STORAGE_KEY = "monitorEinstellungen";
@@ -4075,6 +4177,23 @@ function eventHinzufuegen(
 }
 
 function appInitialisieren() {
+
+    eventHinzufuegen(
+        "loginButton",
+        "click",
+        login
+    );
+
+    supabaseClient.auth
+        .getSession()
+        .then(function ({ data }) {
+            if (data.session) {
+                angemeldetenBereichAnzeigen();
+            } else {
+                loginBereichAnzeigen();
+            }
+        });
+
     const masterData =
         stammdatenLaden();
 
@@ -4114,6 +4233,8 @@ function appInitialisieren() {
                 }
             );
         });
+
+}
 
     eventHinzufuegen(
         "menuButton",
