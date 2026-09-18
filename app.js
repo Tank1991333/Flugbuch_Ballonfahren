@@ -358,6 +358,10 @@ function seiteAnzeigen(pageId) {
         );
     }
 
+    if (window.innerWidth <= 768) {
+        setzeMobilmenue(false);
+    }
+
     window.scrollTo({
         top: 0,
         behavior: "smooth"
@@ -3802,9 +3806,47 @@ function eventHinzufuegen(
     );
 }
 
+function setzeMobilmenue(status) {
+    const sidebar = element("sidebar");
+    const backdrop = document.getElementById("mobileMenuBackdrop");
+
+    if (sidebar) {
+        sidebar.classList.toggle("sidebar-open", status);
+    }
+
+    if (backdrop) {
+        backdrop.classList.toggle("visible", status);
+        backdrop.hidden = !status;
+    }
+
+    element("menuButton")?.setAttribute(
+        "aria-expanded",
+        status ? "true" : "false"
+    );
+}
+
+function erstelleMobilmenueOverlay() {
+    if (document.getElementById("mobileMenuBackdrop")) {
+        return;
+    }
+
+    const backdrop = document.createElement("div");
+    backdrop.id = "mobileMenuBackdrop";
+    backdrop.className = "mobile-menu-backdrop";
+    backdrop.hidden = true;
+
+    backdrop.addEventListener("click", function () {
+        setzeMobilmenue(false);
+    });
+
+    document.body.appendChild(backdrop);
+}
+
 function appInitialisieren() {
     const masterData =
         stammdatenLaden();
+
+    erstelleMobilmenueOverlay();
 
     [
         "pilot",
@@ -3850,19 +3892,12 @@ function appInitialisieren() {
             const sidebar =
                 element("sidebar");
 
-            sidebar?.classList.toggle(
-                "sidebar-open"
-            );
-
-            element("menuButton")
-                ?.setAttribute(
-                    "aria-expanded",
-                    sidebar?.classList.contains(
-                        "sidebar-open"
-                    )
-                        ? "true"
-                        : "false"
+            const isOpen =
+                sidebar?.classList.contains(
+                    "sidebar-open"
                 );
+
+            setzeMobilmenue(!isOpen);
         }
     );
 
@@ -4118,6 +4153,10 @@ window.addEventListener(
     function () {
         hauptkarte?.invalidateSize();
         trackingKarte?.invalidateSize();
+
+        if (window.innerWidth > 768) {
+            setzeMobilmenue(false);
+        }
     }
 );
 
