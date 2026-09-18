@@ -1285,288 +1285,6 @@ function zeichneHoehenprofil(track) {
     });
 }
 
-function ladeFilterOptionen() {
-    const pilotSet = new Set();
-    const balloonSet = new Set();
-    const yearSet = new Set();
-
-    fluege.forEach(function (flight) {
-        const date = flight.startzeit || flight.datum || "";
-        if (flight.pilot) pilotSet.add(flight.pilot);
-        if (flight.ballon) balloonSet.add(flight.ballon);
-        if (date) {
-            const year = new Date(date).getFullYear();
-            if (Number.isFinite(year)) yearSet.add(String(year));
-        }
-    });
-
-    const pilotSelect = element("flightFilterPilot");
-    const balloonSelect = element("flightFilterBalloon");
-    const yearSelect = element("flightFilterYear");
-
-    if (pilotSelect) {
-        const current = pilotSelect.value;
-        pilotSelect.innerHTML = `<option value="">Alle Piloten</option>` +
-            [...pilotSet].sort().map(
-                (value) => `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`
-            ).join("");
-
-        if ([...pilotSet].includes(current)) {
-            pilotSelect.value = current;
-        }
-    }
-
-    if (balloonSelect) {
-        const current = balloonSelect.value;
-        balloonSelect.innerHTML = `<option value="">Alle Ballons</option>` +
-            [...balloonSet].sort().map(
-                (value) => `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`
-            ).join("");
-
-        if ([...balloonSet].includes(current)) {
-            balloonSelect.value = current;
-        }
-    }
-
-    if (yearSelect) {
-        const current = yearSelect.value;
-        yearSelect.innerHTML = `<option value="">Alle Jahre</option>` +
-            [...yearSet].sort((a, b) => Number(b) - Number(a)).map(
-                (value) => `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`
-            ).join("");
-
-        if ([...yearSet].includes(current)) {
-            yearSelect.value = current;
-        }
-    }
-}
-
-function flugFilterMatches(flight) {
-    const searchField = element("flightSearch");
-    const pilotField = element("flightFilterPilot");
-    const balloonField = element("flightFilterBalloon");
-    const yearField = element("flightFilterYear");
-
-    const query = (searchField?.value || "").trim().toLowerCase();
-    const pilot = (pilotField?.value || "").trim().toLowerCase();
-    const balloon = (balloonField?.value || "").trim().toLowerCase();
-    const year = (yearField?.value || "").trim();
-
-    const haystack = [
-        flight.pilot || "",
-        flight.ballon || "",
-        flight.startOrt || "",
-        flight.landeOrt || "",
-        flight.ballontyp || "",
-        flight.bemerkung || ""
-    ].join(" ").toLowerCase();
-
-    if (query && !haystack.includes(query)) {
-        return false;
-    }
-
-    if (pilot && (flight.pilot || "").trim().toLowerCase() !== pilot) {
-        return false;
-    }
-
-    if (balloon && (flight.ballon || "").trim().toLowerCase() !== balloon) {
-        return false;
-    }
-
-    if (year) {
-        const date = new Date(flight.startzeit || flight.datum || 0);
-        const flightYear = String(date.getFullYear());
-
-        if (flightYear !== year) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function flugbuchAktualisieren() {
-    const list = element("flugliste");
-
-    if (!list) {
-        return;
-    }
-
-    const filteredFlights = fluege.filter(flugFilterMatches);
-
-    if (filteredFlights.length === 0) {
-        list.innerHTML = `
-            <p class="empty-message">
-                Keine passenden Fahrten gefunden.
-            </p>
-        `;
-        return;
-    }
-
-    list.innerHTML = filteredFlights
-        .map(function (flight, index) {
-            return {
-                flight,
-                index: fluege.indexOf(flight)
-            };
-        })
-        .sort(function (itemA, itemB) {
-            return (
-                new Date(itemB.flight.startzeit || itemB.flight.datum || 0).getTime() -
-                new Date(itemA.flight.startzeit || itemA.flight.datum || 0).getTime()
-            );
-        })
-        .map(function (item) {
-            const flight = item.flight;
-            const index = item.index;
-
-            const hasTrack =
-                Array.isArray(flight.track) &&
-                flight.track.some(mapPointValid);
-
-            return `
-                <article class="flight">
-                    <div class="flight-header">
-                        <h3>
-                            ${htmlSicher(formatDatum(flight.startzeit || flight.datum))}
-                        </h3>
-
-                        <strong>
-                            ${htmlSicher(flight.ballon || "-")}
-                        </strong>
-                    </div>
-
-                    <div class="flight-data">
-                        <div>
-                            <small>Pilot</small>
-                            ${htmlSicher(flight.pilot || "-")}
-                        </div>
-
-                        <div>
-                            <small>Route</small>
-                            ${htmlSicher(flight.startOrt || "-")}
-                            →
-                            ${htmlSicher(flight.landeOrt || "-")}
-                        </div>
-
-                        <div>
-                            <small>Dauer</small>
-                            ${htmlSicher(formatFlugzeit(flight.flugzeit))}
-                        </div>
-
-                        <div>
-                            <small>Strecke</small>
-                            ${formatZahl(flight.strecke, 1)} km
-                        </div>
-
-                        <div>
-                            <small>Maximale Höhe</small>
-                            ${formatZahl(flight.maxHoehe)} m
-                        </div>
-
-                        <div>
-                            <small>Maximales Tempo</small>
-                            ${formatZahl(flight.maxSpeed, 1)} km/h
-                        </div>
-
-                        <div>
-                            <small>Landungen</small>
-                            ${formatZahl(flight.landungen)}
-                        </div>
-
-                        <div>
-                            <small>Ballontyp</small>
-                            ${htmlSicher(flight.ballontyp || "-")}
-                        </div>
-                    </div>
-
-                    ${flight.bemerkung ? `
-                        <div class="flight-note">
-                            ${htmlSicher(flight.bemerkung)}
-                        </div>
-                    ` : ""}
-
-                    <div class="flight-actions">
-                        <button
-                            class="secondary-button"
-                            data-flight-map="${index}"
-                            type="button"
-                            ${hasTrack ? "" : "disabled"}
-                        >
-                            ${hasTrack ? "Auf Karte" : "Kein GPS-Track"}
-                        </button>
-
-                        <button
-                            class="primary-button delete-button"
-                            data-flight-delete="${index}"
-                            type="button"
-                        >
-                            Löschen
-                        </button>
-                    </div>
-                </article>
-            `;
-        }).join("");
-}
-
-function exportCsv() {
-    if (!fluege.length) {
-        window.alert("Es gibt keine Fahrten zum Exportieren.");
-        return;
-    }
-
-    const rows = [
-        [
-            "Datum",
-            "Pilot",
-            "Ballon",
-            "Ballontyp",
-            "Startort",
-            "Landeort",
-            "Dauer (Minuten)",
-            "Strecke (km)",
-            "Landungen",
-            "Max. Höhe (m)",
-            "Max. Speed (km/h)",
-            "Bemerkung"
-        ]
-    ];
-
-    fluege.forEach(function (flight) {
-        rows.push([
-            flight.startzeit || flight.datum || "",
-            flight.pilot || "",
-            flight.ballon || "",
-            flight.ballontyp || "",
-            flight.startOrt || "",
-            flight.landeOrt || "",
-            Number(flight.flugzeit) || 0,
-            Number(flight.strecke) || 0,
-            Number(flight.landungen) || 0,
-            Number(flight.maxHoehe) || 0,
-            Number(flight.maxSpeed) || 0,
-            flight.bemerkung || ""
-        ]);
-    });
-
-    const csvContent = rows.map(function (row) {
-        return row.map(function (cell) {
-            const value = String(cell ?? "");
-            return `"${value.replace(/"/g, '""')}"`;
-        }).join(";");
-    }).join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `ballonflugbuch-export-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-}
-
 function zeichneMonatsstatistik() {
     if (typeof Chart === "undefined" || !element("monthlyChart")) {
         return;
@@ -1586,14 +1304,17 @@ function zeichneMonatsstatistik() {
             })
         );
 
-        const count = fluege.filter(function (flight) {
-            const flightDate = new Date(flight.startzeit || flight.datum);
-            return (
-                !Number.isNaN(flightDate.getTime()) &&
-                flightDate.getFullYear() === monthDate.getFullYear() &&
-                flightDate.getMonth() === monthDate.getMonth()
-            );
-        }).length;
+        const count = fluege.filter(
+            function (flight) {
+                const flightDate = new Date(flight.startzeit || flight.datum);
+
+                return (
+                    !Number.isNaN(flightDate.getTime()) &&
+                    flightDate.getFullYear() === monthDate.getFullYear() &&
+                    flightDate.getMonth() === monthDate.getMonth()
+                );
+            }
+        ).length;
 
         values.push(count);
     }
@@ -2412,6 +2133,304 @@ function aktuelleZeitAktualisieren() {
     );
 }
 
+function ladeFilterOptionen() {
+    const pilotSet = new Set();
+    const balloonSet = new Set();
+    const yearSet = new Set();
+
+    fluege.forEach(function (flight) {
+        if (flight.pilot) {
+            pilotSet.add(flight.pilot);
+        }
+
+        if (flight.ballon) {
+            balloonSet.add(flight.ballon);
+        }
+
+        const date = flight.startzeit || flight.datum || "";
+        const year = new Date(date).getFullYear();
+
+        if (Number.isFinite(year)) {
+            yearSet.add(String(year));
+        }
+    });
+
+    const pilotSelect = element("flightFilterPilot");
+    const balloonSelect = element("flightFilterBalloon");
+    const yearSelect = element("flightFilterYear");
+
+    if (pilotSelect) {
+        const current = pilotSelect.value;
+        pilotSelect.innerHTML =
+            "<option value=''>Alle Piloten</option>" +
+            [...pilotSet].sort().map(function (value) {
+                return `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`;
+            }).join("");
+
+        if ([...pilotSet].includes(current)) {
+            pilotSelect.value = current;
+        }
+    }
+
+    if (balloonSelect) {
+        const current = balloonSelect.value;
+        balloonSelect.innerHTML =
+            "<option value=''>Alle Ballons</option>" +
+            [...balloonSet].sort().map(function (value) {
+                return `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`;
+            }).join("");
+
+        if ([...balloonSet].includes(current)) {
+            balloonSelect.value = current;
+        }
+    }
+
+    if (yearSelect) {
+        const current = yearSelect.value;
+        yearSelect.innerHTML =
+            "<option value=''>Alle Jahre</option>" +
+            [...yearSet].sort((a, b) => Number(b) - Number(a)).map(function (value) {
+                return `<option value="${htmlSicher(value)}">${htmlSicher(value)}</option>`;
+            }).join("");
+
+        if ([...yearSet].includes(current)) {
+            yearSelect.value = current;
+        }
+    }
+}
+
+function flugFilterMatches(flight) {
+    const searchField = element("flightSearch");
+    const pilotField = element("flightFilterPilot");
+    const balloonField = element("flightFilterBalloon");
+    const yearField = element("flightFilterYear");
+
+    const query = (searchField?.value || "").trim().toLowerCase();
+    const pilot = (pilotField?.value || "").trim().toLowerCase();
+    const balloon = (balloonField?.value || "").trim().toLowerCase();
+    const year = (yearField?.value || "").trim();
+
+    const haystack = [
+        flight.pilot || "",
+        flight.ballon || "",
+        flight.startOrt || "",
+        flight.landeOrt || "",
+        flight.ballontyp || "",
+        flight.bemerkung || ""
+    ].join(" ").toLowerCase();
+
+    if (query && !haystack.includes(query)) {
+        return false;
+    }
+
+    if (pilot && (flight.pilot || "").trim().toLowerCase() !== pilot) {
+        return false;
+    }
+
+    if (balloon && (flight.ballon || "").trim().toLowerCase() !== balloon) {
+        return false;
+    }
+
+    if (year) {
+        const date = new Date(flight.startzeit || flight.datum || 0);
+        const flightYear = String(date.getFullYear());
+
+        if (flightYear !== year) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function flugbuchAktualisieren() {
+    const list = element("flugliste");
+
+    if (!list) {
+        return;
+    }
+
+    const filteredFlights = fluege.filter(flugFilterMatches);
+
+    if (filteredFlights.length === 0) {
+        list.innerHTML = `
+            <p class="empty-message">
+                Keine passenden Fahrten gefunden.
+            </p>
+        `;
+
+        return;
+    }
+
+    list.innerHTML = filteredFlights
+        .map(function (flight, index) {
+            return {
+                flight,
+                index: fluege.indexOf(flight)
+            };
+        })
+        .sort(function (itemA, itemB) {
+            return (
+                new Date(itemB.flight.startzeit || itemB.flight.datum || 0).getTime() -
+                new Date(itemA.flight.startzeit || itemA.flight.datum || 0).getTime()
+            );
+        })
+        .map(function (item) {
+            const flight = item.flight;
+            const index = item.index;
+
+            const hasTrack =
+                Array.isArray(flight.track) &&
+                flight.track.some(mapPointValid);
+
+            return `
+                <article class="flight">
+                    <div class="flight-header">
+                        <h3>
+                            ${htmlSicher(formatDatum(flight.startzeit || flight.datum))}
+                        </h3>
+
+                        <strong>
+                            ${htmlSicher(flight.ballon || "-")}
+                        </strong>
+                    </div>
+
+                    <div class="flight-data">
+                        <div>
+                            <small>Pilot</small>
+                            ${htmlSicher(flight.pilot || "-")}
+                        </div>
+
+                        <div>
+                            <small>Route</small>
+                            ${htmlSicher(flight.startOrt || "-")}
+                            →
+                            ${htmlSicher(flight.landeOrt || "-")}
+                        </div>
+
+                        <div>
+                            <small>Dauer</small>
+                            ${htmlSicher(formatFlugzeit(flight.flugzeit))}
+                        </div>
+
+                        <div>
+                            <small>Strecke</small>
+                            ${formatZahl(flight.strecke, 1)} km
+                        </div>
+
+                        <div>
+                            <small>Maximale Höhe</small>
+                            ${formatZahl(flight.maxHoehe)} m
+                        </div>
+
+                        <div>
+                            <small>Maximales Tempo</small>
+                            ${formatZahl(flight.maxSpeed, 1)} km/h
+                        </div>
+
+                        <div>
+                            <small>Landungen</small>
+                            ${formatZahl(flight.landungen)}
+                        </div>
+
+                        <div>
+                            <small>Ballontyp</small>
+                            ${htmlSicher(flight.ballontyp || "-")}
+                        </div>
+                    </div>
+
+                    ${
+                        flight.bemerkung
+                            ? `
+                                <div class="flight-note">
+                                    ${htmlSicher(flight.bemerkung)}
+                                </div>
+                            `
+                            : ""
+                    }
+
+                    <div class="flight-actions">
+                        <button
+                            class="secondary-button"
+                            data-flight-map="${index}"
+                            type="button"
+                            ${hasTrack ? "" : "disabled"}
+                        >
+                            ${hasTrack ? "Auf Karte" : "Kein GPS-Track"}
+                        </button>
+
+                        <button
+                            class="primary-button delete-button"
+                            data-flight-delete="${index}"
+                            type="button"
+                        >
+                            Löschen
+                        </button>
+                    </div>
+                </article>
+            `;
+        })
+        .join("");
+}
+
+function exportCsv() {
+    if (!fluege.length) {
+        window.alert("Es gibt keine Fahrten zum Exportieren.");
+        return;
+    }
+
+    const rows = [
+        [
+            "Datum",
+            "Pilot",
+            "Ballon",
+            "Ballontyp",
+            "Startort",
+            "Landeort",
+            "Dauer (Minuten)",
+            "Strecke (km)",
+            "Landungen",
+            "Max. Höhe (m)",
+            "Max. Speed (km/h)",
+            "Bemerkung"
+        ]
+    ];
+
+    fluege.forEach(function (flight) {
+        rows.push([
+            flight.startzeit || flight.datum || "",
+            flight.pilot || "",
+            flight.ballon || "",
+            flight.ballontyp || "",
+            flight.startOrt || "",
+            flight.landeOrt || "",
+            Number(flight.flugzeit) || 0,
+            Number(flight.strecke) || 0,
+            Number(flight.landungen) || 0,
+            Number(flight.maxHoehe) || 0,
+            Number(flight.maxSpeed) || 0,
+            flight.bemerkung || ""
+        ]);
+    });
+
+    const csvContent = rows.map(function (row) {
+        return row.map(function (cell) {
+            const value = String(cell ?? "");
+            return `"${value.replace(/"/g, '""')}"`;
+        }).join(";");
+    }).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ballonflugbuch-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
 function anzeigeAktualisieren() {
     zusammenfassungAktualisieren();
     rekordeAktualisieren();
@@ -2453,15 +2472,11 @@ function appInitialisieren() {
         });
     });
 
-    eventHinzufuegen(
-        "menuButton",
-        "click",
-        function () {
-            const sidebar = element("sidebar");
-            const isOpen = sidebar?.classList.contains("sidebar-open");
-            setzeMobilmenue(!isOpen);
-        }
-    );
+    eventHinzufuegen("menuButton", "click", function () {
+        const sidebar = element("sidebar");
+        const isOpen = sidebar?.classList.contains("sidebar-open");
+        setzeMobilmenue(!isOpen);
+    });
 
     eventHinzufuegen("startButton", "click", flugStarten);
     eventHinzufuegen("stopButton", "click", flugBeenden);
@@ -2567,7 +2582,6 @@ function appInitialisieren() {
     window.setInterval(aktuelleZeitAktualisieren, 1000);
 
     const requestedPage = window.location.hash.slice(1);
-
     seiteAnzeigen(PAGE_IDS.includes(requestedPage) ? requestedPage : "dashboard");
 
     erstelleMobilmenueOverlay();
@@ -2592,57 +2606,4 @@ function appInitialisieren() {
 
     updateOnlineStatus();
     window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
-}
-
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", appInitialisieren, { once: true });
-} else {
-    appInitialisieren();
-}
-
-window.addEventListener("hashchange", function () {
-    const requestedPage = window.location.hash.slice(1);
-
-    if (PAGE_IDS.includes(requestedPage)) {
-        seiteAnzeigen(requestedPage);
-    }
-});
-
-window.addEventListener("resize", function () {
-    hauptkarte?.invalidateSize();
-    trackingKarte?.invalidateSize();
-
-    if (window.innerWidth > 768) {
-        setzeMobilmenue(false);
-    }
-});
-
-window.addEventListener("beforeunload", function () {
-    if (locationWatchId !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(locationWatchId);
-    }
-
-    if (flightWatchId !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(flightWatchId);
-    }
-});
-
-let wakeLock = null;
-
-async function aktivBleiben() {
-    try {
-        wakeLock = await navigator.wakeLock.request("screen");
-        console.log("Wake Lock aktiv");
-    } catch (err) {
-        console.error("Wake Lock Fehler:", err);
-    }
-}
-
-window.addEventListener("load", aktivBleiben);
-
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        aktivBleiben();
-    }
-});
+    window.addEventListener("offline", updateOnlineStatus
