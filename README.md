@@ -26,7 +26,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 - Berechnung der zurückgelegten Strecke
 - Berechnung der durchschnittlichen Geschwindigkeit
 - Berechnung der maximalen Geschwindigkeit
-- Höhenprofil mit Chart.js
+- Höhenprofil mit eigener Canvas-Diagrammbibliothek
 - Monatsstatistik
 - Aktivitätsmonitor
 - Persönliche Rekorde
@@ -39,6 +39,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
 - CSV-Import
 - Duplikatprüfung beim Import
 - Responsive Ansicht für Desktop, Tablet und Smartphone
+- App-ähnliche Nutzung als Web-App auf Smartphones
 
 ## Dateien
 
@@ -47,6 +48,7 @@ Diese Dateien liegen im Hauptverzeichnis:
 - `index.html`
 - `style.css`
 - `app.js`
+- `manifest.webmanifest`
 - `README.md`
 
 Der GitHub-Workflow liegt unter:
@@ -58,7 +60,7 @@ Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind vollständig in `a
 ## Externe Bibliotheken und Dienste
 
 - Leaflet für die Kartendarstellung
-- Chart.js für Diagramme und Statistiken
+- Eigene lokale Canvas-Diagrammbibliothek für Höhenprofil und Monatsstatistik
 - OpenStreetMap für die Standardkarte
 - Esri World Imagery für die Satellitenkarte
 - Nominatim für die Ermittlung von Ortsnamen
@@ -77,6 +79,27 @@ Die GPS-Funktionen stehen normalerweise nicht zur Verfügung, wenn die Datei dir
 
 GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
 
+## Smartphone und Installation als Web-App
+
+Die Anwendung ist für Smartphones optimiert und kann über das Browsermenü
+zum Startbildschirm hinzugefügt werden.
+
+Voraussetzungen:
+
+- HTTPS oder `localhost`
+- aktivierte Standortberechtigung
+- aktuelle Browser-Version
+- Internetverbindung für Karten, Wetter und Ortsabfragen
+
+Auf Android kann die Anwendung über „Zum Startbildschirm hinzufügen“ als
+Web-App installiert werden.
+
+Auf iPhone und iPad kann sie über „Teilen“ und „Zum Home-Bildschirm“
+hinzugefügt werden.
+
+Die GPS-Aufzeichnung sollte während einer aktiven Fahrt im Vordergrund
+geöffnet bleiben, da mobile Browser Hintergrundprozesse pausieren können.
+
 ## Installation
 
 1. Alle Projektdateien in das Hauptverzeichnis des Repositorys kopieren.
@@ -87,11 +110,5 @@ GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
 index.html
 style.css
 app.js
+manifest.webmanifest
 README.md
-```
-
-3. Projekt auf GitHub hochladen oder lokal über einen Webserver starten.
-
-4. Standortberechtigung im Browser erlauben.
-
-5. Anwendung verwenden.
