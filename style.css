@@ -2160,932 +2160,7 @@ a.secondary-button,
 }
 
 /* =========================================================
-   MOBILE MENU
-   ========================================================= */
-
-.mobile-menu-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 2100;
-
-    display: none;
-
-    background: rgba(3, 10, 18, 0.72);
-    backdrop-filter: blur(4px);
-}
-
-.mobile-menu-backdrop.visible {
-    display: block;
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        z-index: 2200;
-
-        display: flex;
-        width: min(82vw, 300px);
-        height: 100vh;
-        padding: 18px 14px;
-
-        transform: translateX(-110%);
-        transition: transform 0.25s ease;
-
-        box-shadow:
-            18px 0 34px rgba(0, 0, 0, 0.38);
-    }
-
-    .sidebar.sidebar-open {
-        transform: translateX(0);
-    }
-
-    .app-shell {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        display: flex;
-    }
-
-    .menu-button {
-        display: block;
-    }
-
-    .main {
-        padding: 12px;
-    }
-
-    .topbar {
-        flex-wrap: wrap;
-        align-items: flex-start;
-    }
-
-    .top-meta {
-        width: 100%;
-        margin-left: 0;
-        display: grid;
-        grid-template-columns: 1fr auto auto;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .top-meta > span:nth-child(2) {
-        text-align: right;
-    }
-
-    .hero-dashboard {
-        flex-direction: column;
-        min-height: auto;
-        text-align: center;
-    }
-
-    .hero-copy {
-        padding: 20px;
-    }
-
-    .hero-copy h2 {
-        font-size: 32px;
-    }
-
-    .hero-balloon {
-        margin: 0 0 20px 0;
-        font-size: 90px;
-    }
-
-    .kpi-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .kpi strong {
-        font-size: 24px;
-    }
-
-    .dashboard-grid,
-    .tracking-grid,
-    .statistics-grid,
-    .settings-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .records,
-    .weather-grid,
-    .flight-data,
-    .location-values {
-        grid-template-columns: 1fr;
-    }
-
-    .panel-title {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .summary-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-
-    .summary-row strong {
-        text-align: left;
-    }
-
-    .button-group,
-    .map-toolbar,
-    .flight-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .primary-button,
-    .secondary-button {
-        width: 100%;
-    }
-
-    .monitor-progress-header {
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .flight-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .map-title {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    #map,
-    #trackingMap {
-        height: 350px;
-    }
-}
-
-@media (max-width: 480px) {
-    .main {
-        padding: 10px;
-    }
-
-    .topbar {
-        gap: 10px;
-    }
-
-    .topbar h1 {
-        font-size: 24px;
-    }
-
-    .top-meta {
-        grid-template-columns: 1fr;
-        text-align: left;
-    }
-
-    .top-meta > span:nth-child(2) {
-        text-align: left;
-    }
-
-    .avatar {
-        display: none;
-    }
-
-    .hero-copy {
-        padding: 18px 16px 12px;
-    }
-
-    .hero-copy h2 {
-        font-size: 26px;
-    }
-
-    .hero-copy p {
-        font-size: 14px;
-    }
-
-    .hero-balloon {
-        font-size: 74px;
-    }
-
-    .kpi {
-        gap: 12px;
-        padding: 16px;
-    }
-
-    .kpi-icon {
-        font-size: 28px;
-    }
-
-    .kpi strong {
-        font-size: 20px;
-    }
-
-    .panel-title {
-        padding: 12px 14px;
-    }
-
-    .panel-title h2 {
-        font-size: 13px;
-    }
-
-    .summary-row {
-        padding: 8px 0;
-    }
-
-    .record strong {
-        font-size: 18px;
-    }
-
-    .status-message,
-    .weather-rating {
-        margin-left: 0;
-        margin-right: 0;
-    }
-
-    .primary-button,
-    .secondary-button {
-        min-height: 42px;
-    }
-
-    .import-dialog {
-        padding: 18px 14px;
-    }
-
-    .dialog-header {
-        gap: 12px;
-    }
-
-    .import-dropzone {
-        padding: 22px 16px;
-    }
-
-    .location-panel {
-        padding: 12px;
-    }
-
-    .location-values > div {
-        padding: 8px;
-    }
-
-    .tracking-location-display {
-        left: 12px;
-        right: 12px;
-        bottom: 12px;
-        max-width: none;
-    }
-}
-
-/* =========================================================
-   MOBILE OPTIMIERUNG UND SMARTPHONE SUPPORT
-   ========================================================= */
-
-/* Horizontalen Überlauf verhindern */
-html,
-body {
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
-.main,
-.app-shell,
-.panel,
-.app-page {
-    min-width: 0;
-}
-
-/* Importdialog-Grundgestaltung */
-.import-information,
-.import-preview,
-.import-message {
-    position: relative;
-    z-index: 2;
-
-    margin-top: 14px;
-    padding: 12px;
-
-    border-radius: 9px;
-
-    background: rgba(6, 23, 35, 0.72);
-}
-
-.import-information {
-    color: var(--sky-light);
-}
-
-.import-preview {
-    border: 1px solid #3cad61;
-    color: #a7ffbc;
-}
-
-.import-message-success {
-    color: #a7ffbc;
-}
-
-.import-message-error {
-    color: #ffadaf;
-}
-
-.import-mode {
-    position: relative;
-    z-index: 2;
-
-    margin: 18px 0 0;
-    padding: 14px;
-
-    border: 1px solid rgba(79, 121, 148, 0.55);
-    border-radius: 10px;
-
-    color: var(--text);
-}
-
-.import-mode legend {
-    padding: 0 7px;
-
-    color: var(--sky-light);
-
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.import-mode label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-
-    margin: 10px 0;
-
-    cursor: pointer;
-}
-
-.import-mode input {
-    flex: 0 0 auto;
-
-    width: 18px;
-    height: 18px;
-    margin: 2px 0 0;
-}
-
-.import-mode strong,
-.import-mode small {
-    display: block;
-}
-
-.import-mode small {
-    margin-top: 3px;
-    color: var(--muted);
-}
-
-.dialog-actions {
-    position: relative;
-    z-index: 2;
-
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 10px;
-
-    margin-top: 18px;
-}
-
-/* Tablet und Smartphone */
-@media (max-width: 768px) {
-    .main {
-        padding-top: max(12px, env(safe-area-inset-top));
-        padding-right: max(12px, env(safe-area-inset-right));
-        padding-bottom: max(18px, env(safe-area-inset-bottom));
-        padding-left: max(12px, env(safe-area-inset-left));
-    }
-
-    .sidebar {
-        padding-top: max(18px, env(safe-area-inset-top));
-        padding-bottom: max(18px, env(safe-area-inset-bottom));
-    }
-
-    .dialog-backdrop {
-        padding-top: max(20px, env(safe-area-inset-top));
-        padding-right: max(20px, env(safe-area-inset-right));
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
-        padding-left: max(20px, env(safe-area-inset-left));
-    }
-
-    /*
-     * Karte und Standortdaten werden untereinander angezeigt.
-     * Dadurch gibt es auf Smartphones keine zu schmale Zwei-Spalten-Karte.
-     */
-    .main-map-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .location-panel {
-        border-top: 1px solid rgba(72, 120, 150, 0.5);
-        border-left: 0;
-    }
-
-    #map,
-    #trackingMap {
-        width: 100%;
-        height: min(58vh, 430px);
-        min-height: 300px;
-    }
-
-    .tracking-map-wrapper {
-        min-height: 300px;
-    }
-
-    /*
-     * Touch-Flächen für Smartphones.
-     */
-    button,
-    .nav-link,
-    .primary-button,
-    .secondary-button,
-    input,
-    select,
-    textarea {
-        min-height: 44px;
-    }
-
-    .dialog-close {
-        width: 44px;
-        height: 44px;
-    }
-
-    /*
-     * Verhindert automatischen iPhone-Zoom bei Formularfeldern.
-     */
-    input,
-    select,
-    textarea {
-        font-size: 16px;
-    }
-
-    .dialog-actions {
-        align-items: stretch;
-    }
-}
-
-/* Kleine Smartphones */
-@media (max-width: 480px) {
-    .main {
-        padding-top: max(10px, env(safe-area-inset-top));
-        padding-right: max(10px, env(safe-area-inset-right));
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
-        padding-left: max(10px, env(safe-area-inset-left));
-    }
-
-    #map,
-    #trackingMap {
-        height: 320px;
-        min-height: 320px;
-    }
-
-    .tracking-map-wrapper {
-        min-height: 320px;
-    }
-
-    .location-panel {
-        padding: 14px 12px;
-    }
-
-    .dialog-actions {
-        flex-direction: column-reverse;
-    }
-
-    .dialog-actions button {
-        width: 100%;
-    }
-
-    .import-dialog {
-        width: 100%;
-        max-height: calc(100vh - 24px);
-        border-radius: 14px;
-    }
-
-    .import-mode {
-        padding: 12px;
-    }
-
-    .import-mode label {
-        gap: 8px;
-    }
-
-    .tracking-location-display {
-        left: 12px;
-        right: 12px;
-        bottom: 12px;
-        max-width: none;
-    }
-}
-
-/* Geräte mit geringer Bewegungspräferenz */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        scroll-behavior: auto !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* =========================================================
-   FINALER SMARTPHONE-FIX
-   ========================================================= */
-
-html,
-body {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: hidden;
-}
-
-body {
-    margin: 0;
-}
-
-.app-shell {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-}
-
-.main {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-}
-
-/* =========================================================
-   MOBILE SIDEBAR
-   ========================================================= */
-
-@media (max-width: 768px) {
-    html,
-    body {
-        overflow-x: hidden;
-    }
-
-    .app-shell {
-        display: block;
-        width: 100%;
-        min-width: 0;
-    }
-
-    .main {
-        display: block;
-        width: 100%;
-        max-width: 100vw;
-        min-width: 0;
-        margin: 0;
-        padding-top: max(12px, env(safe-area-inset-top));
-        padding-right: max(12px, env(safe-area-inset-right));
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
-        padding-left: max(12px, env(safe-area-inset-left));
-    }
-
-    .sidebar {
-        position: fixed !important;
-        top: 0 !important;
-        right: auto !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        z-index: 2200 !important;
-
-        display: flex !important;
-        flex-direction: column !important;
-
-        width: min(84vw, 310px) !important;
-        max-width: 310px !important;
-        height: 100dvh !important;
-        min-height: 100vh !important;
-        margin: 0 !important;
-        padding-top: max(18px, env(safe-area-inset-top)) !important;
-        padding-right: 14px !important;
-        padding-bottom: max(18px, env(safe-area-inset-bottom)) !important;
-        padding-left: 14px !important;
-
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-
-        transform: translate3d(-105%, 0, 0) !important;
-        visibility: hidden;
-        pointer-events: none;
-
-        transition:
-            transform 0.25s ease,
-            visibility 0s linear 0.25s !important;
-    }
-
-    .sidebar.sidebar-open {
-        transform: translate3d(0, 0, 0) !important;
-        visibility: visible;
-        pointer-events: auto;
-
-        transition:
-            transform 0.25s ease,
-            visibility 0s linear 0s !important;
-    }
-
-    .mobile-menu-backdrop {
-        position: fixed !important;
-        inset: 0 !important;
-        z-index: 2100 !important;
-
-        display: none !important;
-
-        width: 100vw !important;
-        height: 100dvh !important;
-
-        background: rgba(3, 10, 18, 0.76) !important;
-        backdrop-filter: blur(4px);
-    }
-
-    .mobile-menu-backdrop.visible {
-        display: block !important;
-    }
-
-    .menu-button {
-        position: relative;
-        z-index: 1100;
-
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-
-        width: 46px;
-        min-width: 46px;
-        height: 46px;
-        min-height: 46px;
-        padding: 0;
-
-        border: 1px solid var(--border);
-        border-radius: 9px;
-
-        color: #ffffff;
-        background: var(--panel);
-
-        font-size: 22px;
-        line-height: 1;
-    }
-
-    .topbar {
-        position: relative;
-        z-index: 100;
-
-        display: flex;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        flex-wrap: wrap;
-        align-items: flex-start;
-    }
-
-    .topbar > div:not(.top-meta) {
-        min-width: 0;
-        max-width: calc(100% - 60px);
-    }
-
-    .topbar h1 {
-        max-width: 100%;
-        overflow-wrap: anywhere;
-        font-size: 24px;
-    }
-
-    .topbar p {
-        max-width: 100%;
-        overflow-wrap: anywhere;
-    }
-
-    .top-meta {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin-left: 0;
-        white-space: normal;
-    }
-
-    /* Alle Seiten dürfen nicht breiter als der Bildschirm werden */
-    .app-page,
-    .panel,
-    .dashboard-grid,
-    .tracking-grid,
-    .statistics-grid,
-    .settings-grid,
-    .map-page-grid,
-    .hero-dashboard,
-    .kpi-grid,
-    .weather-grid,
-    .flight-data,
-    .current-master-data,
-    .main-map-layout {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-    }
-
-    .dashboard-grid,
-    .tracking-grid,
-    .statistics-grid,
-    .settings-grid {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-
-    .main-map-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-
-    .location-panel {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-
-        border-top: 1px solid rgba(72, 120, 150, 0.5);
-        border-left: 0;
-    }
-
-    #map,
-    #trackingMap {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        height: 350px !important;
-    }
-
-    .tracking-map-wrapper {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        min-height: 350px;
-    }
-
-    .map-toolbar,
-    .button-group,
-    .flight-actions,
-    .dialog-actions {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .primary-button,
-    .secondary-button,
-    .link-button {
-        width: 100%;
-        max-width: 100%;
-        min-height: 46px;
-    }
-
-    input,
-    select,
-    textarea {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        min-height: 46px;
-        font-size: 16px;
-    }
-
-    .weather-grid,
-    .records,
-    .flight-data,
-    .location-values,
-    .current-master-data {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-
-    .hero-dashboard {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .hero-copy {
-        width: 100%;
-        max-width: 100%;
-        padding: 22px 16px 12px;
-    }
-
-    .hero-copy h2 {
-        overflow-wrap: anywhere;
-        font-size: clamp(26px, 9vw, 36px);
-    }
-
-    .hero-balloon {
-        margin: 0 0 22px;
-        font-size: 82px;
-    }
-
-    .kpi-grid {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-
-    .kpi {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .panel-title {
-        min-width: 0;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .panel-title h2,
-    .panel-title span {
-        max-width: 100%;
-        overflow-wrap: anywhere;
-    }
-
-    .summary-row {
-        min-width: 0;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .summary-row strong {
-        text-align: left;
-        overflow-wrap: anywhere;
-    }
-
-    .flight {
-        min-width: 0;
-        margin: 10px 0;
-    }
-
-    .flight-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .flight-data > div {
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .tracking-location-display {
-        right: 10px;
-        bottom: 10px;
-        left: 10px;
-        max-width: none;
-    }
-
-    .import-dialog {
-        width: calc(100vw - 24px);
-        max-width: calc(100vw - 24px);
-        max-height: calc(100dvh - 24px);
-        padding: 18px 14px;
-    }
-
-    .dialog-actions button {
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .main {
-        padding-top: max(10px, env(safe-area-inset-top));
-        padding-right: max(10px, env(safe-area-inset-right));
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
-        padding-left: max(10px, env(safe-area-inset-left));
-    }
-
-    #map,
-    #trackingMap {
-        height: 300px !important;
-    }
-
-    .tracking-map-wrapper {
-        min-height: 300px;
-    }
-
-    .top-meta {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-
-    .top-meta > span:nth-child(2) {
-        text-align: left;
-    }
-
-    .avatar {
-        display: none;
-    }
-
-    .import-dialog {
-        width: calc(100vw - 16px);
-        max-width: calc(100vw - 16px);
-    }
-}
-
-/* =========================================================
-   ERZWUNGENER FINALER MOBILE FIX
-   Muss ganz am Ende der style.css stehen
+   SMARTPHONE / TABLET MOBILE FIX
    ========================================================= */
 
 html,
@@ -3102,10 +2177,6 @@ body {
 *::after {
     max-width: 100%;
 }
-
-/* ---------------------------------------------------------
-   Smartphone- und Tablet-Layout
-   --------------------------------------------------------- */
 
 @media screen and (max-width: 1024px) {
     .app-shell {
@@ -3128,13 +2199,11 @@ body {
         padding-left: max(12px, env(safe-area-inset-left)) !important;
     }
 
-    /* Sidebar standardmäßig verstecken */
     .sidebar {
         position: fixed !important;
         top: 0 !important;
-        right: auto !important;
-        bottom: 0 !important;
         left: 0 !important;
+        bottom: 0 !important;
         z-index: 2200 !important;
 
         display: flex !important;
@@ -3163,7 +2232,6 @@ body {
             visibility 0s linear 0.25s !important;
     }
 
-    /* Sidebar nur bei geöffneter Navigation anzeigen */
     .sidebar.sidebar-open {
         transform: translateX(0) !important;
         visibility: visible !important;
@@ -3174,14 +2242,12 @@ body {
             visibility 0s linear 0s !important;
     }
 
-    /* Dunkler Hintergrund hinter dem Menü */
     .mobile-menu-backdrop {
         position: fixed !important;
-        z-index: 2100 !important;
         inset: 0 !important;
+        z-index: 2100 !important;
 
         display: none !important;
-
         width: 100vw !important;
         height: 100dvh !important;
 
@@ -3193,7 +2259,6 @@ body {
         display: block !important;
     }
 
-    /* Menübutton anzeigen */
     .menu-button {
         position: relative !important;
         z-index: 2300 !important;
@@ -3218,7 +2283,6 @@ body {
         line-height: 1 !important;
     }
 
-    /* Kopfbereich */
     .topbar {
         display: flex !important;
         width: 100% !important;
@@ -3258,7 +2322,6 @@ body {
         white-space: normal !important;
     }
 
-    /* Alle Inhaltsbereiche auf volle Breite setzen */
     .app-page,
     .panel,
     .dashboard-grid,
@@ -3279,7 +2342,6 @@ body {
         min-width: 0 !important;
     }
 
-    /* Einspaltige Seiten */
     .dashboard-grid,
     .tracking-grid,
     .statistics-grid,
@@ -3288,7 +2350,6 @@ body {
         grid-template-columns: minmax(0, 1fr) !important;
     }
 
-    /* Kartenbereich */
     .main-map-layout {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) !important;
@@ -3319,7 +2380,6 @@ body {
         border-left: 0 !important;
     }
 
-    /* Mobile Kartenlegende */
     .map-title {
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -3330,7 +2390,6 @@ body {
         max-width: 100% !important;
     }
 
-    /* Mobile Buttons */
     .button-group,
     .map-toolbar,
     .flight-actions,
@@ -3351,7 +2410,6 @@ body {
         min-height: 46px !important;
     }
 
-    /* Mobile Formulare */
     input,
     select,
     textarea {
@@ -3362,7 +2420,6 @@ body {
         font-size: 16px !important;
     }
 
-    /* Karten und Informationsboxen */
     .records,
     .weather-grid,
     .flight-data,
@@ -3374,7 +2431,6 @@ body {
         max-width: 100% !important;
     }
 
-    /* Hero */
     .hero-dashboard {
         display: flex !important;
         flex-direction: column !important;
@@ -3407,7 +2463,6 @@ body {
         font-size: 82px !important;
     }
 
-    /* KPI-Karten */
     .kpi-grid {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) !important;
@@ -3419,7 +2474,6 @@ body {
         min-width: 0 !important;
     }
 
-    /* Panels und Überschriften */
     .panel-title {
         width: 100% !important;
         min-width: 0 !important;
@@ -3433,7 +2487,6 @@ body {
         overflow-wrap: anywhere !important;
     }
 
-    /* Flugbuch */
     .flight {
         margin: 10px 0 !important;
         padding: 14px !important;
@@ -3451,7 +2504,6 @@ body {
         overflow-wrap: anywhere !important;
     }
 
-    /* Standortanzeige auf der Live-Karte */
     .tracking-location-display {
         right: 10px !important;
         bottom: 10px !important;
@@ -3459,7 +2511,6 @@ body {
         max-width: none !important;
     }
 
-    /* Importdialog */
     .import-dialog {
         width: calc(100vw - 24px) !important;
         max-width: calc(100vw - 24px) !important;
@@ -3472,7 +2523,6 @@ body {
     }
 }
 
-/* Kleine Smartphones */
 @media screen and (max-width: 480px) {
     .main {
         padding-top: max(10px, env(safe-area-inset-top)) !important;
