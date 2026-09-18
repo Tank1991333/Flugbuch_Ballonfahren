@@ -1,0 +1,17 @@
+{
+  "name": "Ballonflugbuch Professional V10",
+  "short_name": "Ballonflugbuch",
+  "description": "Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#06111d",
+  "theme_color": "#07111f",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
