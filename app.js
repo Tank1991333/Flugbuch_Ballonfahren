@@ -3814,39 +3814,86 @@ function eventHinzufuegen(
 }
 
 function setzeMobilmenue(status) {
-    const sidebar = element("sidebar");
-    const backdrop = document.getElementById("mobileMenuBackdrop");
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const backdrop =
+        document.getElementById(
+            "mobileMenuBackdrop"
+        );
+
+    const menuButton =
+        document.getElementById("menuButton");
+
+    const isOpen =
+        Boolean(status) &&
+        window.innerWidth <= 768;
 
     if (sidebar) {
-        sidebar.classList.toggle("sidebar-open", status);
+        sidebar.classList.toggle(
+            "sidebar-open",
+            isOpen
+        );
+
+        sidebar.setAttribute(
+            "aria-hidden",
+            isOpen ? "false" : "true"
+        );
     }
 
     if (backdrop) {
-        backdrop.classList.toggle("visible", status);
-        backdrop.hidden = !status;
+        backdrop.classList.toggle(
+            "visible",
+            isOpen
+        );
+
+        backdrop.hidden = !isOpen;
     }
 
-    element("menuButton")?.setAttribute(
-        "aria-expanded",
-        status ? "true" : "false"
+    if (menuButton) {
+        menuButton.setAttribute(
+            "aria-expanded",
+            isOpen ? "true" : "false"
+        );
+
+        menuButton.setAttribute(
+            "aria-label",
+            isOpen
+                ? "Navigation schließen"
+                : "Navigation öffnen"
+        );
+    }
+
+    document.body.classList.toggle(
+        "mobile-navigation-open",
+        isOpen
     );
 }
 
 function erstelleMobilmenueOverlay() {
-    if (document.getElementById("mobileMenuBackdrop")) {
-        return;
+    let backdrop =
+        document.getElementById(
+            "mobileMenuBackdrop"
+        );
+
+    if (!backdrop) {
+        backdrop =
+            document.createElement("div");
+
+        backdrop.id =
+            "mobileMenuBackdrop";
+
+        backdrop.className =
+            "mobile-menu-backdrop";
+
+        document.body.appendChild(backdrop);
     }
 
-    const backdrop = document.createElement("div");
-    backdrop.id = "mobileMenuBackdrop";
-    backdrop.className = "mobile-menu-backdrop";
     backdrop.hidden = true;
 
-    backdrop.addEventListener("click", function () {
+    backdrop.onclick = function () {
         setzeMobilmenue(false);
-    });
-
-    document.body.appendChild(backdrop);
+    };
 }
 
 function appInitialisieren() {
@@ -3854,6 +3901,7 @@ function appInitialisieren() {
         stammdatenLaden();
 
     erstelleMobilmenueOverlay();
+    setzeMobilmenue(false);
 
     [
         "pilot",
@@ -3893,20 +3941,20 @@ function appInitialisieren() {
         });
 
     eventHinzufuegen(
-        "menuButton",
-        "click",
-        function () {
-            const sidebar =
-                element("sidebar");
+    "menuButton",
+    "click",
+    function () {
+        const sidebar =
+            document.getElementById("sidebar");
 
-            const isOpen =
-                sidebar?.classList.contains(
-                    "sidebar-open"
-                );
+        const isOpen =
+            sidebar?.classList.contains(
+                "sidebar-open"
+            );
 
-            setzeMobilmenue(!isOpen);
-        }
-    );
+        setzeMobilmenue(!isOpen);
+    }
+);
 
     eventHinzufuegen(
         "startButton",
