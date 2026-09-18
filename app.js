@@ -368,6 +368,8 @@ function seiteAnzeigen(pageId) {
     });
 
     if (zielseite === "karte") {
+        standortUeberwachungStarten();
+
         window.setTimeout(
             function () {
                 hauptkarteInitialisieren();
@@ -1295,6 +1297,9 @@ function flugStarten() {
 
     navigator.geolocation.getCurrentPosition(
         async function (position) {
+            standortErfolgreich(position);
+            aktivBleiben();
+
             const now = new Date();
 
             aktuellerFlug = {
@@ -1614,6 +1619,8 @@ function flugSpeichern() {
     aktuellerFlug = null;
     trackpunkte = [];
     flugWirdBeendet = false;
+
+    aktivBleibenBeenden();
 
     if (element("landungen")) {
         element("landungen").value = "1";
@@ -4097,7 +4104,6 @@ function appInitialisieren() {
 
     zeichneHoehenprofil([]);
     anzeigeAktualisieren();
-    standortUeberwachungStarten();
 
     window.setInterval(
         aktuelleZeitAktualisieren,
@@ -4163,6 +4169,8 @@ window.addEventListener(
 window.addEventListener(
     "beforeunload",
     function () {
+        aktivBleibenBeenden();
+
         if (
             locationWatchId !== null &&
             navigator.geolocation
@@ -4183,22 +4191,65 @@ window.addEventListener(
     }
 );
 
-// Bildschirm aktiv halten
+// Bildschirm während einer aktiven Fahrt aktiv halten
 let wakeLock = null;
 
 async function aktivBleiben() {
+    if (
+        !aktuellerFlug ||
+        !("wakeLock" in navigator)
+    ) {
+        return;
+    }
+
     try {
-        wakeLock = await navigator.wakeLock.request("screen");
+        if (wakeLock) {
+            return;
+        }
+
+        wakeLock =
+            await navigator.wakeLock.request(
+                "screen"
+            );
+
         console.log("Wake Lock aktiv");
-    } catch (err) {
-        console.error("Wake Lock Fehler:", err);
+
+        wakeLock.addEventListener(
+            "release",
+            function () {
+                wakeLock = null;
+            }
+        );
+    } catch (error) {
+        console.warn(
+            "Wake Lock konnte nicht aktiviert werden:",
+            error
+        );
+
+        wakeLock = null;
     }
 }
 
-window.addEventListener("load", aktivBleiben);
-
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        aktivBleiben();
+function aktivBleibenBeenden() {
+    if (!wakeLock) {
+        return;
     }
-});
+
+    wakeLock.release()
+        .catch(function () {})
+        .finally(function () {
+            wakeLock = null;
+        });
+}
+
+document.addEventListener(
+    "visibilitychange",
+    function () {
+        if (
+            document.visibilityState === "visible" &&
+            aktuellerFlug
+        ) {
+            aktivBleiben();
+        }
+    }
+);
