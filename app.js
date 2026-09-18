@@ -3825,9 +3825,13 @@ function setzeMobilmenue(status) {
     const menuButton =
         document.getElementById("menuButton");
 
+    const mobile =
+        window.matchMedia(
+            "(max-width: 1024px)"
+        ).matches;
+
     const isOpen =
-        Boolean(status) &&
-        window.innerWidth <= 768;
+        Boolean(status) && mobile;
 
     if (sidebar) {
         sidebar.classList.toggle(
