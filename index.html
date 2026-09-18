@@ -19,6 +19,13 @@
         content="Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer"
     >
 
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="favicon.svg">
+
     <title>Ballonflugbuch Professional V10</title>
 
     <link
@@ -27,7 +34,6 @@
         type="image/svg+xml"
     >
 
-    <!-- Leaflet CSS -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -35,7 +41,6 @@
         crossorigin=""
     >
 
-    <!-- Eigene CSS-Datei -->
     <link
         rel="stylesheet"
         href="style.css"
@@ -52,8 +57,6 @@
     </noscript>
 
     <div class="app-shell">
-
-        <!-- Seitennavigation -->
 
         <aside
             id="sidebar"
@@ -186,8 +189,6 @@
             </div>
         </aside>
 
-        <!-- Hauptbereich -->
-
         <main class="main">
 
             <header class="topbar">
@@ -234,8 +235,6 @@
                 </div>
 
             </header>
-
-            <!-- Übersicht -->
 
             <section
                 id="dashboard"
@@ -390,8 +389,6 @@
 
                 </section>
             </section>
-
-            <!-- Fahrt erfassen -->
 
             <section
                 id="fahrt-erfassen"
@@ -569,8 +566,6 @@
                 </article>
             </section>
 
-            <!-- Flugbuch -->
-
             <section
                 id="flugbuch"
                 class="app-page panel"
@@ -587,14 +582,41 @@
                     </span>
                 </div>
 
+                <div class="flight-toolbar">
+                    <input
+                        id="flightSearch"
+                        type="search"
+                        placeholder="Suche nach Pilot, Ballon, Ort..."
+                        aria-label="Flugbuch durchsuchen"
+                    >
+
+                    <select id="flightFilterPilot">
+                        <option value="">Alle Piloten</option>
+                    </select>
+
+                    <select id="flightFilterBalloon">
+                        <option value="">Alle Ballons</option>
+                    </select>
+
+                    <select id="flightFilterYear">
+                        <option value="">Alle Jahre</option>
+                    </select>
+
+                    <button id="clearFiltersButton" class="secondary-button" type="button">
+                        Filter zurücksetzen
+                    </button>
+
+                    <button id="exportCsvButton" class="primary-button" type="button">
+                        CSV exportieren
+                    </button>
+                </div>
+
                 <div id="flugliste">
                     <p class="empty-message">
                         Noch keine Fahrten gespeichert.
                     </p>
                 </div>
             </section>
-
-            <!-- Karte -->
 
             <section
                 id="karte"
@@ -617,17 +639,9 @@
                         </div>
 
                         <span class="map-legend">
-                            <b class="location-color">
-                                ● Standort
-                            </b>
-
-                            <b class="start-color">
-                                ● Start
-                            </b>
-
-                            <b class="landing-color">
-                                ● Landung
-                            </b>
+                            <b class="location-color">● Standort</b>
+                            <b class="start-color">● Start</b>
+                            <b class="landing-color">● Landung</b>
                         </span>
 
                     </div>
@@ -772,8 +786,6 @@
                 </div>
             </section>
 
-            <!-- Statistiken -->
-
             <section
                 id="statistiken"
                 class="app-page statistics-grid"
@@ -843,8 +855,6 @@
 
                 </article>
             </section>
-
-            <!-- Wetter -->
 
             <section
                 id="wetter"
@@ -916,8 +926,6 @@
 
                 </div>
             </section>
-
-            <!-- Einstellungen -->
 
             <section
                 id="einstellungen"
@@ -1017,17 +1025,17 @@
                             >
                         </label>
 
-<label for="monitorSollStunden">
-    Erforderliche Flugstunden
+                        <label for="monitorSollStunden">
+                            Erforderliche Flugstunden
 
-    <input
-        id="monitorSollStunden"
-        type="number"
-        min="0"
-        step="0.5"
-        value="6"
-    >
-</label>
+                            <input
+                                id="monitorSollStunden"
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                value="6"
+                            >
+                        </label>
 
                         <label for="monitorSollLandungen">
                             Erforderliche Landungen
@@ -1104,8 +1112,6 @@
 
         </main>
     </div>
-
-    <!-- Importdialog -->
 
     <div
         id="importDialog"
@@ -1229,61 +1235,52 @@
 
             </fieldset>
 
-<div
-    id="importPreview"
-    class="import-preview"
-    hidden
-></div>
+            <div
+                id="importPreview"
+                class="import-preview"
+                hidden
+            ></div>
 
-<div
-    id="importMessage"
-    class="import-message"
-    role="status"
-    aria-live="polite"
-></div>
+            <div
+                id="importMessage"
+                class="import-message"
+                role="status"
+                aria-live="polite"
+            ></div>
 
-<div class="dialog-actions">
+            <div class="dialog-actions">
 
-    <button
-        id="cancelImportButton"
-        class="secondary-button"
-        type="button"
-    >
-        Abbrechen
-    </button>
+                <button
+                    id="cancelImportButton"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Abbrechen
+                </button>
 
-    <button
-        id="executeImportButton"
-        class="primary-button"
-        type="button"
-        disabled
-    >
-        Fahrten importieren
-    </button>
+                <button
+                    id="executeImportButton"
+                    class="primary-button"
+                    type="button"
+                    disabled
+                >
+                    Fahrten importieren
+                </button>
 
-</div>
+            </div>
 
-</section>
+        </section>
 
-</div>
+    </div>
 
-<!--
-    Reihenfolge der JavaScript-Dateien:
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
 
-    1. Leaflet
-    2. Chart.js
-    3. app.js
--->
-
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-></script>
-
-<script src="chart.js"></script>
-
-<script src="app.js"></script>
+    <script src="chart.js"></script>
+    <script src="app.js"></script>
 
 </body>
 </html>
