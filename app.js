@@ -3945,20 +3945,20 @@ function appInitialisieren() {
         });
 
     eventHinzufuegen(
-    "menuButton",
-    "click",
-    function () {
-        const sidebar =
-            document.getElementById("sidebar");
+        "menuButton",
+        "click",
+        function () {
+            const sidebar =
+                document.getElementById("sidebar");
 
-        const isOpen =
-            sidebar?.classList.contains(
-                "sidebar-open"
-            );
+            const isOpen =
+                sidebar?.classList.contains(
+                    "sidebar-open"
+                );
 
-        setzeMobilmenue(!isOpen);
-    }
-);
+            setzeMobilmenue(!isOpen);
+        }
+    );
 
     eventHinzufuegen(
         "startButton",
