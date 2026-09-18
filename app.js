@@ -259,6 +259,7 @@ function erstelleMobilmenueOverlay() {
     backdrop.id = "mobileMenuBackdrop";
     backdrop.className = "mobile-menu-backdrop";
     backdrop.hidden = true;
+    backdrop.setAttribute("aria-hidden", "true");
 
     backdrop.addEventListener("click", function () {
         setzeMobilmenue(false);
@@ -298,18 +299,18 @@ function seiteAnzeigen(pageId) {
             hauptkarteInitialisieren();
             hauptkarte?.invalidateSize();
             alleFluegeAufKarte();
-        }, 100);
+        }, 120);
     }
 
     if (zielseite === "fahrt-erfassen") {
         window.setTimeout(function () {
             trackingKarteInitialisieren();
             trackingKarte?.invalidateSize();
-        }, 100);
+        }, 120);
     }
 
     if (zielseite === "statistiken") {
-        window.setTimeout(zeichneMonatsstatistik, 100);
+        window.setTimeout(zeichneMonatsstatistik, 120);
     }
 
     if (zielseite === "wetter") {
@@ -2557,6 +2558,15 @@ function appInitialisieren() {
     updateOnlineStatus();
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
+
+    window.addEventListener("resize", function () {
+        if (window.innerWidth > 768) {
+            setzeMobilmenue(false);
+        }
+
+        hauptkarte?.invalidateSize();
+        trackingKarte?.invalidateSize();
+    });
 }
 
 if (document.readyState === "loading") {
@@ -2573,11 +2583,6 @@ window.addEventListener("hashchange", function () {
     if (PAGE_IDS.includes(requestedPage)) {
         seiteAnzeigen(requestedPage);
     }
-});
-
-window.addEventListener("resize", function () {
-    hauptkarte?.invalidateSize();
-    trackingKarte?.invalidateSize();
 });
 
 window.addEventListener("beforeunload", function () {
