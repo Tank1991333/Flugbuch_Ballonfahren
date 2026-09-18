@@ -2434,3 +2434,257 @@ a.secondary-button,
         max-width: none;
     }
 }
+
+/* =========================================================
+   MOBILE OPTIMIERUNG UND SMARTPHONE SUPPORT
+   ========================================================= */
+
+/* Horizontalen Überlauf verhindern */
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.main,
+.app-shell,
+.panel,
+.app-page {
+    min-width: 0;
+}
+
+/* Importdialog-Grundgestaltung */
+.import-information,
+.import-preview,
+.import-message {
+    position: relative;
+    z-index: 2;
+
+    margin-top: 14px;
+    padding: 12px;
+
+    border-radius: 9px;
+
+    background: rgba(6, 23, 35, 0.72);
+}
+
+.import-information {
+    color: var(--sky-light);
+}
+
+.import-preview {
+    border: 1px solid #3cad61;
+    color: #a7ffbc;
+}
+
+.import-message-success {
+    color: #a7ffbc;
+}
+
+.import-message-error {
+    color: #ffadaf;
+}
+
+.import-mode {
+    position: relative;
+    z-index: 2;
+
+    margin: 18px 0 0;
+    padding: 14px;
+
+    border: 1px solid rgba(79, 121, 148, 0.55);
+    border-radius: 10px;
+
+    color: var(--text);
+}
+
+.import-mode legend {
+    padding: 0 7px;
+
+    color: var(--sky-light);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.import-mode label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 10px 0;
+
+    cursor: pointer;
+}
+
+.import-mode input {
+    flex: 0 0 auto;
+
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+}
+
+.import-mode strong,
+.import-mode small {
+    display: block;
+}
+
+.import-mode small {
+    margin-top: 3px;
+    color: var(--muted);
+}
+
+.dialog-actions {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    margin-top: 18px;
+}
+
+/* Tablet und Smartphone */
+@media (max-width: 768px) {
+    .main {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+    }
+
+    .sidebar {
+        padding-top: max(18px, env(safe-area-inset-top));
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+    }
+
+    .dialog-backdrop {
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-right: max(20px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+        padding-left: max(20px, env(safe-area-inset-left));
+    }
+
+    /*
+     * Karte und Standortdaten werden untereinander angezeigt.
+     * Dadurch gibt es auf Smartphones keine zu schmale Zwei-Spalten-Karte.
+     */
+    .main-map-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .location-panel {
+        border-top: 1px solid rgba(72, 120, 150, 0.5);
+        border-left: 0;
+    }
+
+    #map,
+    #trackingMap {
+        width: 100%;
+        height: min(58vh, 430px);
+        min-height: 300px;
+    }
+
+    .tracking-map-wrapper {
+        min-height: 300px;
+    }
+
+    /*
+     * Touch-Flächen für Smartphones.
+     */
+    button,
+    .nav-link,
+    .primary-button,
+    .secondary-button,
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+    }
+
+    .dialog-close {
+        width: 44px;
+        height: 44px;
+    }
+
+    /*
+     * Verhindert automatischen iPhone-Zoom bei Formularfeldern.
+     */
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    .dialog-actions {
+        align-items: stretch;
+    }
+}
+
+/* Kleine Smartphones */
+@media (max-width: 480px) {
+    .main {
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        padding-left: max(10px, env(safe-area-inset-left));
+    }
+
+    #map,
+    #trackingMap {
+        height: 320px;
+        min-height: 320px;
+    }
+
+    .tracking-map-wrapper {
+        min-height: 320px;
+    }
+
+    .location-panel {
+        padding: 14px 12px;
+    }
+
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions button {
+        width: 100%;
+    }
+
+    .import-dialog {
+        width: 100%;
+        max-height: calc(100vh - 24px);
+        border-radius: 14px;
+    }
+
+    .import-mode {
+        padding: 12px;
+    }
+
+    .import-mode label {
+        gap: 8px;
+    }
+
+    .tracking-location-display {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        max-width: none;
+    }
+}
+
+/* Geräte mit geringer Bewegungspräferenz */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
