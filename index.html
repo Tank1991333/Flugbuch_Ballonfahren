@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
 
     <meta
         name="theme-color"
         content="#07111f"
     >
 
-    <link
-        rel="manifest"
-        href="manifest.webmanifest"
+    <meta
+        name="description"
+        content="Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer"
     >
 
     <meta
@@ -34,12 +33,12 @@
         content="Ballonflugbuch"
     >
 
-    <meta
-        name="description"
-        content="Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer"
-    >
-
     <title>Ballonflugbuch Professional V10</title>
+
+    <link
+        rel="manifest"
+        href="manifest.webmanifest"
+    >
 
     <link
         rel="icon"
@@ -73,12 +72,11 @@
     <div class="app-shell">
 
         <!-- Seitennavigation -->
-
         <aside
-    id="sidebar"
-    class="sidebar"
-    aria-label="Seitennavigation"
->
+            id="sidebar"
+            class="sidebar"
+            aria-label="Seitennavigation"
+        >
             <button
                 class="brand"
                 data-page-link="dashboard"
@@ -188,6 +186,7 @@
             </div>
 
             <div class="maintenance">
+
                 <span
                     class="maintenance-icon"
                     aria-hidden="true"
@@ -202,16 +201,17 @@
                         Nicht festgelegt
                     </strong>
                 </span>
+
             </div>
         </aside>
 
         <!-- Hauptbereich -->
-
         <main class="main">
 
+            <!-- Kopfbereich -->
             <header class="topbar">
 
-                 <button
+                <button
                     id="menuButton"
                     class="menu-button"
                     type="button"
@@ -233,8 +233,14 @@
                 </div>
 
                 <div class="top-meta">
-                    <span id="currentDate">--</span>
-                    <span id="currentTime">--</span>
+
+                    <span id="currentDate">
+                        --
+                    </span>
+
+                    <span id="currentTime">
+                        --
+                    </span>
 
                     <span
                         class="avatar"
@@ -248,22 +254,25 @@
                             Pilot
                         </strong>
 
-                        <small>Ballonpilot</small>
+                        <small>
+                            Ballonpilot
+                        </small>
                     </span>
-                </div>
 
+                </div>
             </header>
 
             <!-- Übersicht -->
-
             <section
                 id="dashboard"
                 class="app-page active"
                 aria-labelledby="dashboardTitle"
             >
+
                 <div class="hero-dashboard">
 
                     <div class="hero-copy">
+
                         <span class="eyebrow">
                             BALLONFLUGBUCH PROFESSIONAL
                         </span>
@@ -279,6 +288,7 @@
                             Wetterdaten und digitales Flugbuch
                             in einer Anwendung.
                         </p>
+
                     </div>
 
                     <div
@@ -290,11 +300,14 @@
 
                 </div>
 
+                <!-- Kennzahlen -->
                 <section
                     class="kpi-grid"
                     aria-label="Gesamte Flugstatistik"
                 >
+
                     <article class="kpi kpi-blue">
+
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -307,9 +320,11 @@
                             <strong id="countFlights">0</strong>
                             <em>gespeicherte Fahrten</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-green">
+
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -322,9 +337,11 @@
                             <strong id="countLandings">0</strong>
                             <em>gesamte Landungen</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-yellow">
+
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -337,9 +354,11 @@
                             <strong id="countMinutes">0h 00m</strong>
                             <em>gesamte Flugzeit</em>
                         </span>
+
                     </article>
 
                     <article class="kpi kpi-purple">
+
                         <span
                             class="kpi-icon"
                             aria-hidden="true"
@@ -352,12 +371,16 @@
                             <strong id="countKm">0,0 km</strong>
                             <em>gesamte Strecke</em>
                         </span>
+
                     </article>
+
                 </section>
 
+                <!-- Dashboard-Panels -->
                 <section class="dashboard-grid">
 
                     <article class="panel">
+
                         <div class="panel-title">
                             <h2>BERECHTIGUNGSMONITOR</h2>
 
@@ -374,9 +397,11 @@
                                 Aktivitätsdaten werden berechnet ...
                             </p>
                         </div>
+
                     </article>
 
                     <article class="panel">
+
                         <div class="panel-title">
                             <h2>ZUSAMMENFASSUNG</h2>
                             <span>GESAMT</span>
@@ -393,9 +418,11 @@
                         >
                             Kein relevanter Flug vorhanden.
                         </div>
+
                     </article>
 
                     <article class="panel">
+
                         <div class="panel-title">
                             <h2>REKORDE</h2>
                             <span>PERSÖNLICH</span>
@@ -405,88 +432,115 @@
                             id="records"
                             class="records"
                         ></div>
+
                     </article>
 
                 </section>
             </section>
 
-            <!-- Fahrt erfassen (REDESIGN) -->
-
+            <!-- Fahrt erfassen -->
             <section
                 id="fahrt-erfassen"
                 class="app-page tracking-page-new"
                 aria-labelledby="trackingTitle"
                 hidden
             >
-                <!-- Kompakte Kopfleiste mit Infos -->
+
                 <div class="tracking-topbar">
+
                     <div class="tracking-header">
-                        <h2 id="trackingTitle">FAHRT ERFASSEN</h2>
-                        <small>GPS-TRACKING</small>
+
+                        <h2 id="trackingTitle">
+                            FAHRT ERFASSEN
+                        </h2>
+
+                        <small>
+                            GPS-TRACKING
+                        </small>
+
                     </div>
-                    
-                    <!-- Kompakte Kacheln oben -->
+
                     <div class="tracking-stats-bar">
+
                         <article class="stat-tile stat-altitude">
                             <small>HÖHE</small>
                             <strong id="trackingAltitude">--</strong>
                             <em>m</em>
                         </article>
+
                         <article class="stat-tile stat-speed">
                             <small>GESCHWINDIGKEIT</small>
                             <strong id="trackingSpeed">--</strong>
                             <em>km/h</em>
                         </article>
+
                         <article class="stat-tile stat-time">
                             <small>FLUGZEIT</small>
                             <strong id="trackingFlightTime">00:00</strong>
                             <em>hh:mm</em>
                         </article>
+
                         <article class="stat-tile stat-distance">
                             <small>STRECKE</small>
                             <strong id="trackingDistance">0,0</strong>
                             <em>km</em>
                         </article>
+
                     </div>
                 </div>
 
-                <!-- HAUPT-INHALT: Karte dominiert -->
                 <div class="tracking-main-content">
-                    
-                    <!-- Linke Seite: KARTE (großer Bereich) -->
+
+                    <!-- Live-Karte -->
                     <div class="tracking-map-section">
+
                         <div
                             id="trackingMap"
                             class="tracking-map-large"
                             role="region"
                             aria-label="Live-Karte der aktuellen Fahrt"
                         ></div>
+
                     </div>
 
-                    <!-- Rechte Seite: Bedienelemente (schmale Spalte) -->
+                    <!-- Bedienelemente -->
                     <aside class="tracking-controls-panel">
-                        
-                        <!-- Pilot & Ballon Info -->
+
                         <div class="tracking-info-section">
+
                             <h3>FAHRTDATEN</h3>
+
                             <div class="current-master-data compact">
+
                                 <div>
                                     <small>Pilot</small>
-                                    <strong id="trackingPilotDisplay">Nicht festgelegt</strong>
+
+                                    <strong id="trackingPilotDisplay">
+                                        Nicht festgelegt
+                                    </strong>
                                 </div>
+
                                 <div>
                                     <small>Ballon</small>
-                                    <strong id="trackingBallonDisplay">Nicht festgelegt</strong>
+
+                                    <strong id="trackingBallonDisplay">
+                                        Nicht festgelegt
+                                    </strong>
                                 </div>
+
                                 <div>
                                     <small>Ballontyp</small>
-                                    <strong id="trackingTypeDisplay">Nicht festgelegt</strong>
+
+                                    <strong id="trackingTypeDisplay">
+                                        Nicht festgelegt
+                                    </strong>
                                 </div>
+
                             </div>
                         </div>
 
-                        <!-- Start/Stop Buttons -->
                         <div class="tracking-action-buttons">
+
                             <button
                                 id="startButton"
                                 class="primary-button start-button full-width"
@@ -503,9 +557,9 @@
                             >
                                 ■ Fahrt beenden
                             </button>
+
                         </div>
 
-                        <!-- Status -->
                         <div
                             id="status"
                             class="status-message compact"
@@ -515,14 +569,16 @@
                             Keine Fahrt aktiv
                         </div>
 
-                        <!-- Formulare -->
                         <div class="tracking-form-section">
+
                             <label for="landungen">
                                 Landungen
+
                                 <input
                                     id="landungen"
                                     type="number"
                                     min="1"
+                                    max="99"
                                     step="1"
                                     value="1"
                                     inputmode="numeric"
@@ -531,15 +587,16 @@
 
                             <label for="bemerkung">
                                 Bemerkungen
+
                                 <textarea
                                     id="bemerkung"
                                     rows="3"
                                     placeholder="Bemerkungen zur Fahrt"
                                 ></textarea>
                             </label>
+
                         </div>
 
-                        <!-- Speichern Button -->
                         <button
                             id="saveButton"
                             class="primary-button full-width"
@@ -549,35 +606,42 @@
                             💾 Fahrt speichern
                         </button>
 
-                        <!-- Warnung -->
                         <div class="safety-warning compact">
+
                             <strong>Hinweis</strong>
-                            <p>App sollte geöffnet bleiben!</p>
+
+                            <p>
+                                Die Anwendung sollte während der
+                                GPS-Aufzeichnung geöffnet bleiben.
+                            </p>
+
                         </div>
 
                     </aside>
-
                 </div>
 
-                <!-- Höhenprofil unten (optional, reduziert) -->
+                <!-- Höhenprofil -->
                 <article class="panel profile-panel-compact">
+
                     <div class="panel-title">
                         <h2>HÖHENPROFIL</h2>
                         <span>METER</span>
                     </div>
+
                     <div class="chart-container height-chart-compact">
+
                         <canvas
                             id="heightChart"
                             role="img"
-                            aria-label="Höhenverlauf während Fahrt"
+                            aria-label="Höhenverlauf während der Fahrt"
                         ></canvas>
-                    </div>
-                </article>
 
+                    </div>
+
+                </article>
             </section>
 
             <!-- Flugbuch -->
-
             <section
                 id="flugbuch"
                 class="app-page"
@@ -599,14 +663,16 @@
 
                     <div id="flugbuchTable">
 
+                        <p class="empty-message">
+                            Noch keine Fahrten gespeichert.
+                        </p>
+
                     </div>
 
                 </article>
-
             </section>
 
             <!-- Karte -->
-
             <section
                 id="karte"
                 class="app-page"
@@ -626,14 +692,17 @@
 
                     </div>
 
-                    <div id="routenKarte" class="map-container"></div>
+                    <div
+                        id="routenKarte"
+                        class="map-container"
+                        role="region"
+                        aria-label="Karte mit gespeicherten Flugstrecken"
+                    ></div>
 
                 </article>
-
             </section>
 
             <!-- Statistiken -->
-
             <section
                 id="statistiken"
                 class="app-page"
@@ -660,7 +729,7 @@
                             <canvas
                                 id="flightTimeChart"
                                 role="img"
-                                aria-label="Flugzeiten Statistik"
+                                aria-label="Flugzeiten-Statistik"
                             ></canvas>
 
                         </div>
@@ -684,7 +753,7 @@
                             <canvas
                                 id="distanceChart"
                                 role="img"
-                                aria-label="Streckenlängen Statistik"
+                                aria-label="Streckenlängen-Statistik"
                             ></canvas>
 
                         </div>
@@ -716,11 +785,9 @@
                     </article>
 
                 </section>
-
             </section>
 
             <!-- Wetter -->
-
             <section
                 id="wetter"
                 class="app-page"
@@ -749,11 +816,9 @@
                     </div>
 
                 </article>
-
             </section>
 
             <!-- Einstellungen -->
-
             <section
                 id="einstellungen"
                 class="app-page"
@@ -783,15 +848,18 @@
 
                             <label for="pilotName">
                                 Pilot Name
+
                                 <input
                                     id="pilotName"
                                     type="text"
+                                    autocomplete="name"
                                     placeholder="Dein Name"
                                 >
                             </label>
 
                             <label for="balloonName">
                                 Ballon Name
+
                                 <input
                                     id="balloonName"
                                     type="text"
@@ -801,10 +869,11 @@
 
                             <label for="balloonType">
                                 Ballontyp
+
                                 <input
                                     id="balloonType"
                                     type="text"
-                                    placeholder="z.B. Kubicek"
+                                    placeholder="z. B. Kubicek"
                                 >
                             </label>
 
@@ -818,6 +887,7 @@
 
                             <label for="licenseNumber">
                                 Lizenznummer
+
                                 <input
                                     id="licenseNumber"
                                     type="text"
@@ -827,10 +897,21 @@
 
                             <label for="licenseType">
                                 Lizenztyp
+
                                 <select id="licenseType">
-                                    <option value="">-- wählen --</option>
-                                    <option value="commercial">Gewerblich</option>
-                                    <option value="private">Privat</option>
+
+                                    <option value="">
+                                        Bitte wählen
+                                    </option>
+
+                                    <option value="commercial">
+                                        Gewerblich
+                                    </option>
+
+                                    <option value="private">
+                                        Privat
+                                    </option>
+
                                 </select>
                             </label>
 
@@ -843,7 +924,8 @@
                             </legend>
 
                             <label for="nextMaintenance">
-                                Nächste Wartung (Datum)
+                                Nächste Wartung
+
                                 <input
                                     id="nextMaintenance"
                                     type="date"
@@ -863,37 +945,31 @@
                     </div>
 
                 </article>
-
             </section>
 
         </main>
-
     </div>
 
-    <!-- Hidden file input für Import -->
+    <!-- Verstecktes Eingabefeld für JSON- und CSV-Import -->
     <input
         id="fileInput"
         type="file"
-        accept=".json"
-        style="display: none;"
-        aria-label="Datei zum Importieren wählen"
+        accept=".json,.csv,application/json,text/csv"
+        hidden
+        aria-label="Datei zum Importieren auswählen"
     >
 
-    <!-- Leaflet JS -->
+    <!-- Leaflet für die Kartendarstellung -->
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         crossorigin="anonymous"
     ></script>
 
-    <!-- Chart.js -->
-    <script
-        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
-        crossorigin="anonymous"
-    ></script>
+    <!-- Lokale Canvas-Diagrammbibliothek -->
+    <script src="chart.js"></script>
 
-    <!-- Eigene JavaScript-Datei -->
+    <!-- Ballonflugbuch-Anwendung -->
     <script src="app.js"></script>
 
 </body>
-
 </html>
