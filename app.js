@@ -26,6 +26,53 @@ const MONITOR_DEFAULTS = Object.freeze({
 
 let fluegeSyncChannel = null;
 
+/**
+ * Liest JSON-Daten sicher aus dem Local Storage.
+ *
+ * @param {string} key Schlüssel im Local Storage
+ * @param {*} fallback Rückgabewert, wenn keine gültigen Daten vorhanden sind
+ * @returns {*} Gespeicherte Daten oder der Fallback-Wert
+ */
+function ladeJson(key, fallback) {
+    try {
+        const gespeicherterWert = localStorage.getItem(key);
+
+        if (gespeicherterWert === null) {
+            return fallback;
+        }
+
+        return JSON.parse(gespeicherterWert);
+    } catch (fehler) {
+        console.error(
+            `Die gespeicherten Daten für "${key}" konnten nicht geladen werden:`,
+            fehler
+        );
+
+        return fallback;
+    }
+}
+
+/**
+ * Speichert Daten als JSON im Local Storage.
+ *
+ * @param {string} key Schlüssel im Local Storage
+ * @param {*} value Zu speichernde Daten
+ * @returns {boolean} true bei Erfolg, andernfalls false
+ */
+function speichereJson(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    } catch (fehler) {
+        console.error(
+            `Die Daten für "${key}" konnten nicht gespeichert werden:`,
+            fehler
+        );
+
+        return false;
+    }
+}
+
 function sichereDezimalzahl(
     value,
     fallback,
@@ -51,6 +98,7 @@ function sichereDezimalzahl(
 
 function fluegeLaden() {
     const saved = ladeJson(FLIGHT_STORAGE_KEY, []);
+
     return Array.isArray(saved) ? saved : [];
 }
 
