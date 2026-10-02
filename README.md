@@ -48,6 +48,8 @@ Diese Dateien liegen im Hauptverzeichnis:
 - `index.html`
 - `style.css`
 - `app.js`
+- `chart.js`
+- `favicon.svg`
 - `manifest.webmanifest`
 - `README.md`
 
@@ -55,7 +57,7 @@ Der GitHub-Workflow liegt unter:
 
 - `.github/workflows/validate.yml`
 
-Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind vollständig in `app.js` integriert. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js` werden nicht benötigt.
+Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind vollständig in `app.js` integriert, die Diagramme in `chart.js`. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js` werden nicht benötigt.
 
 ## Externe Bibliotheken und Dienste
 
@@ -100,7 +102,7 @@ hinzugefügt werden.
 Die GPS-Aufzeichnung sollte während einer aktiven Fahrt im Vordergrund
 geöffnet bleiben, da mobile Browser Hintergrundprozesse pausieren können.
 
-## Installation
+## Installation (GitHub Pages)
 
 1. Alle Projektdateien in das Hauptverzeichnis des Repositorys kopieren.
 
@@ -110,5 +112,21 @@ geöffnet bleiben, da mobile Browser Hintergrundprozesse pausieren können.
 index.html
 style.css
 app.js
+chart.js
+favicon.svg
 manifest.webmanifest
 README.md
+```
+
+3. Im Repository unter **Settings → Pages** den Branch `main` und das
+   Verzeichnis `/ (root)` auswählen und speichern.
+
+4. Nach kurzer Zeit ist die App unter der angezeigten HTTPS-Adresse erreichbar.
+
+## Lokal testen
+
+```bash
+python3 -m http.server 8000
+```
+
+Danach `http://localhost:8000` im Browser öffnen.

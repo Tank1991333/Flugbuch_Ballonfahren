@@ -1,0 +1,64 @@
+name: Validate Ballonflugbuch
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate static website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: JavaScript-Syntax prüfen
+        run: |
+          node --check app.js
+          node --check chart.js
+
+      - name: Erforderliche Dateien prüfen
+        run: |
+          test -f index.html
+          test -f style.css
+          test -f app.js
+          test -f chart.js
+          test -f favicon.svg
+          test -f manifest.webmanifest
+          echo "Alle erforderlichen Dateien sind vorhanden."
+
+      - name: HTML auf offensichtliche Fehler prüfen
+        run: |
+          if grep -n '<<aside' index.html; then
+            echo "Fehler: In index.html wurde <<aside gefunden."
+            exit 1
+          fi
+
+          if grep -n '</html>' index.html; then
+            echo "HTML-Datei wurde gefunden."
+          else
+            echo "Fehler: </html> fehlt."
+            exit 1
+          fi
+
+      - name: Grundstruktur prüfen
+        run: |
+          grep -q '<!DOCTYPE html>' index.html
+          grep -q 'id="sidebar"' index.html
+          grep -q 'id="menuButton"' index.html
+          grep -q 'src="chart.js"' index.html
+          grep -q 'src="app.js"' index.html
+          echo "Grundstruktur ist in Ordnung."

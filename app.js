@@ -179,13 +179,29 @@ function sichereId() {
     );
 }
 
+function zahlOderNull(value) {
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return null;
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : null;
+}
+
 function mapPointValid(point) {
-    const lat = Number(point?.lat);
-    const lng = Number(point?.lng);
+    const lat = zahlOderNull(point?.lat);
+    const lng = zahlOderNull(point?.lng);
 
     return (
-        Number.isFinite(lat) &&
-        Number.isFinite(lng) &&
+        lat !== null &&
+        lng !== null &&
         lat >= -90 &&
         lat <= 90 &&
         lng >= -180 &&
@@ -358,9 +374,7 @@ function seiteAnzeigen(pageId) {
         );
     }
 
-    if (window.innerWidth <= 768) {
-        setzeMobilmenue(false);
-    }
+    setzeMobilmenue(false);
 
     window.scrollTo({
         top: 0,
@@ -1078,6 +1092,33 @@ function standortZentrieren(map) {
     );
 }
 
+async function fetchMitTimeout(
+    url,
+    options = {},
+    timeoutMs = 6000
+) {
+    const controller = new AbortController();
+
+    const timer = window.setTimeout(
+        function () {
+            controller.abort();
+        },
+        timeoutMs
+    );
+
+    try {
+        return await fetch(
+            url,
+            {
+                ...options,
+                signal: controller.signal
+            }
+        );
+    } finally {
+        window.clearTimeout(timer);
+    }
+}
+
 async function ortName(latitude, longitude) {
     try {
         const parameters =
@@ -1089,7 +1130,7 @@ async function ortName(latitude, longitude) {
                 addressdetails: "1"
             });
 
-        const response = await fetch(
+        const response = await fetchMitTimeout(
             "https://nominatim.openstreetmap.org/reverse?" +
             parameters.toString(),
             {
@@ -1133,39 +1174,23 @@ function trackpunktHinzufuegen(position) {
             position.coords.longitude
         ),
 
-        hoehe:
-            Number.isFinite(
-                Number(
-                    position.coords.altitude
-                )
-            )
-                ? Number(
-                    position.coords.altitude
-                )
-                : null,
+        hoehe: zahlOderNull(
+            position.coords.altitude
+        ),
 
-        speed:
-            Number.isFinite(
-                Number(position.coords.speed)
-            )
-                ? Math.max(
-                    0,
-                    Number(
-                        position.coords.speed
-                    )
-                )
-                : null,
+        speed: (function () {
+            const speed = zahlOderNull(
+                position.coords.speed
+            );
 
-        genauigkeit:
-            Number.isFinite(
-                Number(
-                    position.coords.accuracy
-                )
-            )
-                ? Number(
-                    position.coords.accuracy
-                )
-                : null,
+            return speed === null
+                ? null
+                : Math.max(0, speed);
+        })(),
+
+        genauigkeit: zahlOderNull(
+            position.coords.accuracy
+        ),
 
         zeit: new Date(
             position.timestamp ||
@@ -1298,7 +1323,6 @@ function flugStarten() {
     navigator.geolocation.getCurrentPosition(
         async function (position) {
             standortErfolgreich(position);
-            aktivBleiben();
 
             const now = new Date();
 
@@ -1324,6 +1348,8 @@ function flugStarten() {
 
             trackpunkte = [];
             flugWirdBeendet = false;
+
+            aktivBleiben();
 
             trackingKarteZuruecksetzen();
 
@@ -1725,16 +1751,9 @@ function zeichneHoehenprofil(track) {
 
                         data: safeTrack.map(
                             function (point) {
-                                const height =
-                                    Number(
-                                        point.hoehe
-                                    );
-
-                                return Number.isFinite(
-                                    height
-                                )
-                                    ? height
-                                    : null;
+                                return zahlOderNull(
+                                    point.hoehe
+                                );
                             }
                         ),
 
@@ -2732,9 +2751,11 @@ async function wetterAnzeigen(
                     "1"
             });
 
-        const response = await fetch(
+        const response = await fetchMitTimeout(
             "https://api.open-meteo.com/v1/forecast?" +
-            parameters.toString()
+            parameters.toString(),
+            {},
+            10000
         );
 
         if (!response.ok) {
@@ -3839,10 +3860,16 @@ function setzeMobilmenue(status) {
             isOpen
         );
 
-        sidebar.setAttribute(
-            "aria-hidden",
-            isOpen ? "false" : "true"
-        );
+        if (mobile) {
+            sidebar.setAttribute(
+                "aria-hidden",
+                isOpen ? "false" : "true"
+            );
+        } else {
+            sidebar.removeAttribute(
+                "aria-hidden"
+            );
+        }
     }
 
     if (backdrop) {
@@ -4212,7 +4239,7 @@ window.addEventListener(
         hauptkarte?.invalidateSize();
         trackingKarte?.invalidateSize();
 
-        if (window.innerWidth > 768) {
+        if (window.innerWidth > 1024) {
             setzeMobilmenue(false);
         }
     }
