@@ -1,0 +1,20 @@
+{
+    "name": "Ballonflugbuch Professional",
+    "short_name": "Ballonflugbuch",
+    "description": "Digitales Flugbuch für Heißluftballonfahrer",
+    "lang": "de",
+    "start_url": "./index.html#dashboard",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#06111d",
+    "theme_color": "#07111f",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
