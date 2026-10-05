@@ -83,3 +83,15 @@ dialog::backdrop{background:#000a}
 .dunkelkachel{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7)}
 
 select{display:block;width:100%;margin:4px 0 6px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+
+/* Trajektoren */
+nav button{font-size:.62rem;padding:0 1px;min-width:0}
+#tbox{height:50vh}
+#tmap{height:100%;min-height:0;border-radius:18px;background:#0b1626;box-shadow:0 8px 28px #0009}
+.hoehen{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.hoehen label{display:flex;align-items:center;gap:8px;margin:0;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:.9rem}
+.hoehen input{width:auto;margin:0}
+.tabelle{overflow-x:auto}.tabelle table{width:100%;border-collapse:collapse;font-size:.85rem}
+.tabelle th{color:var(--mut);font-weight:600;text-align:left;padding:6px;white-space:nowrap}
+.tabelle td{padding:8px 6px;border-top:1px solid var(--line);white-space:nowrap}
+.fk{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}

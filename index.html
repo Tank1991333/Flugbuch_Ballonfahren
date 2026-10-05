@@ -73,6 +73,29 @@
   <p class="note">Nur zur allgemeinen Information. Ersetzt keine offizielle Flugwetterberatung.</p>
 </section>
 
+<section id="trajektoren" class="seite" hidden>
+  <div class="card"><h2>Startort</h2>
+    <div class="row"><input id="tSuche" type="search" placeholder="Ort oder PLZ in Österreich" autocomplete="off"><button id="tSucheB">Suchen</button></div>
+    <button id="tGpsB" style="width:100%">◎ Meinen Standort verwenden</button>
+    <p id="tOrt" class="note">Startpunkt suchen oder in der Karte antippen. Der Marker lässt sich verschieben.</p>
+    <input id="tLat" type="hidden" value="47.16960"><input id="tLon" type="hidden" value="16.00930">
+  </div>
+  <div class="card"><h2>Fahrtdaten</h2>
+    <div class="row"><label>Datum<input id="tDatum" type="date"></label><label>Startzeit<input id="tStart" type="time" value="07:00"></label></div>
+    <label>Flugdauer: <b id="tDauerW">1,5 Stunden</b><input id="tDauer" type="range" min="0.5" max="6" step="0.5" value="1.5"></label>
+  </div>
+  <div class="card"><h2>Höhen über Grund</h2>
+    <p class="note">Bis 180 m ICON-D2, ab 200 m GFS (auf die Höhe über Grund interpoliert).</p>
+    <div class="row"><button id="tBallonH">Ballonhöhen</button><button id="tAlle">Alle</button><button id="tKeine">Keine</button></div>
+    <div id="tHoehen" class="hoehen"></div>
+    <button id="tRun" class="gross blaub" style="width:100%;margin-top:12px">Simulation ausführen</button>
+    <p id="tStatus" class="note">Bereit.</p>
+  </div>
+  <div class="mapbox" id="tbox"><div id="tmap"></div></div>
+  <div class="card"><h2>Ergebnisse</h2><div id="tErg"><p class="note">Noch nichts berechnet.</p></div></div>
+  <p class="note">Unverbindliche Modellrechnung (ICON-D2/GFS). Keine geprüfte Flug- oder Landeprognose und kein Ersatz für die offizielle Flugwetterberatung.</p>
+</section>
+
 <section id="einstellungen" class="seite" hidden>
   <div class="card"><h2>Pilot &amp; Ballon</h2>
     <label>Pilot<select id="pilotSel"></select><input id="pilot" placeholder="Neuer Pilot oder oben auswählen" autocomplete="name"></label>
@@ -99,6 +122,7 @@
   <button data-s="flugbuch"><span>▤</span>Flugbuch</button>
   <button data-s="karte"><span>◇</span>Karte</button>
   <button data-s="wetter"><span>☁</span>Wetter</button>
+  <button data-s="trajektoren"><span>↗</span>Trajektoren</button>
   <button data-s="einstellungen"><span>⚙</span>Mehr</button>
 </nav>
 
@@ -121,6 +145,7 @@
 </form></dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="trajektoren.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

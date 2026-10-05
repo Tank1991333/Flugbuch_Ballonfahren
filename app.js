@@ -17,7 +17,7 @@ let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überle
 let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
-const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "einstellungen"];
+const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "trajektoren", "einstellungen"];
 function zeige(id) {
   id = id === "fahrt-erfassen" ? "fahrt" : id;
   if (!SEITEN.includes(id)) id = "dashboard";
@@ -28,6 +28,7 @@ function zeige(id) {
   if (id === "karte" || id === "fahrt") { $(id === "fahrt" ? "fbox" : "kbox").prepend($("map")); kartePrep(); }
   if (id === "fahrt") standbyStart(); else standbyStop();
   if (id === "wetter") wetter();
+  if (id === "trajektoren") trajektorenOeffnen();
   if (id === "fahrt") hoehe();
 }
 
