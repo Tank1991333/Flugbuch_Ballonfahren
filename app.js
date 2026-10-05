@@ -219,32 +219,44 @@ $("dlg").addEventListener("close", () => {
 function kartePrep() {
   if (typeof L === "undefined") { $("map").textContent = "Die Karte benötigt beim ersten Start eine Internetverbindung."; return; }
   if (!karte) {
-    karte = L.map("map").setView([47.28, 15.97], 8);
-    const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }),
-      sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 18, attribution: "Esri" });
-    osm.addTo(karte);
-    L.control.layers({ Karte: osm, Satellit: sat }).addTo(karte);
+    karte = L.map("map", { zoomControl: false, attributionControl: false }).setView([47.28, 15.97], 8);
+    const carto = n => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${n}/{z}/{x}/{y}{r}.png`, { subdomains: "abcd", maxZoom: 20, attribution: "© OpenStreetMap © CARTO" }),
+      dunkel = carto("dark_all"), hell = carto("rastertiles/voyager"),
+      sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 18, attribution: "© Esri" });
+    dunkel.addTo(karte);
+    L.control.layers({ Dunkel: dunkel, Hell: hell, Satellit: sat }, null, { position: "topright" }).addTo(karte);
+    L.control.zoom({ position: "bottomright" }).addTo(karte);
+    L.control.scale({ position: "bottomleft", imperial: false }).addTo(karte);
+    L.control.attribution({ prefix: false, position: "bottomleft" }).addTo(karte);
     ebene = L.layerGroup().addTo(karte); liveL = L.layerGroup().addTo(karte);
   }
   setTimeout(() => { karte.invalidateSize(); zeichne(fluege); liveKarte(); }, 50);
 }
+const pin = c => L.divIcon({ className: "", html: `<i class="pin ${c}"></i>`, iconSize: [20, 20], iconAnchor: [10, 10] });
+const linie = (t, farbe, g) => {
+  L.polyline(t, { color: "#000", weight: 8, opacity: .35, lineCap: "round", lineJoin: "round" }).addTo(g);
+  L.polyline(t, { color: farbe, weight: 4, lineCap: "round", lineJoin: "round" }).addTo(g);
+};
 function zeichne(l) {
   if (!karte) return;
   ebene.clearLayers();
   const b = [];
   l.forEach(f => {
     const t = (f.track || []).map(p => [p.lat, p.lng]);
-    if (t.length > 1) { L.polyline(t, { color: "#4cc9f0", weight: 3 }).addTo(ebene); b.push(...t); }
-    if (Number.isFinite(f.startLat)) { L.circleMarker([f.startLat, f.startLng], { radius: 7, color: "#3ddc97" }).addTo(ebene).bindPopup("Start: " + esc(f.startOrt || "")); b.push([f.startLat, f.startLng]); }
-    if (Number.isFinite(f.landeLat)) L.circleMarker([f.landeLat, f.landeLng], { radius: 7, color: "#ff6b6b" }).addTo(ebene).bindPopup("Landung: " + esc(f.landeOrt || ""));
+    if (t.length > 1) { linie(t, "#4cc9f0", ebene); b.push(...t); }
+    if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b><br>" + esc(f.startOrt || "–")); b.push([f.startLat, f.startLng]); }
+    if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–"));
   });
   if (b.length) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
 }
 function liveKarte() {
   if (!karte || $("karte").hidden && $("fahrt").hidden) return;
   liveL.clearLayers();
-  if (aktiv?.t.length > 1) L.polyline(aktiv.t.map(p => [p.lat, p.lng]), { color: "#ffb703", weight: 4 }).addTo(liveL);
-  if (pos) L.circleMarker([pos.lat, pos.lng], { radius: 8, color: "#fff", fillColor: "#ffb703", fillOpacity: 1 }).addTo(liveL);
+  if (aktiv?.t.length > 1) linie(aktiv.t.map(p => [p.lat, p.lng]), "#ffb703", liveL);
+  if (pos) {
+    L.circle([pos.lat, pos.lng], { radius: pos.genauigkeit || 0, color: "#4cc9f0", weight: 1, fillOpacity: .1, interactive: false }).addTo(liveL);
+    L.marker([pos.lat, pos.lng], { icon: pin("live"), interactive: false }).addTo(liveL);
+  }
 }
 $("allB").onclick = () => zeichne(fluege);
 $("posB").onclick = () => {
