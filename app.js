@@ -204,7 +204,7 @@ function hoehe() {
   if (!w) return;
   c.width = w * r; c.height = h * r;
   const x = c.getContext("2d");
-  x.scale(r, r); x.font = "11px sans-serif"; x.fillStyle = "#8fa3b8"; x.strokeStyle = "#4cc9f0"; x.lineWidth = 2;
+  x.scale(r, r); x.font = "11px sans-serif"; const cs = getComputedStyle(document.documentElement); x.fillStyle = cs.getPropertyValue("--mut"); x.strokeStyle = cs.getPropertyValue("--acc2"); x.lineWidth = 2;
   const v = (aktiv?.t || []).map(p => p.hoehe).filter(Number.isFinite);
   if (v.length < 2) { x.fillText("Noch keine Höhendaten", 10, 20); return; }
   const mn = Math.min(...v), mx = Math.max(...v), sp = Math.max(mx - mn, 10);
@@ -436,6 +436,17 @@ window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
 window.addEventListener("resize", () => { karte?.invalidateSize(); hoehe(); });
 setInterval(() => { $("uhr").textContent = new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }); $("fuhr").textContent = new Date().toLocaleTimeString("de-AT"); if (aktiv && !$("fahrt").hidden) liveAnzeige(); }, 1000);
 
+// Design: hell/dunkel umschaltbar, Auswahl wird gemerkt (Start: Systemeinstellung)
+function theme(t, merken) {
+  document.documentElement.dataset.theme = t;
+  $("themeB").textContent = t === "dunkel" ? "☀" : "☾";
+  $("themeB").setAttribute("aria-label", t === "dunkel" ? "Zum hellen Design wechseln" : "Zum dunklen Design wechseln");
+  document.querySelector('meta[name="theme-color"]').content = t === "dunkel" ? "#1A1411" : "#FFF8EF";
+  if (merken) save("theme", t);
+  hoehe();
+}
+$("themeB").onclick = () => theme(document.documentElement.dataset.theme === "dunkel" ? "hell" : "dunkel", true);
+theme(document.documentElement.dataset.theme || "hell", false);
 render(); ui();
 zeige(location.hash.slice(1));
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
