@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span></header>
+<header><button id="menuB" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menue">☰</button><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span></header>
 <main>
 <section id="dashboard" class="seite">
   <div id="kpis" class="kpis"></div>
@@ -27,7 +27,7 @@
     <span id="fdot" class="dot"></span><span><b id="fstate">BEREIT</b><small id="status">Keine Aufzeichnung</small></span>
     <span class="fr"><span id="gpsB" class="gpsb">GPS SUCHT …</span><b id="fuhr">--:--:--</b></span>
   </div>
-  <p id="hinweis" class="warn" hidden>Bitte zuerst Pilot und Ballon-Kennzeichen unter Mehr eintragen.</p>
+  <p id="hinweis" class="warn" hidden>Bitte zuerst Pilot und Ballon-Kennzeichen unter Einstellungen eintragen.</p>
   <div class="cards4">
     <div class="kc blau"><small>⏱ GESCHWINDIGKEIT</small><b id="kV">0</b><em>km/h</em><p id="kVs">Ø 0 · MAX 0 km/h</p></div>
     <div class="kc gruen"><small>▲ HÖHE</small><b id="kH">0</b><em>m</em><p id="kHs">MAX 0 m</p></div>
@@ -116,14 +116,15 @@
 </section>
 </main>
 
-<nav aria-label="Hauptnavigation">
+<div id="schleier"></div>
+<nav id="menue" aria-label="Hauptnavigation">
   <button data-s="dashboard"><span>⌂</span>Übersicht</button>
   <button data-s="fahrt"><span>▶</span>Fahrt</button>
   <button data-s="flugbuch"><span>▤</span>Flugbuch</button>
   <button data-s="karte"><span>◇</span>Karte</button>
   <button data-s="wetter"><span>☁</span>Wetter</button>
   <button data-s="trajektoren"><span>↗</span>Trajektoren</button>
-  <button data-s="einstellungen"><span>⚙</span>Mehr</button>
+  <button data-s="einstellungen"><span>⚙</span>Einstellungen</button>
 </nav>
 
 <dialog id="dlg"><form method="dialog">

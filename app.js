@@ -19,6 +19,7 @@ fluege.forEach(f => { f.id ??= nid(); });
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "trajektoren", "einstellungen"];
 function zeige(id) {
+  menue(false);
   id = id === "fahrt-erfassen" ? "fahrt" : id;
   if (!SEITEN.includes(id)) id = "dashboard";
   document.querySelectorAll(".seite").forEach(s => s.hidden = s.id !== id);
@@ -388,6 +389,13 @@ $("imp").onchange = async e => {
 
 // ---------- Start ----------
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => zeige(b.dataset.s));
+function menue(auf) { // Seitenmenü öffnen/schließen
+  $("menue").classList.toggle("offen", auf); $("schleier").classList.toggle("offen", auf);
+  $("menuB").setAttribute("aria-expanded", String(auf)); $("menuB").textContent = auf ? "✕" : "☰";
+}
+$("menuB").onclick = () => menue(!$("menue").classList.contains("offen"));
+$("schleier").onclick = () => menue(false);
+document.addEventListener("keydown", e => { if (e.key === "Escape") menue(false); });
 $("startB").onclick = start;
 $("stopB").onclick = () => { $("endDlg").returnValue = ""; $("endDlg").showModal(); };
 $("endDlg").addEventListener("close", () => { if ($("endDlg").returnValue === "ok") ende(); });
