@@ -196,6 +196,7 @@ function hoehe() {
 }
 
 function render() {
+  auswahlFuellen();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -332,10 +333,33 @@ async function wetter() {
 $("wetterB").onclick = wetter;
 
 // ---------- Einstellungen, Backup, Import ----------
-["pilot", "ballon", "ballontyp", "maintenance"].forEach(k => {
-  const el = $(k); el.value = stamm[k] || "";
-  el.onchange = () => { stamm[k] = k === "ballon" ? el.value.trim().toUpperCase() : el.value.trim(); el.value = stamm[k]; save("stammdaten", stamm); ui(); render(); };
-});
+// Auswahllisten: zuletzt benutzte Piloten/Ballone plus alle aus dem Flugbuch
+function auswahlFuellen() {
+  const alt = [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit));
+  const quellen = [...(stamm.piloten || []).map(p => ({ pilot: p })), ...(stamm.ballone || []), ...alt];
+  const P = [...new Set(quellen.map(x => x.pilot).filter(Boolean))], B = new Map();
+  quellen.forEach(x => { if (x.ballon) { const k = x.ballon + "|" + (x.ballontyp || ""); if (!B.has(k)) B.set(k, x); } });
+  const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
+  $("pilotSel").innerHTML = opt("", "Gespeicherten Piloten wählen …") + P.map(p => opt(p, p, p === stamm.pilot)).join("");
+  $("ballonSel").innerHTML = opt("", "Gespeicherten Ballon wählen …") + [...B].map(([k, x]) => opt(k, x.ballon + (x.ballontyp ? " · " + x.ballontyp : ""), x.ballon === stamm.ballon && (x.ballontyp || "") === (stamm.ballontyp || ""))).join("");
+}
+function stammSpeichern() {
+  stamm.pilot = $("pilot").value.trim(); stamm.ballon = $("ballon").value.trim().toUpperCase();
+  stamm.ballontyp = $("ballontyp").value.trim(); stamm.maintenance = $("maintenance").value;
+  $("ballon").value = stamm.ballon;
+  const vorn = (liste, x, key) => [x, ...(liste || []).filter(y => key(y) !== key(x))].slice(0, 10);
+  if (stamm.pilot) stamm.piloten = vorn(stamm.piloten, stamm.pilot, y => y);
+  if (stamm.ballon) stamm.ballone = vorn(stamm.ballone, { ballon: stamm.ballon, ballontyp: stamm.ballontyp }, y => y.ballon + "|" + y.ballontyp);
+  save("stammdaten", stamm); ui(); render();
+}
+["pilot", "ballon", "ballontyp", "maintenance"].forEach(k => { $(k).value = stamm[k] || ""; $(k).onchange = stammSpeichern; });
+$("pilotSel").onchange = () => { if ($("pilotSel").value) { $("pilot").value = $("pilotSel").value; stammSpeichern(); } };
+$("ballonSel").onchange = () => {
+  const v = $("ballonSel").value;
+  if (!v) return;
+  const [b, t] = v.split("|");
+  $("ballon").value = b; $("ballontyp").value = t; stammSpeichern();
+};
 Object.entries({ mZ: "zeitraumMonate", mS: "erforderlicheStunden", mL: "erforderlicheLandungen" }).forEach(([id, k]) => {
   $(id).value = mon[k];
   $(id).onchange = () => { const v = parseFloat($(id).value); if (v >= 0) mon[k] = v; $(id).value = mon[k]; save("monitorEinstellungen", mon); render(); };

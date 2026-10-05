@@ -81,3 +81,5 @@ dialog::backdrop{background:#000a}
 .pin.marke{background:var(--acc)}
 
 .dunkelkachel{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7)}
+
+select{display:block;width:100%;margin:4px 0 6px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
