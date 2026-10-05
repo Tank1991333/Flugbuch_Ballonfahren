@@ -1,127 +1,44 @@
-# 🎈 Ballonflugbuch Professional V10
+# 🎈 Ballonflugbuch Professional
 
-Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer.
+Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlos auf GitHub Pages, ohne Server und ohne Schlüssel.
 
-## Ansichten
+## Seiten (Menü links oben ☰)
 
-- Übersicht
-- Fahrt erfassen
-- Flugbuch
-- Karte und Live-Standort
-- Statistiken
-- Wetter
-- Einstellungen
+- **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
+- **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
+- **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte
+- **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, Link zur VFR/ICAO-Karte
+- **Wetter:** Temperatur, Wind in 10 m und 80 m, Böen, Sonnenaufgang und -untergang
+- **Trajektoren:** Winddrift-Simulation (ICON-D2 bis 180 m, GFS ab 200 m) für heute und morgen
+- **Einstellungen:** Pilot und Ballon (mit Auswahl zuletzt benutzter), Wartung, Aktivitätsmonitor, Backup und Import
 
-## Funktionen
+## Besonderheiten
 
-- GPS-basierter Start- und Landeort
-- Automatische Aufzeichnung der Flugroute
-- Live-Anzeige des aktuellen Standorts
-- Anzeige von Breitengrad und Längengrad
-- Anzeige der GPS-Höhe
-- Anzeige der GPS-Genauigkeit
-- Anzeige der aktuellen GPS-Geschwindigkeit
-- Standardkarte und Satellitenkarte
-- Link zur offiziellen VFR/ICAO-Karte von Austro Control
-- Berechnung der zurückgelegten Strecke
-- Berechnung der durchschnittlichen Geschwindigkeit
-- Berechnung der maximalen Geschwindigkeit
-- Höhenprofil mit eigener Canvas-Diagrammbibliothek
-- Monatsstatistik
-- Aktivitätsmonitor
-- Persönliche Rekorde
-- Wetterdaten über Open-Meteo
-- Sonnenaufgang und Sonnenuntergang
-- Windgeschwindigkeit und Windrichtung
-- Lokale Speicherung im Browser
-- JSON-Backup
-- JSON-Import
-- CSV-Import
-- Duplikatprüfung beim Import
-- Responsive Ansicht für Desktop, Tablet und Smartphone
-- App-ähnliche Nutzung als Web-App auf Smartphones
+- Alle Koordinaten werden als UTM angezeigt (gespeichert wird intern Breite/Länge)
+- Laufende Fahrt wird laufend gesichert und kann nach Absturz oder Neuladen fortgesetzt werden
+- Orte werden im Hintergrund ermittelt und bei fehlendem Netz später nachgeladen
+- Offline-Start über Service Worker (Karten und Wetter brauchen Internet)
+- JSON-Backup und -Import mit Duplikatprüfung
 
-## Dateien
+## Dateien im Hauptverzeichnis
 
-Diese Dateien liegen im Hauptverzeichnis:
+`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md`
 
-- `index.html`
-- `style.css`
-- `app.js`
-- `chart.js`
-- `favicon.svg`
-- `manifest.webmanifest`
-- `README.md`
+Der Prüf-Workflow gehört nach `.github/workflows/validate.yml`.
 
-Der GitHub-Workflow liegt unter:
+## Dienste (alle kostenlos, ohne API-Key)
 
-- `.github/workflows/validate.yml`
+Leaflet (Karte), OpenStreetMap (Standardkarte, Ortssuche über Nominatim), Esri World Imagery mit Straßen und Ortsnamen (Hybridkarte), Open-Meteo (Wetter, ICON-D2 und GFS).
 
-Die Funktionen für Karte, Wetter und Aktivitätsmonitor sind vollständig in `app.js` integriert, die Diagramme in `chart.js`. Separate Dateien wie `map.js`, `weather.js` oder `monitor.js` werden nicht benötigt.
+## Voraussetzungen
 
-## Externe Bibliotheken und Dienste
-
-- Leaflet für die Kartendarstellung
-- Eigene lokale Canvas-Diagrammbibliothek für Höhenprofil und Monatsstatistik
-- OpenStreetMap für die Standardkarte
-- Esri World Imagery für die Satellitenkarte
-- Nominatim für die Ermittlung von Ortsnamen
-- Open-Meteo für Wetterdaten
-- Austro Control als externer Verweis zur offiziellen VFR/ICAO-Karte
-
-Für Kartendarstellung, Wetterdaten und Ortsabfragen wird eine aktive Internetverbindung benötigt.
-
-## Wichtige Voraussetzungen
-
-Die Anwendung muss über HTTPS oder über `localhost` geöffnet werden.
-
-Beim ersten Start muss die Standortberechtigung im Browser erteilt werden.
-
-Die GPS-Funktionen stehen normalerweise nicht zur Verfügung, wenn die Datei direkt über eine lokale Adresse wie `file:///` geöffnet wird.
-
-GitHub Pages verwendet HTTPS und ist deshalb für diese Anwendung geeignet.
-
-## Smartphone und Installation als Web-App
-
-Die Anwendung ist für Smartphones optimiert und kann über das Browsermenü
-zum Startbildschirm hinzugefügt werden.
-
-Voraussetzungen:
-
-- HTTPS oder `localhost`
-- aktivierte Standortberechtigung
-- aktuelle Browser-Version
-- Internetverbindung für Karten, Wetter und Ortsabfragen
-
-Auf Android kann die Anwendung über „Zum Startbildschirm hinzufügen“ als
-Web-App installiert werden.
-
-Auf iPhone und iPad kann sie über „Teilen“ und „Zum Home-Bildschirm“
-hinzugefügt werden.
-
-Die GPS-Aufzeichnung sollte während einer aktiven Fahrt im Vordergrund
-geöffnet bleiben, da mobile Browser Hintergrundprozesse pausieren können.
+HTTPS oder `localhost` und erteilte Standortberechtigung. Die Aufzeichnung sollte im Vordergrund bleiben, da mobile Browser Hintergrundprozesse pausieren können.
 
 ## Installation (GitHub Pages)
 
-1. Alle Projektdateien in das Hauptverzeichnis des Repositorys kopieren.
-
-2. Sicherstellen, dass mindestens folgende Dateien vorhanden sind:
-
-```text
-index.html
-style.css
-app.js
-chart.js
-favicon.svg
-manifest.webmanifest
-README.md
-```
-
-3. Im Repository unter **Settings → Pages** den Branch `main` und das
-   Verzeichnis `/ (root)` auswählen und speichern.
-
-4. Nach kurzer Zeit ist die App unter der angezeigten HTTPS-Adresse erreichbar.
+1. Alle Dateien in das Hauptverzeichnis des Repositorys laden.
+2. **Settings → Pages**: Branch `main`, Verzeichnis `/ (root)`.
+3. Nach kurzer Zeit ist die App unter der angezeigten HTTPS-Adresse erreichbar.
 
 ## Lokal testen
 
@@ -129,4 +46,8 @@ README.md
 python3 -m http.server 8000
 ```
 
-Danach `http://localhost:8000` im Browser öffnen.
+Danach `http://localhost:8000` öffnen.
+
+## Hinweis
+
+Wetter und Trajektoren sind unverbindliche Modellrechnungen und ersetzen weder die offizielle Flugwetterberatung noch die Flugvorbereitung.

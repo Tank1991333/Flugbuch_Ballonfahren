@@ -103,6 +103,7 @@ function start() {
   if (!navigator.geolocation) return alert("GPS wird von diesem Browser nicht unterstützt.");
   if (!stamm.pilot || !stamm.ballon) { zeige("einstellungen"); return alert("Bitte zuerst Pilot und Ballon-Kennzeichen eintragen."); }
   status("Startposition wird ermittelt …");
+  standbyStop(); // ein laufender Standby-Stream kann die Einmalabfrage blockieren
   navigator.geolocation.getCurrentPosition(p => {
     const now = new Date().toISOString();
     aktiv = { f: { id: nid(), datum: now, startzeit: now, pilot: stamm.pilot, ballon: stamm.ballon, ballontyp: stamm.ballontyp || "", startLat: p.coords.latitude, startLng: p.coords.longitude, startOrt: null }, t: [] };
@@ -111,7 +112,7 @@ function start() {
     punkt(p);
     save("aktiveFahrt", aktiv);
     orteNachladen(); // im Hintergrund, blockiert den Start nicht
-  }, e => { status("❌ " + fehler(e)); ui(); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }, e => { ui(); status("❌ " + fehler(e)); standbyStart(); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
 function aufnehmen() {
@@ -357,10 +358,10 @@ function auswahlFuellen() {
   const alt = [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit));
   const quellen = [...(stamm.piloten || []).map(p => ({ pilot: p })), ...(stamm.ballone || []), ...alt];
   const P = [...new Set(quellen.map(x => x.pilot).filter(Boolean))], B = new Map();
-  quellen.forEach(x => { if (x.ballon) { const k = x.ballon + "|" + (x.ballontyp || ""); if (!B.has(k)) B.set(k, x); } });
+  quellen.forEach(x => { if (x.ballon && !B.has(x.ballon)) B.set(x.ballon, x); });
   const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
   $("pilotSel").innerHTML = opt("", "Gespeicherten Piloten wählen …") + P.map(p => opt(p, p, p === stamm.pilot)).join("");
-  $("ballonSel").innerHTML = opt("", "Gespeicherten Ballon wählen …") + [...B].map(([k, x]) => opt(k, x.ballon + (x.ballontyp ? " · " + x.ballontyp : ""), x.ballon === stamm.ballon && (x.ballontyp || "") === (stamm.ballontyp || ""))).join("");
+  $("ballonSel").innerHTML = opt("", "Gespeicherten Ballon wählen …") + [...B.values()].map(x => opt(x.ballon + "|" + (x.ballontyp || ""), x.ballon + (x.ballontyp ? " · " + x.ballontyp : ""), x.ballon === stamm.ballon)).join("");
 }
 function stammSpeichern() {
   stamm.pilot = $("pilot").value.trim(); stamm.ballon = $("ballon").value.trim().toUpperCase();
@@ -368,7 +369,7 @@ function stammSpeichern() {
   $("ballon").value = stamm.ballon;
   const vorn = (liste, x, key) => [x, ...(liste || []).filter(y => key(y) !== key(x))].slice(0, 10);
   if (stamm.pilot) stamm.piloten = vorn(stamm.piloten, stamm.pilot, y => y);
-  if (stamm.ballon) stamm.ballone = vorn(stamm.ballone, { ballon: stamm.ballon, ballontyp: stamm.ballontyp }, y => y.ballon + "|" + y.ballontyp);
+  if (stamm.ballon) stamm.ballone = vorn(stamm.ballone, { ballon: stamm.ballon, ballontyp: stamm.ballontyp }, y => y.ballon); // ein Eintrag pro Kennzeichen, zuletzt gesetzter Typ gewinnt
   save("stammdaten", stamm); ui(); render();
 }
 ["pilot", "ballon", "ballontyp", "maintenance"].forEach(k => { $(k).value = stamm[k] || ""; $(k).onchange = stammSpeichern; });
