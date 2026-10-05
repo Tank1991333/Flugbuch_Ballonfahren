@@ -22,7 +22,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 
 ## Dateien im Hauptverzeichnis
 
-`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md`
+`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
 
 Der Prüf-Workflow gehört nach `.github/workflows/validate.yml`.
 
