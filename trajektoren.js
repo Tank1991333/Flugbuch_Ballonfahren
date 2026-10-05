@@ -67,7 +67,7 @@ const trajektorenOeffnen = (() => {
   }
   function setzeStart(lat, lon, name) {
     E("tLat").value = lat.toFixed(5); E("tLon").value = lon.toFixed(5);
-    E("tOrt").textContent = `${name || "Gewählter Startpunkt"} · ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    E("tOrt").textContent = `${name || "Gewählter Startpunkt"} · ${utmText(lat, lon)}`;
     marker.setLatLng([lat, lon]);
   }
 
@@ -133,6 +133,7 @@ const trajektorenOeffnen = (() => {
     map = L.map("tmap").setView([lat, lon], 12);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
     marker = L.marker([lat, lon], { draggable: true, icon: pin("start") }).addTo(map);
+    E("tOrt").textContent = "Startpunkt · " + utmText(lat, lon);
     const verschoben = p => { setzeStart(p.lat, p.lng, "Manuell gewählter Startpunkt"); leeren("Startpunkt geändert. Bitte Simulation erneut ausführen."); };
     marker.on("dragend", () => verschoben(marker.getLatLng()));
     map.on("click", e => verschoben(e.latlng));

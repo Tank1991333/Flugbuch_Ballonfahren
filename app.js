@@ -9,6 +9,22 @@ const datum = iso => new Date(iso).toLocaleString("de-AT", { dateStyle: "medium"
 const nid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random();
 const km = (a, b) => { const r = Math.PI / 180, dl = (b.lat - a.lat) * r, dn = (b.lng - a.lng) * r, x = Math.sin(dl / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dn / 2) ** 2; return 12742 * Math.asin(Math.sqrt(x)); };
 
+// UTM-Koordinaten (WGS84) für alle Koordinatenanzeigen der App
+function utm(lat, lng) {
+  const zone = Math.floor((lng + 180) / 6) + 1, r = Math.PI / 180, a = 6378137, e2 = 0.00669438, k0 = 0.9996;
+  const phi = lat * r, ep2 = e2 / (1 - e2), N = a / Math.sqrt(1 - e2 * Math.sin(phi) ** 2), T = Math.tan(phi) ** 2, C = ep2 * Math.cos(phi) ** 2;
+  const A = Math.cos(phi) * (lng - ((zone - 1) * 6 - 177)) * r;
+  const M = a * ((1 - e2 / 4 - 3 * e2 ** 2 / 64 - 5 * e2 ** 3 / 256) * phi - (3 * e2 / 8 + 3 * e2 ** 2 / 32 + 45 * e2 ** 3 / 1024) * Math.sin(2 * phi) + (15 * e2 ** 2 / 256 + 45 * e2 ** 3 / 1024) * Math.sin(4 * phi) - 35 * e2 ** 3 / 3072 * Math.sin(6 * phi));
+  const E = k0 * N * (A + (1 - T + C) * A ** 3 / 6 + (5 - 18 * T + T ** 2 + 72 * C - 58 * ep2) * A ** 5 / 120) + 500000;
+  const Nn = k0 * (M + N * Math.tan(phi) * (A ** 2 / 2 + (5 - T + 9 * C + 4 * C ** 2) * A ** 4 / 24 + (61 - 58 * T + T ** 2 + 600 * C - 330 * ep2) * A ** 6 / 720)) + (lat < 0 ? 1e7 : 0);
+  return { zone: zone + (lat < 0 ? "S" : "N"), e: Math.round(E), n: Math.round(Nn) };
+}
+function utmText(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "–";
+  const u = utm(lat, lng);
+  return `UTM ${u.zone} · ${u.e} E · ${u.n} N`;
+}
+
 // Datenschlüssel bleiben kompatibel zur alten Version
 let fluege = load("fluege", []);
 let stamm = load("stammdaten", {});
@@ -175,7 +191,7 @@ function liveAnzeige() {
   set("sDauer", `${p2(Math.floor(sek / 3600))}:${p2(Math.floor(sek / 60) % 60)}:${p2(sek % 60)}`);
   set("sStrecke", num(d, 2) + " km"); set("sSteig", num(Math.max(0, vs), 1) + " m/s"); set("sSink", num(Math.max(0, -vs), 1) + " m/s");
   set("sMaxH", Math.round(hmax) + " m"); set("sMaxV", num(vmax) + " km/h");
-  const info = pos ? `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} · GPS ±${Math.round(pos.genauigkeit)} m` : "Standort wird ermittelt …";
+  const info = pos ? `${utmText(pos.lat, pos.lng)} · GPS ±${Math.round(pos.genauigkeit)} m` : "Standort wird ermittelt …";
   set("chip", info); set("posInfo", info);
   set("gpsB", pos ? "GPS AKTIV" : "GPS SUCHT …"); $("gpsB").classList.toggle("on", !!pos);
   if (!$("fahrt").hidden) hoehe();
@@ -217,6 +233,7 @@ function render() {
     ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => `<article class="card"><h3>${esc(datum(f.startzeit))}</h3>
       <p>${esc(f.startOrt || "Ort wird ermittelt …")} → ${esc(f.landeOrt || "…")}</p>
       <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · max. ${f.maxHoehe || 0} m · ${f.landungen || 1} Landung(en) · ${esc(f.ballon)}</p>
+      <p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
       <div class="row"><button data-a="karte" data-id="${esc(f.id)}">Karte</button><button data-a="edit" data-id="${esc(f.id)}">Bearbeiten</button><button data-a="del" data-id="${esc(f.id)}" class="gef">Löschen</button></div></article>`).join("")
     : '<p class="leer">Noch keine Fahrten gespeichert.</p>';
@@ -282,9 +299,9 @@ function zeichne(l) {
   l.forEach(f => {
     const t = (f.track || []).map(p => [p.lat, p.lng]);
     if (t.length > 1) { linie(t, "#4cc9f0", ebene); b.push(...t); }
-    if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b><br>" + esc(f.startOrt || "–")); b.push([f.startLat, f.startLng]); }
-    if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–"));
-    (f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke") }).addTo(ebene).bindPopup("<b>Markierung</b><br>" + esc(datum(m.zeit))));
+    if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b><br>" + esc(f.startOrt || "–") + "<br>" + utmText(f.startLat, f.startLng)); b.push([f.startLat, f.startLng]); }
+    if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–") + "<br>" + utmText(f.landeLat, f.landeLng));
+    (f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke") }).addTo(ebene).bindPopup("<b>Markierung</b><br>" + esc(datum(m.zeit)) + "<br>" + utmText(m.lat, m.lng)));
   });
   if (b.length) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
 }

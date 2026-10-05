@@ -106,3 +106,5 @@ nav button.on{background:#16304f;color:var(--acc)}
 #schleier.offen{opacity:1;pointer-events:auto}
 #menuB{width:42px;min-height:42px;padding:0;font-size:1.3rem;margin-right:10px}
 header h1{margin-right:auto}
+
+.chip{max-width:calc(100% - 76px)}
