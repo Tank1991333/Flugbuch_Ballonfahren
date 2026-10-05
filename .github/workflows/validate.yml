@@ -23,6 +23,6 @@ jobs:
           node --check trajektoren.js
       - name: Erforderliche Dateien prüfen
         run: |
-          for f in index.html style.css app.js trajektoren.js sw.js manifest.webmanifest favicon.svg; do test -f "$f" || { echo "Fehlt: $f"; exit 1; }; done
+          for f in index.html style.css app.js trajektoren.js sw.js manifest.webmanifest favicon.svg apple-touch-icon.png icon-192.png icon-512.png icon-maskable-512.png; do test -f "$f" || { echo "Fehlt: $f"; exit 1; }; done
           grep -q '<!DOCTYPE html>' index.html
           grep -q 'src="app.js"' index.html
