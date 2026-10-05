@@ -284,7 +284,9 @@ function kartePrep() {
   setTimeout(() => {
     karte.invalidateSize();
     zentriert = false;
-    if (!$("karte").hidden && !aktiv) zeichne(fluege); else folgeBis = 0;
+    if (!$("fahrt").hidden) ebene.clearLayers(); // Fahrt-Seite: nur die aktuelle Fahrt, keine gespeicherten Tracks
+    else zeichne(fluege, !aktiv);               // Karte-Seite: alle Fahrten (während einer Fahrt ohne Kartensprung)
+    if (aktiv) folgeBis = 0;
     liveKarte();
   }, 50);
 }
@@ -293,7 +295,7 @@ const linie = (t, farbe, g) => {
   L.polyline(t, { color: "#000", weight: 8, opacity: .35, lineCap: "round", lineJoin: "round" }).addTo(g);
   L.polyline(t, { color: farbe, weight: 4, lineCap: "round", lineJoin: "round" }).addTo(g);
 };
-function zeichne(l) {
+function zeichne(l, anpassen = true) {
   if (!karte) return;
   ebene.clearLayers();
   const b = [];
@@ -304,7 +306,7 @@ function zeichne(l) {
     if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–") + "<br>" + utmText(f.landeLat, f.landeLng));
     (f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke") }).addTo(ebene).bindPopup("<b>Markierung</b><br>" + esc(datum(m.zeit)) + "<br>" + utmText(m.lat, m.lng)));
   });
-  if (b.length) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
+  if (b.length && anpassen) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
 }
 function liveKarte() {
   if (!karte || $("karte").hidden && $("fahrt").hidden) return;
