@@ -22,7 +22,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 
 ## Dateien im Hauptverzeichnis
 
-`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
+`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sync.js`, `firebase-config.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
 
 Der Prüf-Workflow gehört nach `.github/workflows/validate.yml`.
 
@@ -47,6 +47,30 @@ python3 -m http.server 8000
 ```
 
 Danach `http://localhost:8000` öffnen.
+
+## Konto und Synchronisierung (optional, kostenlos)
+
+Mit einem Konto (E-Mail und Passwort) sind Fahrten und Einstellungen auf jedem Gerät gleich. Ohne Einrichtung arbeitet die App nur lokal.
+
+1. In der Firebase-Konsole ein Projekt anlegen und eine Web-App hinzufügen.
+2. Die Werte `apiKey`, `authDomain`, `projectId`, `appId` in `firebase-config.js` eintragen.
+3. **Authentication → Anmeldemethode:** E-Mail/Passwort aktivieren.
+4. **Firestore Database** anlegen (Region `eur3`, Europa) und diese Regeln veröffentlichen:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+```
+
+5. **Authentication → Einstellungen → Autorisierte Domains:** die GitHub-Pages-Domain (`name.github.io`) hinzufügen.
+
+Hinweise: Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
 
 ## Hinweis
 

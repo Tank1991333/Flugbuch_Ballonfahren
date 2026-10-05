@@ -1,7 +1,8 @@
 "use strict";
 const $ = id => document.getElementById(id);
 const load = (k, f) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? f; } catch { return f; } };
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { alert("Speichern fehlgeschlagen (Speicher voll?). Bitte Backup erstellen."); return false; } };
+const SYNCKEYS = ["fluege", "geloescht", "stammdaten", "monitorEinstellungen", "theme"];
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); if (SYNCKEYS.includes(k)) window.cloudGeaendert?.(k); return true; } catch { alert("Speichern fehlgeschlagen (Speicher voll?). Bitte Backup erstellen."); return false; } };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString("de-AT", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–";
 const dur = m => `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, "0")}m`;
@@ -142,6 +143,7 @@ function ende() {
   f.avgSpeed = +(d / (f.flugzeit / 60)).toFixed(1);
   f.landungen = Math.max(1, parseInt($("landungen").value, 10) || 1);
   f.bemerkung = $("bemerkung").value.trim();
+  f.bearbeitet = Date.now();
   fluege.push(f);
   if (!save("fluege", fluege)) { fluege.pop(); aufnehmen(); return; } // Fahrt bleibt erhalten
   localStorage.removeItem("aktiveFahrt");
@@ -244,7 +246,7 @@ $("liste").onclick = e => {
   const b = e.target.closest("button"), f = b && fluege.find(x => x.id === b.dataset.id);
   if (!f) return;
   if (b.dataset.a === "del") {
-    if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); save("fluege", fluege); render(); }
+    if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
   } else if (b.dataset.a === "edit") {
     bearbeite = f;
     $("ePilot").value = f.pilot || ""; $("eBallon").value = f.ballon || ""; $("eStart").value = f.startOrt || ""; $("eLande").value = f.landeOrt || "";
@@ -254,7 +256,7 @@ $("liste").onclick = e => {
 };
 $("dlg").addEventListener("close", () => {
   if ($("dlg").returnValue === "ok" && bearbeite) {
-    Object.assign(bearbeite, { pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), bemerkung: $("eBem").value.trim() });
+    Object.assign(bearbeite, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), bemerkung: $("eBem").value.trim() });
     save("fluege", fluege); render();
   }
   bearbeite = null;
@@ -406,6 +408,21 @@ $("imp").onchange = async e => {
   } catch { alert("Die Datei ist kein gültiges JSON-Backup."); }
   e.target.value = "";
 };
+
+// Daten aus der Cloud übernehmen (von sync.js aufgerufen); schreibt direkt, ohne neuen Abgleich auszulösen
+function cloudUebernehmen(d) {
+  if (d.fluege) { fluege = d.fluege; localStorage.setItem("fluege", JSON.stringify(fluege)); }
+  if (d.stamm) {
+    stamm = d.stamm; localStorage.setItem("stammdaten", JSON.stringify(stamm));
+    ["pilot", "ballon", "ballontyp", "maintenance"].forEach(k => { $(k).value = stamm[k] || ""; });
+  }
+  if (d.mon) {
+    mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...d.mon }; localStorage.setItem("monitorEinstellungen", JSON.stringify(mon));
+    $("mZ").value = mon.zeitraumMonate; $("mS").value = mon.erforderlicheStunden; $("mL").value = mon.erforderlicheLandungen;
+  }
+  if (d.theme) { localStorage.setItem("theme", JSON.stringify(d.theme)); theme(d.theme, false); }
+  render(); ui();
+}
 
 // ---------- Start ----------
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => zeige(b.dataset.s));

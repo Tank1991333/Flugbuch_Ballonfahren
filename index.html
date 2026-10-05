@@ -113,6 +113,21 @@
     <label>Erforderliche Flugstunden<input id="mS" type="number" min="0" step="0.5"></label>
     <label>Erforderliche Landungen<input id="mL" type="number" min="0" inputmode="numeric"></label>
   </div>
+  <div class="card"><h2>Konto &amp; Synchronisierung</h2>
+    <p id="cNote" class="note" hidden>Die Cloud ist noch nicht eingerichtet. Trage die Firebase-Daten in firebase-config.js ein (Anleitung siehe README). Bis dahin bleiben die Daten nur auf diesem Gerät.</p>
+    <div id="cOff">
+      <p class="note">Mit einem Konto hast du auf jedem Gerät dieselben Fahrten und Einstellungen.</p>
+      <label>E-Mail<input id="cEmail" type="email" autocomplete="email" inputmode="email"></label>
+      <label>Passwort<input id="cPass" type="password" autocomplete="current-password"></label>
+      <div class="row"><button id="cLogin" class="ok">Anmelden</button><button id="cReg">Registrieren</button></div>
+      <button id="cReset" style="width:100%">Passwort vergessen</button>
+    </div>
+    <div id="cOn" hidden>
+      <p>Angemeldet als <b id="cMail"></b></p>
+      <div class="row"><button id="cSync" class="ok">Jetzt synchronisieren</button><button id="cOut">Abmelden</button></div>
+    </div>
+    <p id="cStatus" class="note"></p>
+  </div>
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Daten liegen nur auf diesem Gerät. Bitte regelmäßig ein Backup erstellen.</p>
     <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,application/json" hidden></label></div>
@@ -151,6 +166,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="trajektoren.js"></script>
+<script src="firebase-config.js"></script>
 <script src="app.js"></script>
+<script src="sync.js"></script>
 </body>
 </html>
