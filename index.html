@@ -23,19 +23,35 @@
 </section>
 
 <section id="fahrt" class="seite" hidden>
-  <div class="card">
-    <h2>Fahrt erfassen</h2>
-    <p id="hinweis" class="warn" hidden>Bitte zuerst Pilot und Ballon-Kennzeichen unter Einstellungen eintragen.</p>
-    <p id="status" class="status">Keine Fahrt aktiv</p>
-    <div class="row">
-      <button id="startB" class="gross ok">▶ Start</button>
-      <button id="stopB" class="gross gef" disabled>■ Beenden &amp; speichern</button>
-    </div>
-    <label>Landungen<input id="landungen" type="number" min="1" value="1" inputmode="numeric"></label>
-    <label>Bemerkungen<textarea id="bemerkung" rows="3"></textarea></label>
+  <div class="fstrip">
+    <span id="fdot" class="dot"></span><span><b id="fstate">BEREIT</b><small id="status">Keine Aufzeichnung</small></span>
+    <span class="fr"><span id="gpsB" class="gpsb">GPS SUCHT …</span><b id="fuhr">--:--:--</b></span>
   </div>
-  <div class="card"><h2>Live</h2><div id="live" class="kpis"></div><canvas id="hoehe"></canvas></div>
-  <p class="note">Die Fahrt wird laufend gesichert. Nach Absturz oder Neuladen kann sie fortgesetzt werden. Die App sollte während der Fahrt im Vordergrund bleiben.</p>
+  <p id="hinweis" class="warn" hidden>Bitte zuerst Pilot und Ballon-Kennzeichen unter Mehr eintragen.</p>
+  <div class="cards4">
+    <div class="kc blau"><small>⏱ GESCHWINDIGKEIT</small><b id="kV">0</b><em>km/h</em><p id="kVs">Ø 0 · MAX 0 km/h</p></div>
+    <div class="kc gruen"><small>▲ HÖHE</small><b id="kH">0</b><em>m</em><p id="kHs">MAX 0 m</p></div>
+    <div class="kc gelb"><small>◈ RICHTUNG</small><b id="kR">–</b><em id="kRu">–</em><p>KURS ÜBER GRUND</p></div>
+    <div class="kc rot"><small>⌖ GENAUIGKEIT</small><b id="kA">±0</b><em>m</em><p>GPS-GENAUIGKEIT</p></div>
+  </div>
+  <div class="mapbox" id="fbox">
+    <div class="ovl"><button id="zB" aria-label="Auf mich zentrieren">⌖</button><button id="tB" aria-label="Ganzen Track zeigen">▭</button><button id="sB" aria-label="Kartenstil wechseln">◎</button></div>
+    <div class="chip" id="chip">Standort wird ermittelt …</div>
+  </div>
+  <div class="stats">
+    <div><small>DAUER</small><b id="sDauer">00:00:00</b></div>
+    <div><small>STRECKE</small><b id="sStrecke">0,00 km</b></div>
+    <div><small>STEIGRATE</small><b id="sSteig">0,0 m/s</b></div>
+    <div><small>SINKRATE</small><b id="sSink">0,0 m/s</b></div>
+    <div><small>MAX. HÖHE</small><b id="sMaxH">0 m</b></div>
+    <div><small>MAX. TEMPO</small><b id="sMaxV">0 km/h</b></div>
+  </div>
+  <div class="card"><h2>Höhenprofil <span class="live">● LIVE</span></h2><canvas id="hoehe"></canvas></div>
+  <div class="aktionen">
+    <button id="stopB" class="gef" disabled>⬇ Landung</button>
+    <button id="mB">⚑ Markierung</button>
+    <button id="startB" class="blaub">▶ Aufzeichnung starten</button>
+  </div>
 </section>
 
 <section id="flugbuch" class="seite" hidden><div id="liste"></div></section>
@@ -44,9 +60,10 @@
   <div class="row">
     <button id="allB">Meine Fahrten</button>
     <button id="posB">Standort</button>
+    <button id="folgeB">◎ Folgen</button>
     <a class="btn" href="https://maps.austrocontrol.at/mapstore/" target="_blank" rel="noopener noreferrer">VFR/ICAO ↗</a>
   </div>
-  <div id="map"></div>
+  <div class="mapbox" id="kbox"><div id="map"></div></div>
   <p id="posInfo" class="note"></p>
   <p class="note">Der externe Kartenlink ersetzt keine offizielle Flugvorbereitung.</p>
 </section>
@@ -94,6 +111,13 @@
   <label>Landungen<input id="eLand" type="number" min="1"></label>
   <label>Bemerkungen<textarea id="eBem" rows="3"></textarea></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="endDlg"><form method="dialog">
+  <h2>Fahrt beenden</h2>
+  <label>Landungen<input id="landungen" type="number" min="1" value="1" inputmode="numeric"></label>
+  <label>Bemerkungen<textarea id="bemerkung" rows="3"></textarea></label>
+  <div class="row"><button value="x">Weiterfahren</button><button value="ok" class="ok">Speichern</button></div>
 </form></dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

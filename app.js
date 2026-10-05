@@ -14,7 +14,7 @@ let fluege = load("fluege", []);
 let stamm = load("stammdaten", {});
 let mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...load("monitorEinstellungen", {}) };
 let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überlebt Neuladen/Absturz
-let watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
+let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "einstellungen"];
@@ -25,7 +25,8 @@ function zeige(id) {
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.s === id));
   history.replaceState(null, "", "#" + id);
   scrollTo(0, 0);
-  if (id === "karte") kartePrep();
+  if (id === "karte" || id === "fahrt") { $(id === "fahrt" ? "fbox" : "kbox").prepend($("map")); kartePrep(); }
+  if (id === "fahrt") standbyStart(); else standbyStop();
   if (id === "wetter") wetter();
   if (id === "fahrt") hoehe();
 }
@@ -61,10 +62,16 @@ async function orteNachladen() {
 const status = t => { $("status").textContent = t; };
 const fehler = e => ({ 1: "Standortzugriff verweigert. Bitte im Browser erlauben.", 2: "Position nicht verfügbar.", 3: "Zeitüberschreitung bei der Standortabfrage." }[e.code] || "Standortfehler.");
 
+const posVon = c => ({ lat: c.latitude, lng: c.longitude, hoehe: c.altitude, speed: c.speed == null ? null : Math.max(0, c.speed), kurs: c.heading, genauigkeit: c.accuracy });
+function standbyStart() { // Standortanzeige auf der Fahrt-Seite, auch ohne Aufzeichnung
+  if (aktiv || standbyId !== null || !navigator.geolocation) return;
+  standbyId = navigator.geolocation.watchPosition(p => { pos = posVon(p.coords); liveAnzeige(); }, () => { pos = null; liveAnzeige(); }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+}
+function standbyStop() { if (standbyId !== null) navigator.geolocation.clearWatch(standbyId); standbyId = null; }
 function punkt(p) {
   if (!aktiv) return;
   const c = p.coords;
-  pos = { lat: c.latitude, lng: c.longitude, hoehe: c.altitude, speed: c.speed == null ? null : Math.max(0, c.speed), genauigkeit: c.accuracy };
+  pos = posVon(c);
   if (c.accuracy <= 100) {
     const q = { ...pos, zeit: new Date(p.timestamp).toISOString() }, l = aktiv.t.at(-1);
     if (!l || km(l, q) >= 0.003) aktiv.t.push(q);
@@ -91,6 +98,7 @@ function start() {
 
 function aufnehmen() {
   watch = navigator.geolocation.watchPosition(punkt, () => status("● Fahrt läuft – GPS vorübergehend gestört"), { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  standbyStop();
   wakeLock();
   ui();
 }
@@ -135,23 +143,39 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 function ui() {
   const ok = !!(stamm.pilot && stamm.ballon);
   $("startB").disabled = !!aktiv || !ok;
+  $("startB").textContent = aktiv ? "● Aufzeichnung läuft" : "▶ Aufzeichnung starten";
   $("stopB").disabled = !aktiv;
   $("hinweis").hidden = ok;
-  status(aktiv ? "● Fahrt läuft" : "Keine Fahrt aktiv");
+  $("fdot").className = aktiv ? "dot on" : "dot";
+  $("fstate").textContent = aktiv ? "AUFZEICHNUNG" : "BEREIT";
+  status(aktiv ? "Fahrt läuft" : "Keine Aufzeichnung");
   liveAnzeige();
 }
 
+const RICHT = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"], p2 = n => String(n).padStart(2, "0");
 function liveAnzeige() {
-  const t = aktiv?.t || [];
+  const t = aktiv?.t || [], set = (id, v) => { $(id).textContent = v; };
   let d = 0;
   for (let i = 1; i < t.length; i++) d += km(t[i - 1], t[i]);
-  const min = aktiv ? (Date.now() - new Date(aktiv.f.startzeit)) / 6e4 : 0;
-  const v = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
-  $("live").innerHTML = v("Zeit", dur(min)) + v("Strecke", num(d, 1) + " km") +
-    v("Höhe", Number.isFinite(pos?.hoehe) ? Math.round(pos.hoehe) + " m" : "–") +
-    v("Tempo", pos?.speed != null ? num(pos.speed * 3.6) + " km/h" : "–") +
-    v("Genauigkeit", pos ? "±" + Math.round(pos.genauigkeit) + " m" : "–");
-  if (pos) $("posInfo").textContent = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} · Höhe ${Number.isFinite(pos.hoehe) ? Math.round(pos.hoehe) + " m" : "–"} · ±${Math.round(pos.genauigkeit)} m`;
+  const sek = aktiv ? Math.max(0, Math.floor((Date.now() - new Date(aktiv.f.startzeit)) / 1000)) : 0;
+  const sp = t.map(p => p.speed).filter(Number.isFinite), hs = t.map(p => p.hoehe).filter(Number.isFinite);
+  const vmax = sp.length ? Math.max(...sp) * 3.6 : 0, vavg = sek > 0 ? d / (sek / 3600) : 0, hmax = hs.length ? Math.max(...hs) : 0;
+  let vs = 0;
+  const l = t.at(-1);
+  for (let i = t.length - 2; l && i >= 0; i--) { // Steig-/Sinkrate über ca. 8 Sekunden
+    const dt = (new Date(l.zeit) - new Date(t[i].zeit)) / 1000;
+    if (dt >= 8) { if (Number.isFinite(l.hoehe) && Number.isFinite(t[i].hoehe)) vs = (l.hoehe - t[i].hoehe) / dt; break; }
+  }
+  set("kV", pos?.speed != null ? num(pos.speed * 3.6) : "0"); set("kVs", `Ø ${num(vavg)} · MAX ${num(vmax)} km/h`);
+  set("kH", Number.isFinite(pos?.hoehe) ? Math.round(pos.hoehe) : "0"); set("kHs", `MAX ${Math.round(hmax)} m`);
+  set("kR", Number.isFinite(pos?.kurs) ? Math.round(pos.kurs) + "°" : "–"); set("kRu", Number.isFinite(pos?.kurs) ? RICHT[Math.round(pos.kurs / 45) % 8] : "–");
+  set("kA", pos ? "±" + Math.round(pos.genauigkeit) : "±0");
+  set("sDauer", `${p2(Math.floor(sek / 3600))}:${p2(Math.floor(sek / 60) % 60)}:${p2(sek % 60)}`);
+  set("sStrecke", num(d, 2) + " km"); set("sSteig", num(Math.max(0, vs), 1) + " m/s"); set("sSink", num(Math.max(0, -vs), 1) + " m/s");
+  set("sMaxH", Math.round(hmax) + " m"); set("sMaxV", num(vmax) + " km/h");
+  const info = pos ? `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} · GPS ±${Math.round(pos.genauigkeit)} m` : "Standort wird ermittelt …";
+  set("chip", info); set("posInfo", info);
+  set("gpsB", pos ? "GPS AKTIV" : "GPS SUCHT …"); $("gpsB").classList.toggle("on", !!pos);
   if (!$("fahrt").hidden) hoehe();
   liveKarte();
 }
@@ -204,7 +228,7 @@ $("liste").onclick = e => {
     bearbeite = f;
     $("ePilot").value = f.pilot || ""; $("eBallon").value = f.ballon || ""; $("eStart").value = f.startOrt || ""; $("eLande").value = f.landeOrt || "";
     $("eLand").value = f.landungen || 1; $("eBem").value = f.bemerkung || "";
-    $("dlg").showModal();
+    $("dlg").returnValue = ""; $("dlg").showModal();
   } else { zeige("karte"); setTimeout(() => zeichne([f]), 120); }
 };
 $("dlg").addEventListener("close", () => {
@@ -223,14 +247,21 @@ function kartePrep() {
     const carto = n => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${n}/{z}/{x}/{y}{r}.png`, { subdomains: "abcd", maxZoom: 20, attribution: "© OpenStreetMap © CARTO" }),
       dunkel = carto("dark_all"), hell = carto("rastertiles/voyager"),
       sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 18, attribution: "© Esri" });
-    dunkel.addTo(karte);
-    L.control.layers({ Dunkel: dunkel, Hell: hell, Satellit: sat }, null, { position: "topright" }).addTo(karte);
-    L.control.zoom({ position: "bottomright" }).addTo(karte);
-    L.control.scale({ position: "bottomleft", imperial: false }).addTo(karte);
-    L.control.attribution({ prefix: false, position: "bottomleft" }).addTo(karte);
+    sat.addTo(karte); stile = [sat, dunkel, hell];
+    L.control.layers({ Satellit: sat, Dunkel: dunkel, Hell: hell }, null, { position: "topright" }).addTo(karte);
+    L.control.zoom({ position: "topleft" }).addTo(karte);
+    L.control.scale({ position: "bottomright", imperial: false }).addTo(karte);
+    L.control.attribution({ prefix: false, position: "bottomright" }).addTo(karte);
     ebene = L.layerGroup().addTo(karte); liveL = L.layerGroup().addTo(karte);
+    // Eigene Bedienung (Verschieben, Zoomen, Buttons) pausiert das Folgen für 10 Sekunden
+    ["pointerdown", "pointerup", "wheel"].forEach(ev => karte.getContainer().addEventListener(ev, () => { folgeBis = Date.now() + 10000; }, { passive: true }));
   }
-  setTimeout(() => { karte.invalidateSize(); zeichne(fluege); liveKarte(); }, 50);
+  setTimeout(() => {
+    karte.invalidateSize();
+    zentriert = false;
+    if (!$("karte").hidden && !aktiv) zeichne(fluege); else folgeBis = 0;
+    liveKarte();
+  }, 50);
 }
 const pin = c => L.divIcon({ className: "", html: `<i class="pin ${c}"></i>`, iconSize: [20, 20], iconAnchor: [10, 10] });
 const linie = (t, farbe, g) => {
@@ -246,6 +277,7 @@ function zeichne(l) {
     if (t.length > 1) { linie(t, "#4cc9f0", ebene); b.push(...t); }
     if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b><br>" + esc(f.startOrt || "–")); b.push([f.startLat, f.startLng]); }
     if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–"));
+    (f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke") }).addTo(ebene).bindPopup("<b>Markierung</b><br>" + esc(datum(m.zeit))));
   });
   if (b.length) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
 }
@@ -253,12 +285,19 @@ function liveKarte() {
   if (!karte || $("karte").hidden && $("fahrt").hidden) return;
   liveL.clearLayers();
   if (aktiv?.t.length > 1) linie(aktiv.t.map(p => [p.lat, p.lng]), "#ffb703", liveL);
+  (aktiv?.f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke"), interactive: false }).addTo(liveL));
   if (pos) {
     L.circle([pos.lat, pos.lng], { radius: pos.genauigkeit || 0, color: "#4cc9f0", weight: 1, fillOpacity: .1, interactive: false }).addTo(liveL);
     L.marker([pos.lat, pos.lng], { icon: pin("live"), interactive: false }).addTo(liveL);
+    if ((aktiv || !$("fahrt").hidden) && Date.now() >= folgeBis) {
+      if (!zentriert) { karte.setView([pos.lat, pos.lng], 15); zentriert = true; }
+      else karte.panTo([pos.lat, pos.lng], { animate: true, duration: .5 });
+    }
   }
+  $("folgeB").textContent = !aktiv ? "◎ Folgen" : Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
 }
-$("allB").onclick = () => zeichne(fluege);
+$("allB").onclick = () => { folgeBis = Date.now() + 10000; zeichne(fluege); };
+$("folgeB").onclick = () => { folgeBis = 0; liveKarte(); };
 $("posB").onclick = () => {
   if (!karte) return;
   navigator.geolocation.getCurrentPosition(p => {
@@ -321,11 +360,24 @@ $("imp").onchange = async e => {
 // ---------- Start ----------
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => zeige(b.dataset.s));
 $("startB").onclick = start;
-$("stopB").onclick = () => { if (confirm("Fahrt jetzt beenden und speichern?")) ende(); };
+$("stopB").onclick = () => { $("endDlg").returnValue = ""; $("endDlg").showModal(); };
+$("endDlg").addEventListener("close", () => { if ($("endDlg").returnValue === "ok") ende(); });
+$("mB").onclick = () => {
+  if (!aktiv || !pos) return status("Markierungen sind nur während der Aufzeichnung möglich.");
+  (aktiv.f.marken ??= []).push({ lat: pos.lat, lng: pos.lng, hoehe: pos.hoehe, zeit: new Date().toISOString() });
+  save("aktiveFahrt", aktiv); liveKarte(); status(`Markierung ${aktiv.f.marken.length} gesetzt`);
+};
+$("zB").onclick = () => { folgeBis = 0; if (pos && karte) karte.setView([pos.lat, pos.lng], Math.max(karte.getZoom(), 15)); liveKarte(); };
+$("tB").onclick = () => {
+  const b = (aktiv?.t || []).map(p => [p.lat, p.lng]);
+  folgeBis = Date.now() + 10000;
+  if (karte && b.length > 1) karte.fitBounds(b, { padding: [30, 30], maxZoom: 16 });
+};
+$("sB").onclick = () => { if (!karte) return; karte.removeLayer(stile[stilNr]); stilNr = (stilNr + 1) % stile.length; stile[stilNr].addTo(karte); };
 window.addEventListener("online", orteNachladen);
 window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
 window.addEventListener("resize", () => { karte?.invalidateSize(); hoehe(); });
-setInterval(() => { $("uhr").textContent = new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }); if (aktiv && !$("fahrt").hidden) liveAnzeige(); }, 1000);
+setInterval(() => { $("uhr").textContent = new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }); $("fuhr").textContent = new Date().toLocaleTimeString("de-AT"); if (aktiv && !$("fahrt").hidden) liveAnzeige(); }, 1000);
 
 render(); ui();
 zeige(location.hash.slice(1));

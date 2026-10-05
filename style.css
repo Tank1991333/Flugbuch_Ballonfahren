@@ -51,3 +51,31 @@ dialog::backdrop{background:#000a}
 .pin.live{position:relative;background:var(--warn)}
 .pin.live::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--warn);animation:puls 1.8s ease-out infinite}
 @keyframes puls{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}
+
+/* Cockpit Fahrt-Seite */
+.fstrip{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fstrip small{display:block;color:var(--mut);font-size:.72rem}
+.fstrip .fr{margin-left:auto;display:flex;gap:10px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;background:#44546a}
+.dot.on{background:var(--gef);box-shadow:0 0 0 4px #ff6b6b44}
+.gpsb{font-size:.72rem;color:var(--mut)}.gpsb.on{color:var(--ok)}
+.cards4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+.kc{border:1px solid var(--c);border-radius:14px;padding:12px;background:linear-gradient(160deg,#0f1f33,#07111f)}
+.kc.blau{--c:#2aa8e0}.kc.gruen{--c:#3ddc97}.kc.gelb{--c:#ffb703}.kc.rot{--c:#ff5a4f}
+.kc small,.kc em{color:var(--c);font-weight:700;font-size:.72rem;font-style:normal}.kc em{font-size:1.05rem}
+.kc b{display:block;font-size:2.4rem;line-height:1.1;margin-top:6px}
+.kc p{margin:8px 0 0;padding-top:6px;border-top:1px solid var(--line);color:var(--mut);font-size:.65rem;min-height:1.9em}
+.mapbox{position:relative;height:46vh;min-height:300px;margin-bottom:10px}
+#kbox{height:62vh}
+.mapbox #map{height:100%;min-height:0}
+.ovl{position:absolute;left:10px;bottom:34px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.ovl button{width:42px;min-height:42px;padding:0;font-size:1.2rem;background-color:#07111fe6}
+.chip{position:absolute;left:62px;bottom:34px;z-index:1000;background:#07111fe6;border-radius:8px;padding:6px 10px;font-size:.72rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:10px;overflow:hidden}
+.stats div{padding:10px 12px}
+.stats small{display:block;color:var(--mut);font-size:.65rem}.stats b{font-size:1.05rem}
+.live{color:var(--acc);font-size:.7rem;float:right}
+.aktionen{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));z-index:4;display:flex;gap:8px;padding:8px 0;background:linear-gradient(transparent,var(--bg) 30%)}
+.aktionen button{flex:1;min-height:52px;font-size:.85rem}
+.aktionen .blaub{flex:1.6;background:linear-gradient(#1b9fe0,#0a78b8);border-color:#2aa8e0}
+.pin.marke{background:var(--acc)}
