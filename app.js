@@ -244,11 +244,15 @@ function kartePrep() {
   if (typeof L === "undefined") { $("map").textContent = "Die Karte benötigt beim ersten Start eine Internetverbindung."; return; }
   if (!karte) {
     karte = L.map("map", { zoomControl: false, attributionControl: false }).setView([47.28, 15.97], 8);
-    const carto = n => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${n}/{z}/{x}/{y}{r}.png`, { subdomains: "abcd", maxZoom: 20, attribution: "© OpenStreetMap © CARTO" }),
-      dunkel = carto("dark_all"), hell = carto("rastertiles/voyager"),
-      sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 18, attribution: "© Esri" });
-    sat.addTo(karte); stile = [sat, dunkel, hell];
-    L.control.layers({ Satellit: sat, Dunkel: dunkel, Hell: hell }, null, { position: "topright" }).addTo(karte);
+    const esri = p => "https://server.arcgisonline.com/ArcGIS/rest/services/" + p + "/MapServer/tile/{z}/{y}/{x}",
+      standard = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }),
+      hybrid = L.layerGroup([ // Luftbild mit Straßen und Ortsnamen
+        L.tileLayer(esri("World_Imagery"), { maxZoom: 18, attribution: "© Esri" }),
+        L.tileLayer(esri("Reference/World_Transportation"), { maxZoom: 18 }),
+        L.tileLayer(esri("Reference/World_Boundaries_and_Places"), { maxZoom: 18 })
+      ]);
+    hybrid.addTo(karte); stile = [hybrid, standard];
+    L.control.layers({ Hybrid: hybrid, Standard: standard }, null, { position: "topright" }).addTo(karte);
     L.control.zoom({ position: "topleft" }).addTo(karte);
     L.control.scale({ position: "bottomright", imperial: false }).addTo(karte);
     L.control.attribution({ prefix: false, position: "bottomright" }).addTo(karte);
@@ -373,7 +377,7 @@ $("tB").onclick = () => {
   folgeBis = Date.now() + 10000;
   if (karte && b.length > 1) karte.fitBounds(b, { padding: [30, 30], maxZoom: 16 });
 };
-$("sB").onclick = () => { if (!karte) return; karte.removeLayer(stile[stilNr]); stilNr = (stilNr + 1) % stile.length; stile[stilNr].addTo(karte); };
+$("sB").onclick = () => { if (!karte) return; const i = Math.max(0, stile.findIndex(l => karte.hasLayer(l))); karte.removeLayer(stile[i]); stilNr = (i + 1) % stile.length; stile[stilNr].addTo(karte); };
 window.addEventListener("online", orteNachladen);
 window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
 window.addEventListener("resize", () => { karte?.invalidateSize(); hoehe(); });
