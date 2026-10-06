@@ -39,7 +39,8 @@
     <div class="kc rot"><small>⌖ GENAUIGKEIT</small><b id="kA">±0</b><em>m</em><p>GPS-GENAUIGKEIT</p></div>
   </div>
   <div class="mapbox" id="fbox">
-    <div class="ovl"><button id="zB" aria-label="Auf mich zentrieren">⌖</button><button id="tB" aria-label="Ganzen Track zeigen">▭</button><button id="sB" aria-label="Kartenstil wechseln">◎</button></div>
+    <div class="ovl"><button id="zB" aria-label="Auf mich zentrieren">⌖</button><button id="tB" aria-label="Ganzen Track zeigen">▭</button><button id="sB" aria-label="Kartenstil wählen" title="Kartenstil wählen">🗺</button></div>
+    <div class="stilmenue" id="stilMenue" hidden><button data-stil="Standard">Standard</button><button data-stil="Hybrid">Hybrid</button><button data-stil="VFR/ICAO">VFR/ICAO</button></div>
     <div class="chip" id="chip">Standort wird ermittelt …</div>
   </div>
   <div class="stats">
@@ -69,7 +70,7 @@
   </div>
   <div class="mapbox" id="kbox"><div id="map"></div></div>
   <p id="posInfo" class="note"></p>
-  <p class="note">Der externe Kartenlink ersetzt keine offizielle Flugvorbereitung.</p>
+  <p class="note">VFR-Karte: open flightmaps (inoffiziell). Weder sie noch der externe Link „VFR/ICAO ↗“ ersetzen die offizielle Flugvorbereitung.</p>
 </section>
 
 <section id="wetter" class="seite" hidden>

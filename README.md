@@ -7,7 +7,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
 - **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte
-- **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, Link zur VFR/ICAO-Karte
+- **Karte:** gespeicherte Fahrten und Live-Standort, Kartenstile Standard, Hybrid und VFR/ICAO (open flightmaps) – auch auf der Fahrt-Seite über 🗺 wählbar; „Folgen“ hält die Karte während der Aufzeichnung auf der eigenen Position; Link zur offiziellen VFR/ICAO-Karte
 - **Wetter:** Temperatur, Wind in 10 m und 80 m, Böen, Sonnenaufgang und -untergang
 - **Trajektoren:** Winddrift-Simulation (ICON-D2 bis 180 m, GFS ab 200 m) für heute und morgen
 - **Einstellungen:** Pilot und Ballon (mit Auswahl zuletzt benutzter), Wartung, Aktivitätsmonitor, Backup und Import

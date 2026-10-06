@@ -31,7 +31,7 @@ let fluege = load("fluege", []);
 let stamm = load("stammdaten", {});
 let mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...load("monitorEinstellungen", {}) };
 let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überlebt Neuladen/Absturz
-let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
+let STILE = {}, stile = [], zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "trajektoren", "einstellungen"];
@@ -273,9 +273,16 @@ function kartePrep() {
         L.tileLayer(esri("World_Imagery"), { maxZoom: 18, attribution: "© Esri" }),
         L.tileLayer(esri("Reference/World_Transportation"), { maxZoom: 18 }),
         L.tileLayer(esri("Reference/World_Boundaries_and_Places"), { maxZoom: 18 })
-      ]);
-    hybrid.addTo(karte); stile = [hybrid, standard];
-    L.control.layers({ Hybrid: hybrid, Standard: standard }, null, { position: "topright" }).addTo(karte);
+      ]),
+      // VFR-Luftfahrtkarte von open flightmaps (kostenlos, ohne Schlüssel; deckt Österreich/LOVV ab)
+      ofm = p => L.tileLayer("https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=" + p, { minZoom: 6, maxNativeZoom: 12, maxZoom: 19, attribution: "© open flightmaps (CC BY-NC-SA)" }),
+      vfr = L.layerGroup([ofm("latest/base/latest"), ofm("latest/aero/latest")]);
+    vfr.eachLayer(l => l.on("tileerror", () => { if (karte.hasLayer(vfr)) status("VFR-Karte nicht erreichbar – bitte Internet prüfen oder den Link „VFR/ICAO ↗“ nutzen."); }));
+    STILE = { Standard: standard, Hybrid: hybrid, "VFR/ICAO": vfr };
+    stile = Object.values(STILE);
+    (STILE[load("kartenstil", "Hybrid")] || hybrid).addTo(karte);
+    L.control.layers(STILE, null, { position: "topright" }).addTo(karte);
+    karte.on("baselayerchange", e => { save("kartenstil", e.name); stilMenue(); });
     L.control.zoom({ position: "topleft" }).addTo(karte);
     L.control.scale({ position: "bottomright", imperial: false }).addTo(karte);
     L.control.attribution({ prefix: false, position: "bottomright" }).addTo(karte);
@@ -323,7 +330,10 @@ function liveKarte() {
       else karte.panTo([pos.lat, pos.lng], { animate: true, duration: .5 });
     }
   }
-  $("folgeB").textContent = !aktiv ? "◎ Folgen" : Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
+  const fb = $("folgeB");
+  fb.disabled = !aktiv;
+  fb.title = aktiv ? "Karte folgt deiner Position. Nach eigenem Verschieben/Zoomen pausiert das Folgen 10 s – Tippen setzt es sofort fort." : "Nur während einer laufenden Aufzeichnung verfügbar.";
+  fb.textContent = !aktiv ? "◎ Folgen" : Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
 }
 $("allB").onclick = () => { folgeBis = Date.now() + 10000; zeichne(fluege); };
 $("folgeB").onclick = () => { folgeBis = 0; liveKarte(); };
@@ -447,7 +457,20 @@ $("tB").onclick = () => {
   folgeBis = Date.now() + 10000;
   if (karte && b.length > 1) karte.fitBounds(b, { padding: [30, 30], maxZoom: 16 });
 };
-$("sB").onclick = () => { if (!karte) return; const i = Math.max(0, stile.findIndex(l => karte.hasLayer(l))); karte.removeLayer(stile[i]); stilNr = (i + 1) % stile.length; stile[stilNr].addTo(karte); };
+// Kartenstil-Auswahl auf der Fahrt-Seite (Standard / Hybrid / VFR/ICAO)
+function setzeStil(name) {
+  if (!karte || !STILE[name]) return;
+  stile.forEach(l => { if (l !== STILE[name] && karte.hasLayer(l)) karte.removeLayer(l); });
+  if (!karte.hasLayer(STILE[name])) STILE[name].addTo(karte);
+  save("kartenstil", name); stilMenue();
+  if (name === "VFR/ICAO" && karte.getZoom() < 7) karte.setZoom(9);
+}
+function stilMenue() {
+  document.querySelectorAll("#stilMenue button").forEach(b => b.classList.toggle("on", !!karte && karte.hasLayer(STILE[b.dataset.stil])));
+}
+$("sB").onclick = e => { e.stopPropagation(); if (!karte) return; stilMenue(); $("stilMenue").hidden = !$("stilMenue").hidden; };
+$("stilMenue").onclick = e => { const b = e.target.closest("button[data-stil]"); if (!b) return; setzeStil(b.dataset.stil); $("stilMenue").hidden = true; };
+document.addEventListener("click", e => { if (!e.target.closest("#stilMenue, #sB")) $("stilMenue").hidden = true; });
 window.addEventListener("online", orteNachladen);
 window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
 window.addEventListener("resize", () => { karte?.invalidateSize(); hoehe(); });
