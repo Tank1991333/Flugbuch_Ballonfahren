@@ -31,7 +31,7 @@ let fluege = load("fluege", []);
 let stamm = load("stammdaten", {});
 let mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...load("monitorEinstellungen", {}) };
 let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überlebt Neuladen/Absturz
-let STILE = {}, stile = [], zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
+let STILE = {}, stile = [], VFR_EBENE = null, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "trajektoren", "einstellungen"];
@@ -275,14 +275,18 @@ function kartePrep() {
         L.tileLayer(esri("Reference/World_Boundaries_and_Places"), { maxZoom: 18 })
       ]),
       // VFR-Luftfahrtkarte von open flightmaps (kostenlos, ohne Schlüssel; deckt Österreich/LOVV ab)
-      ofm = p => L.tileLayer("https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=" + p, { minZoom: 6, maxNativeZoom: 12, maxZoom: 19, attribution: "© open flightmaps (CC BY-NC-SA)" }),
-      vfr = L.layerGroup([ofm("latest/base/latest"), ofm("latest/aero/latest")]);
-    vfr.eachLayer(l => l.on("tileerror", () => { if (karte.hasLayer(vfr)) status("VFR-Karte nicht erreichbar – bitte Internet prüfen oder den Link „VFR/ICAO ↗“ nutzen."); }));
+      ofm = (p, z) => L.tileLayer("https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=" + p, { minZoom: 6, maxNativeZoom: 12, maxZoom: 19, zIndex: z, attribution: "© open flightmaps (CC BY-NC-SA)" }),
+      vfr = L.layerGroup([ofm("latest/base/latest", 1), ofm("latest/aero/latest", 2)]);
+    // Nur die Luftfahrt-Ebene (Lufträume, Flugplätze, Frequenzen) – durchsichtig, liegt über Standard oder Hybrid
+    VFR_EBENE = ofm("latest/aero/latest", 10);
+    [...vfr.getLayers(), VFR_EBENE].forEach(l => l.on("tileerror", () => { if (karte.hasLayer(l)) status("VFR-Karte nicht erreichbar – bitte Internet prüfen oder den Link „VFR/ICAO ↗“ nutzen."); }));
     STILE = { Standard: standard, Hybrid: hybrid, "VFR/ICAO": vfr };
     stile = Object.values(STILE);
     (STILE[load("kartenstil", "Hybrid")] || hybrid).addTo(karte);
-    L.control.layers(STILE, null, { position: "topright" }).addTo(karte);
-    karte.on("baselayerchange", e => { save("kartenstil", e.name); stilMenue(); });
+    if (load("vfrEbene", false) && !karte.hasLayer(vfr)) VFR_EBENE.addTo(karte);
+    L.control.layers(STILE, { "VFR-Ebene darüber": VFR_EBENE }, { position: "topright" }).addTo(karte);
+    karte.on("baselayerchange", e => { save("kartenstil", e.name); if (e.layer === vfr) karte.removeLayer(VFR_EBENE); stilMenue(); });
+    karte.on("overlayadd overlayremove", e => { if (e.layer === VFR_EBENE) { save("vfrEbene", e.type === "overlayadd"); stilMenue(); } });
     L.control.zoom({ position: "topleft" }).addTo(karte);
     L.control.scale({ position: "bottomright", imperial: false }).addTo(karte);
     L.control.attribution({ prefix: false, position: "bottomright" }).addTo(karte);
@@ -462,14 +466,29 @@ function setzeStil(name) {
   if (!karte || !STILE[name]) return;
   stile.forEach(l => { if (l !== STILE[name] && karte.hasLayer(l)) karte.removeLayer(l); });
   if (!karte.hasLayer(STILE[name])) STILE[name].addTo(karte);
+  if (name === "VFR/ICAO" && karte.hasLayer(VFR_EBENE)) karte.removeLayer(VFR_EBENE); // in der VFR-Karte schon enthalten
+  else if (name !== "VFR/ICAO" && load("vfrEbene", false) && !karte.hasLayer(VFR_EBENE)) VFR_EBENE.addTo(karte);
   save("kartenstil", name); stilMenue();
   if (name === "VFR/ICAO" && karte.getZoom() < 7) karte.setZoom(9);
 }
 function stilMenue() {
-  document.querySelectorAll("#stilMenue button").forEach(b => b.classList.toggle("on", !!karte && karte.hasLayer(STILE[b.dataset.stil])));
+  document.querySelectorAll("#stilMenue button[data-stil]").forEach(b => b.classList.toggle("on", !!karte && karte.hasLayer(STILE[b.dataset.stil])));
+  const ov = $("vfrEbeneB"), vfrBasis = !!karte && karte.hasLayer(STILE["VFR/ICAO"]);
+  ov.disabled = vfrBasis;
+  ov.classList.toggle("on", !vfrBasis && load("vfrEbene", false));
+  ov.textContent = (!vfrBasis && load("vfrEbene", false) ? "☑" : "☐") + " VFR-Ebene darüber";
+}
+function vfrEbeneUmschalten() {
+  if (!karte || karte.hasLayer(STILE["VFR/ICAO"])) return;
+  const an = !karte.hasLayer(VFR_EBENE);
+  if (an) { VFR_EBENE.addTo(karte); if (karte.getZoom() < 7) karte.setZoom(9); } else karte.removeLayer(VFR_EBENE);
+  save("vfrEbene", an); stilMenue();
 }
 $("sB").onclick = e => { e.stopPropagation(); if (!karte) return; stilMenue(); $("stilMenue").hidden = !$("stilMenue").hidden; };
-$("stilMenue").onclick = e => { const b = e.target.closest("button[data-stil]"); if (!b) return; setzeStil(b.dataset.stil); $("stilMenue").hidden = true; };
+$("stilMenue").onclick = e => {
+  if (e.target.closest("#vfrEbeneB")) return vfrEbeneUmschalten(); // Menü bleibt offen
+  const b = e.target.closest("button[data-stil]"); if (!b) return; setzeStil(b.dataset.stil); $("stilMenue").hidden = true;
+};
 document.addEventListener("click", e => { if (!e.target.closest("#stilMenue, #sB")) $("stilMenue").hidden = true; });
 window.addEventListener("online", orteNachladen);
 window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
