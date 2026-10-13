@@ -34,7 +34,7 @@ let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überle
 let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
-const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "einstellungen"];
+const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "ausruestung", "einstellungen"];
 function zeige(id) {
   menue(false);
   replayStop();
@@ -48,7 +48,8 @@ function zeige(id) {
   if (id === "fahrt") standbyStart(); else standbyStop();
   if (id === "wetter") wetter();
   if (id === "trajektoren") trajektorenOeffnen();
-  if (id === "rechner") rechnen();
+  if (id === "rechner") { rBallonFuellen(); rechnen(); }
+  if (id === "ausruestung") ausruestungRender();
   if (id === "fahrt") hoehe();
 }
 
@@ -219,7 +220,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen();
+  auswahlFuellen(); ausruestungRender(); termineRender();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -381,6 +382,12 @@ function stammSpeichern() {
   stamm.ballontyp = $("ballontyp").value.trim(); stamm.maintenance = $("maintenance").value;
   stamm.volumen = $("volumen").value.trim(); stamm.leergewicht = $("leergewicht").value.trim(); stamm.maxtemp = $("maxtemp").value.trim();
   $("ballon").value = stamm.ballon;
+  if (stamm.ballon) { // aktiver Ballon steht auch in der Ausrüstung (Kennzeichen entscheidet)
+    const L = stamm.ausruestung ||= [];
+    let g = L.find(x => x.ballon === stamm.ballon);
+    if (!g) { g = { id: nid() }; L.push(g); }
+    Object.assign(g, { ballon: stamm.ballon, ballontyp: stamm.ballontyp, volumen: stamm.volumen, leergewicht: stamm.leergewicht, maxtemp: stamm.maxtemp, wartung: stamm.maintenance });
+  }
   const vorn = (liste, x, key) => [x, ...(liste || []).filter(y => key(y) !== key(x))].slice(0, 10);
   if (stamm.pilot) stamm.piloten = vorn(stamm.piloten, stamm.pilot, y => y);
   if (stamm.ballon) stamm.ballone = vorn(stamm.ballone, { ballon: stamm.ballon, ballontyp: stamm.ballontyp }, y => y.ballon); // ein Eintrag pro Kennzeichen, zuletzt gesetzter Typ gewinnt
@@ -521,11 +528,88 @@ function abspielen(f) {
   }, 250);
 }
 
+// ---------- Ausrüstung: mehrere Ballone mit Terminen ----------
+const gFelder = { gBallon: "ballon", gTyp: "ballontyp", gVol: "volumen", gLeer: "leergewicht", gMax: "maxtemp", gWart: "wartung", gPruef: "pruefung", gNotiz: "notiz" };
+let gBearb = null;
+function tage(d) {
+  if (!d) return null;
+  const h = new Date(); h.setHours(0, 0, 0, 0);
+  return Math.round((new Date(d + "T00:00:00") - h) / 864e5);
+}
+function terminZeile(d, name) {
+  const t = tage(d);
+  if (t === null) return "";
+  const f = t < 0 ? "gef" : t <= 30 ? "warn" : "ok", txt = t < 0 ? `überfällig seit ${-t} Tagen` : t === 0 ? "heute fällig" : t <= 30 ? `fällig in ${t} Tagen` : "in Ordnung";
+  return `<div class="zeile"><span>${esc(name)}: ${esc(new Date(d + "T00:00:00").toLocaleDateString("de-AT"))}</span><b style="color:var(--${f})">${txt}</b></div>`;
+}
+function ausruestungRender() {
+  // Altbestand: der in den Einstellungen eingetragene Ballon wird einmalig in die Ausrüstung übernommen
+  if (stamm.ballon && !(stamm.ausruestung || []).some(x => x.ballon === stamm.ballon)) {
+    (stamm.ausruestung ||= []).push({ id: nid(), ballon: stamm.ballon, ballontyp: stamm.ballontyp || "", volumen: stamm.volumen || "", leergewicht: stamm.leergewicht || "", maxtemp: stamm.maxtemp || "", wartung: stamm.maintenance || "" });
+    localStorage.setItem("stammdaten", JSON.stringify(stamm));
+  }
+  const L = stamm.ausruestung || [], b = (id, a, t, c = "") => `<button data-a="${a}" data-id="${esc(id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
+  $("gListe").innerHTML = L.length ? L.map(g => {
+    const aktiv = g.ballon === stamm.ballon;
+    return `<article class="card"><h3>${esc(g.ballon)}${g.ballontyp ? " · " + esc(g.ballontyp) : ""}${aktiv ? ' <span class="badge">aktiv</span>' : ""}</h3>
+      <p class="m">${g.volumen ? esc(g.volumen) + " m³" : "Volumen –"} · Leergewicht ${g.leergewicht ? esc(g.leergewicht) + " kg" : "–"} · max. ${g.maxtemp ? esc(g.maxtemp) + " °C" : "–"}</p>
+      ${terminZeile(g.wartung, "Wartung")}${terminZeile(g.pruefung, "Nachprüfung")}${g.notiz ? `<p class="m">${esc(g.notiz)}</p>` : ""}
+      <div class="row">${aktiv ? "" : b(g.id, "aktiv", "Aktiv setzen", "ok")}${b(g.id, "edit", "Bearbeiten")}${b(g.id, "del", "Löschen", "gef")}</div></article>`;
+  }).join("") : '<p class="leer">Noch kein Ballon eingetragen.</p>';
+  rBallonFuellen();
+}
+function termineRender() {
+  const f = [];
+  (stamm.ausruestung || []).forEach(g => [["Wartung", g.wartung], ["Nachprüfung", g.pruefung]].forEach(([n, d]) => { const t = tage(d); if (t !== null && t <= 30) f.push({ t, d, n: `${g.ballon} · ${n}` }); }));
+  $("termine").hidden = !f.length;
+  if (f.length) $("termine").innerHTML = "<h2>Fällige Termine</h2>" + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
+}
+function rBallonFuellen() {
+  const L = stamm.ausruestung || [];
+  $("rBallon").innerHTML = L.length ? L.map(g => `<option value="${esc(g.id)}"${g.ballon === stamm.ballon ? " selected" : ""}>${esc(g.ballon)}${g.ballontyp ? " · " + esc(g.ballontyp) : ""}${g.volumen ? " · " + esc(g.volumen) + " m³" : ""}</option>`).join("") : '<option value="">Noch kein Ballon</option>';
+}
+function aktivSetzen(g) {
+  $("ballon").value = g.ballon; $("ballontyp").value = g.ballontyp || ""; $("volumen").value = g.volumen || "";
+  $("leergewicht").value = g.leergewicht || ""; $("maxtemp").value = g.maxtemp || ""; $("maintenance").value = g.wartung || "";
+  stammSpeichern();
+}
+function gDialog(g) {
+  gBearb = g || null;
+  Object.entries(gFelder).forEach(([id, k]) => { $(id).value = g?.[k] || ""; });
+  $("gDlg").returnValue = ""; $("gDlg").showModal();
+}
+$("gNeu").onclick = () => gDialog();
+$("rBallon").onchange = () => { const g = (stamm.ausruestung || []).find(x => x.id === $("rBallon").value); if (g) { aktivSetzen(g); rechnen(); } };
+$("gListe").onclick = e => {
+  const bt = e.target.closest("button"), g = bt && (stamm.ausruestung || []).find(x => x.id === bt.dataset.id);
+  if (!g) return;
+  if (bt.dataset.a === "aktiv") aktivSetzen(g);
+  else if (bt.dataset.a === "edit") gDialog(g);
+  else if (confirm(`Ballon ${g.ballon} aus der Ausrüstung löschen? Bereits gespeicherte Fahrten bleiben erhalten.`)) {
+    if (g.ballon === stamm.ballon) ["ballon", "ballontyp", "volumen", "leergewicht", "maxtemp", "maintenance"].forEach(k => { stamm[k] = ""; $(k).value = ""; }); // aktiver Ballon: Einstellungen leeren
+    stamm.ausruestung = stamm.ausruestung.filter(x => x !== g); save("stammdaten", stamm); render();
+  }
+};
+$("gDlg").addEventListener("close", () => {
+  if ($("gDlg").returnValue !== "ok") return;
+  const n = {};
+  Object.entries(gFelder).forEach(([id, k]) => { n[k] = $(id).value.trim(); });
+  n.ballon = n.ballon.toUpperCase();
+  const L = stamm.ausruestung ||= [];
+  if (!n.ballon) return alert("Bitte ein Kennzeichen eintragen.");
+  if (L.some(x => x !== gBearb && x.ballon === n.ballon)) return alert("Dieser Ballon ist schon vorhanden.");
+  const war = gBearb && gBearb.ballon === stamm.ballon;
+  let g = gBearb;
+  if (g) Object.assign(g, n); else { g = { id: nid(), ...n }; L.push(g); }
+  gBearb = null;
+  if (war) aktivSetzen(g); else { save("stammdaten", stamm); render(); }
+});
+
 // ---------- Auftriebsrechner (Gasgleichung, ISA-Näherung) ----------
 function rechnen() {
   const zahl = id => parseFloat(String($(id).value).replace(",", ".")), box = $("rErg");
   const V = parseFloat(stamm.volumen), leer = parseFloat(stamm.leergewicht) || 0, maxT = parseFloat(stamm.maxtemp);
-  if (!(V > 0)) { box.innerHTML = '<p class="warn">Bitte unter Einstellungen beim Ballon das Hüllenvolumen (und das Leergewicht) eintragen.</p>'; return; }
+  if (!(V > 0)) { box.innerHTML = '<p class="warn">Bitte unter Ausrüstung beim Ballon Hüllenvolumen und Leergewicht eintragen.</p>'; return; }
   const Ta = zahl("rT"), h = zahl("rH"), qnh = zahl("rQ") || 1013.25, Ti = zahl("rI"), last = (zahl("rP") || 0) + (zahl("rG") || 0);
   if (![Ta, h, Ti].every(Number.isFinite)) { box.innerHTML = '<p class="note">Bitte Außentemperatur, Starthöhe und Hüllentemperatur eintragen.</p>'; return; }
   save("auftrieb", { rT: $("rT").value, rH: $("rH").value, rQ: $("rQ").value, rI: $("rI").value, rP: $("rP").value, rG: $("rG").value });

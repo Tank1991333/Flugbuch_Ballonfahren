@@ -23,6 +23,7 @@
 <section id="dashboard" class="seite">
   <div id="kpis" class="kpis"></div>
   <div id="monitor" class="card"></div>
+  <div id="termine" class="card" hidden></div>
   <div id="rekorde" class="card"></div>
 </section>
 
@@ -80,12 +81,13 @@
 
 <section id="rechner" class="seite" hidden>
   <div class="card"><h2>Bedingungen am Startplatz</h2>
+    <label>Ballon<select id="rBallon"></select></label>
     <div class="row"><label>Außentemperatur (°C)<input id="rT" type="number" step="0.5" value="15" inputmode="decimal"></label><label>Starthöhe (m)<input id="rH" type="number" value="300" inputmode="numeric"></label></div>
     <div class="row"><label>QNH (hPa, optional)<input id="rQ" type="number" step="0.1" placeholder="1013,25" inputmode="decimal"></label><label>Mittlere Hüllentemperatur (°C)<input id="rI" type="number" value="100" inputmode="numeric"></label></div>
   </div>
   <div class="card"><h2>Zuladung</h2>
     <div class="row"><label>Piloten + Passagiere (kg)<input id="rP" type="number" inputmode="decimal"></label><label>Gas, Flaschen (kg)<input id="rG" type="number" inputmode="decimal"></label></div>
-    <p class="note">Hüllenvolumen, Leergewicht und maximale Hüllentemperatur werden unter Einstellungen beim Ballon eingetragen.</p>
+    <p class="note">Hüllenvolumen, Leergewicht und maximale Hüllentemperatur werden beim aktiven Ballon unter Ausrüstung eingetragen.</p>
   </div>
   <div class="card"><h2>Ergebnis</h2><div id="rErg"></div></div>
   <p class="note">Orientierungswerte nach der Gasgleichung (ISA-Näherung). Maßgeblich sind Flughandbuch, Beladungsplan und Beurteilung des Piloten.</p>
@@ -112,6 +114,12 @@
   <div class="mapbox" id="tbox"><div id="tmap"></div></div>
   <div class="card"><h2>Ergebnisse</h2><div id="tErg"><p class="note">Noch nichts berechnet.</p></div></div>
   <p class="note">Unverbindliche Modellrechnung (ICON-D2/GFS). Keine geprüfte Flug- oder Landeprognose und kein Ersatz für die offizielle Flugwetterberatung.</p>
+</section>
+
+<section id="ausruestung" class="seite" hidden>
+  <div class="row"><button id="gNeu" class="ok">+ Ballon hinzufügen</button></div>
+  <div id="gListe"></div>
+  <p class="note">Der aktive Ballon wird für neue Fahrten, den Auftriebsrechner und die Übersicht verwendet. Die Ballons werden mit deinem Konto auf alle Geräte übertragen.</p>
 </section>
 
 <section id="einstellungen" class="seite" hidden>
@@ -161,6 +169,7 @@
   <button data-s="wetter"><span>☁</span>Wetter</button>
   <button data-s="rechner"><span>⚖</span>Auftriebsrechner</button>
   <button data-s="trajektoren"><span>↗</span>Trajektoren</button>
+  <button data-s="ausruestung"><span>▣</span>Ausrüstung</button>
   <button data-s="einstellungen"><span>⚙</span>Einstellungen</button>
 </nav>
 
@@ -172,6 +181,17 @@
   <label>Landeort<input id="eLande"></label>
   <label>Landungen<input id="eLand" type="number" min="1"></label>
   <label>Bemerkungen<textarea id="eBem" rows="3"></textarea></label>
+  <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="gDlg"><form method="dialog">
+  <h2>Ballon</h2>
+  <label>Kennzeichen<input id="gBallon" autocomplete="off"></label>
+  <label>Typ<input id="gTyp" autocomplete="off"></label>
+  <div class="row"><label>Volumen (m³)<input id="gVol" type="number" inputmode="numeric"></label><label>Leergewicht (kg)<input id="gLeer" type="number" inputmode="decimal"></label></div>
+  <label>Max. Hüllentemperatur (°C)<input id="gMax" type="number" inputmode="numeric"></label>
+  <div class="row"><label>Nächste Wartung<input id="gWart" type="date"></label><label>Nächste Nachprüfung<input id="gPruef" type="date"></label></div>
+  <label>Notiz<textarea id="gNotiz" rows="2"></textarea></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
 </form></dialog>
 

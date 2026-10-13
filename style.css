@@ -117,3 +117,6 @@ header h1{margin-right:auto}
 [data-theme="hell"] .leaflet-control-layers-toggle{filter:none}
 
 .zeile{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line)}.zeile:first-child{border-top:0}.zeile b{text-align:right}
+
+.badge{font:600 .75rem 'Barlow',system-ui,sans-serif;background:var(--acc);color:var(--onacc);border-radius:8px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+select{margin-bottom:8px}
