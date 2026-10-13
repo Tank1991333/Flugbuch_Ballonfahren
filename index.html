@@ -39,8 +39,7 @@
     <div class="kc rot"><small>⌖ GENAUIGKEIT</small><b id="kA">±0</b><em>m</em><p>GPS-GENAUIGKEIT</p></div>
   </div>
   <div class="mapbox" id="fbox">
-    <div class="ovl"><button id="zB" aria-label="Auf mich zentrieren">⌖</button><button id="tB" aria-label="Ganzen Track zeigen">▭</button><button id="sB" aria-label="Kartenstil wählen" title="Kartenstil wählen">🗺</button></div>
-    <div class="stilmenue" id="stilMenue" hidden><button data-stil="Standard">Standard</button><button data-stil="Hybrid">Hybrid</button><button data-stil="VFR/ICAO">VFR/ICAO</button><hr><button id="vfrEbeneB" title="Lufträume, Flugplätze und Frequenzen über Standard oder Hybrid legen">☐ VFR-Ebene darüber</button></div>
+    <div class="ovl"><button id="zB" aria-label="Auf mich zentrieren">⌖</button><button id="tB" aria-label="Ganzen Track zeigen">▭</button><button id="sB" aria-label="Kartenstil wechseln">◎</button></div>
     <div class="chip" id="chip">Standort wird ermittelt …</div>
   </div>
   <div class="stats">
@@ -64,18 +63,32 @@
 <section id="karte" class="seite" hidden>
   <div class="row">
     <button id="allB">Meine Fahrten</button>
+    <button id="playB">▶ Wiedergabe</button>
     <button id="posB">Standort</button>
     <button id="folgeB">◎ Folgen</button>
     <a class="btn" href="https://maps.austrocontrol.at/mapstore/" target="_blank" rel="noopener noreferrer">VFR/ICAO ↗</a>
   </div>
   <div class="mapbox" id="kbox"><div id="map"></div></div>
   <p id="posInfo" class="note"></p>
-  <p class="note">VFR-Karte: open flightmaps (inoffiziell). Weder sie noch der externe Link „VFR/ICAO ↗“ ersetzen die offizielle Flugvorbereitung.</p>
+  <p class="note">Der externe Kartenlink ersetzt keine offizielle Flugvorbereitung.</p>
 </section>
 
 <section id="wetter" class="seite" hidden>
   <div class="card"><h2>Wetter</h2><div id="wetterBox">–</div><button id="wetterB">Aktualisieren</button></div>
   <p class="note">Nur zur allgemeinen Information. Ersetzt keine offizielle Flugwetterberatung.</p>
+</section>
+
+<section id="rechner" class="seite" hidden>
+  <div class="card"><h2>Bedingungen am Startplatz</h2>
+    <div class="row"><label>Außentemperatur (°C)<input id="rT" type="number" step="0.5" value="15" inputmode="decimal"></label><label>Starthöhe (m)<input id="rH" type="number" value="300" inputmode="numeric"></label></div>
+    <div class="row"><label>QNH (hPa, optional)<input id="rQ" type="number" step="0.1" placeholder="1013,25" inputmode="decimal"></label><label>Mittlere Hüllentemperatur (°C)<input id="rI" type="number" value="100" inputmode="numeric"></label></div>
+  </div>
+  <div class="card"><h2>Zuladung</h2>
+    <div class="row"><label>Piloten + Passagiere (kg)<input id="rP" type="number" inputmode="decimal"></label><label>Gas, Flaschen (kg)<input id="rG" type="number" inputmode="decimal"></label></div>
+    <p class="note">Hüllenvolumen, Leergewicht und maximale Hüllentemperatur werden unter Einstellungen beim Ballon eingetragen.</p>
+  </div>
+  <div class="card"><h2>Ergebnis</h2><div id="rErg"></div></div>
+  <p class="note">Orientierungswerte nach der Gasgleichung (ISA-Näherung). Maßgeblich sind Flughandbuch, Beladungsplan und Beurteilung des Piloten.</p>
 </section>
 
 <section id="trajektoren" class="seite" hidden>
@@ -106,6 +119,9 @@
     <label>Pilot<select id="pilotSel"></select><input id="pilot" placeholder="Neuer Pilot oder oben auswählen" autocomplete="name"></label>
     <label>Ballon-Kennzeichen<select id="ballonSel"></select><input id="ballon" placeholder="Neu: z. B. OE-BAL" autocomplete="off"></label>
     <label>Ballontyp<input id="ballontyp" autocomplete="off"></label>
+    <label>Hüllenvolumen (m³)<input id="volumen" type="number" inputmode="numeric" placeholder="z. B. 3000"></label>
+    <label>Leergewicht inkl. Korb, Brenner, Flaschen (kg)<input id="leergewicht" type="number" inputmode="decimal"></label>
+    <label>Max. Hüllentemperatur (°C)<input id="maxtemp" type="number" inputmode="numeric" placeholder="laut Handbuch"></label>
     <label>Nächste Wartung<input id="maintenance" type="date"></label>
     <p class="note">Änderungen werden automatisch gespeichert.</p>
   </div>
@@ -130,8 +146,8 @@
     <p id="cStatus" class="note"></p>
   </div>
   <div class="card"><h2>Datensicherung</h2>
-    <p class="note">Daten liegen nur auf diesem Gerät. Bitte regelmäßig ein Backup erstellen.</p>
-    <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,application/json" hidden></label></div>
+    <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>
+    <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,.gpx,.igc,application/json" hidden></label></div>
   </div>
 </section>
 </main>
@@ -143,6 +159,7 @@
   <button data-s="flugbuch"><span>▤</span>Flugbuch</button>
   <button data-s="karte"><span>◇</span>Karte</button>
   <button data-s="wetter"><span>☁</span>Wetter</button>
+  <button data-s="rechner"><span>⚖</span>Auftriebsrechner</button>
   <button data-s="trajektoren"><span>↗</span>Trajektoren</button>
   <button data-s="einstellungen"><span>⚙</span>Einstellungen</button>
 </nav>
