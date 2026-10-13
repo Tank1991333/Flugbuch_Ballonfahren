@@ -233,7 +233,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender();
+  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -621,7 +621,7 @@ function tage(d) {
 function terminZeile(d, name) {
   const t = tage(d);
   if (t === null) return "";
-  const f = t < 0 ? "gef" : t <= 30 ? "warn" : "ok", txt = t < 0 ? `überfällig seit ${-t} Tagen` : t === 0 ? "heute fällig" : t <= 30 ? `fällig in ${t} Tagen` : "in Ordnung";
+  const f = t < 0 ? "gef" : t <= WARNTAGE ? "warn" : "ok", txt = t < 0 ? `überfällig seit ${-t} Tagen` : t === 0 ? "heute fällig" : t <= WARNTAGE ? `fällig in ${t} Tagen` : "in Ordnung";
   return `<div class="zeile"><span>${esc(name)}: ${esc(new Date(d + "T00:00:00").toLocaleDateString("de-AT"))}</span><b style="color:var(--${f})">${txt}</b></div>`;
 }
 function ausruestungRender() {
@@ -642,10 +642,11 @@ function ausruestungRender() {
 }
 function termineRender() {
   const f = [];
-  (stamm.ausruestung || []).forEach(g => [["Wartung", g.wartung], ["Nachprüfung", g.pruefung]].forEach(([n, d]) => { const t = tage(d); if (t !== null && t <= 30) f.push({ t, d, n: `${g.ballon} · ${n}` }); }));
-  (stamm.flaschen || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= 30) f.push({ t, d: x.pruefung, n: `${x.name} · Prüfung` }); });
+  (stamm.ausruestung || []).forEach(g => [["Wartung", g.wartung], ["Nachprüfung", g.pruefung]].forEach(([n, d]) => { const t = tage(d); if (t !== null && t <= WARNTAGE) f.push({ t, d, n: `${g.ballon} · ${n}` }); }));
+  (stamm.flaschen || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= WARNTAGE) f.push({ t, d: x.pruefung, n: `${x.name} · Prüfung` }); });
+  (stamm.fahrzeuge || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= WARNTAGE) f.push({ t, d: x.pruefung, n: `${x.art} ${x.kennzeichen || x.name} · Prüfung` }); });
   $("termine").hidden = !f.length;
-  if (f.length) $("termine").innerHTML = "<h2>Fällige Termine</h2>" + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
+  if (f.length) $("termine").innerHTML = "<h2>Termine in den nächsten 4 Wochen</h2>" + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
 }
 function rBallonFuellen() {
   const L = stamm.ausruestung || [];
@@ -690,6 +691,39 @@ $("gDlg").addEventListener("close", () => {
   if (war) aktivSetzen(g); else { save("stammdaten", stamm); render(); }
 });
 
+// ---------- Fahrzeuge: Auto und Anhänger mit Prüfterminen ----------
+const WARNTAGE = 28; // Hinweis auf der Startseite 4 Wochen vor Ablauf
+const vFelder = { vArt: "art", vName: "name", vKz: "kennzeichen", vPruef: "pruefung", vNotiz: "notiz" };
+let vBearb = null;
+function vRender() {
+  const V = stamm.fahrzeuge || [];
+  $("vListe").innerHTML = V.length ? V.map(x => `<article class="card"><h3>${esc(x.art)} · ${esc(x.name)}${x.kennzeichen ? " · " + esc(x.kennzeichen) : ""}</h3>
+    ${terminZeile(x.pruefung, "Prüfung (Pickerl)")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
+    <div class="row"><button data-a="edit" data-id="${esc(x.id)}">Bearbeiten</button><button data-a="del" data-id="${esc(x.id)}" class="gef">Löschen</button></div></article>`).join("") : '<p class="leer">Noch kein Fahrzeug eingetragen.</p>';
+}
+function vDialog(x) {
+  vBearb = x || null;
+  Object.entries(vFelder).forEach(([id, k]) => { $(id).value = x?.[k] ?? (k === "art" ? "Auto" : ""); });
+  $("vDlg").returnValue = ""; $("vDlg").showModal();
+}
+$("vNeu").onclick = () => vDialog();
+$("vListe").onclick = e => {
+  const bt = e.target.closest("button"), x = bt && (stamm.fahrzeuge || []).find(y => y.id === bt.dataset.id);
+  if (!x) return;
+  if (bt.dataset.a === "edit") vDialog(x);
+  else if (confirm(`${x.art} ${x.name} löschen?`)) { stamm.fahrzeuge = stamm.fahrzeuge.filter(y => y !== x); save("stammdaten", stamm); render(); }
+};
+$("vDlg").addEventListener("close", () => {
+  if ($("vDlg").returnValue !== "ok") return;
+  const n = {};
+  Object.entries(vFelder).forEach(([id, k]) => { n[k] = $(id).value.trim(); });
+  if (!n.name && !n.kennzeichen) return alert("Bitte eine Bezeichnung oder ein Kennzeichen eintragen.");
+  n.name = n.name || n.kennzeichen;
+  const L = stamm.fahrzeuge ||= [];
+  if (vBearb) Object.assign(vBearb, n); else L.push({ id: nid(), ...n });
+  vBearb = null; save("stammdaten", stamm); render();
+});
+
 // ---------- Auftriebsrechner (Gasgleichung, ISA-Näherung) ----------
 function rechnen() {
   const zahl = id => parseFloat(String($(id).value).replace(",", ".")), box = $("rErg");
@@ -732,13 +766,14 @@ function gSelRender() {
 }
 function planPruefen() {
   const L = stamm.ausruestung || [], g = L.find(x => x.id === $("rBallon").value) || L.find(x => x.ballon === stamm.ballon), F = selFlaschen();
-  const ueber = d => tage(d) !== null && tage(d) < 0, zs = zulSumme();
+  const ueber = d => tage(d) !== null && tage(d) < 0, zs = zulSumme(), fz = stamm.fahrzeuge || [];
   return [
     { text: "Ballon gewählt", ok: !!g && !ueber(g.wartung) && !ueber(g.pruefung), detail: !g ? "kein Ballon" : ueber(g.wartung) ? "Wartung überfällig" : ueber(g.pruefung) ? "Nachprüfung überfällig" : g.ballon },
     { text: "Gasflaschen gewählt", ok: F.length > 0 && !F.some(x => ueber(x.pruefung)) && F.every(x => zf(x.fuell) > 0), detail: !F.length ? "keine Flasche" : F.some(x => ueber(x.pruefung)) ? "Flaschenprüfung überfällig" : F.some(x => zf(x.fuell) <= 0) ? "Flasche leer" : `${F.length} Flasche(n), ${kg1(F.reduce((s, x) => s + zf(x.fuell), 0))} kg Gas` },
     { text: "Besatzung und Zuladung eingetragen", ok: zs > 0, detail: zs > 0 ? `${num(zs)} kg` : "keine Gewichte" },
     { text: "Auftrieb ausreichend", ok: !!planErg && planErg.frei >= 0 && planErg.tN !== null && !(planErg.maxT && planErg.tN > planErg.maxT), detail: !planErg ? "nicht berechnet" : `${num(planErg.frei)} kg frei` },
-    { text: "Trajektoren berechnet", ok: !!planTraj && Date.now() - planTraj.erstellt < 6 * 36e5, detail: !planTraj ? "noch nicht" : Date.now() - planTraj.erstellt >= 6 * 36e5 ? "älter als 6 Stunden" : "aktuell" }
+    { text: "Trajektoren berechnet", ok: !!planTraj && Date.now() - planTraj.erstellt < 6 * 36e5, detail: !planTraj ? "noch nicht" : Date.now() - planTraj.erstellt >= 6 * 36e5 ? "älter als 6 Stunden" : "aktuell" },
+    ...(fz.length ? [{ text: "Auto und Anhänger geprüft", ok: !fz.some(x => ueber(x.pruefung)), detail: fz.some(x => ueber(x.pruefung)) ? "Prüfung überfällig" : `${fz.length} Fahrzeug(e) in Ordnung` }] : [])
   ];
 }
 function planAktualisieren() {

@@ -21,9 +21,9 @@
 <header><button id="menuB" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menue">☰</button><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span><button id="themeB" aria-label="Design wechseln">☾</button></header>
 <main>
 <section id="dashboard" class="seite">
+  <div id="termine" class="card" hidden></div>
   <div id="kpis" class="kpis"></div>
   <div id="monitor" class="card"></div>
-  <div id="termine" class="card" hidden></div>
   <div id="rekorde" class="card"></div>
 </section>
 
@@ -131,9 +131,13 @@
 </section>
 
 <section id="ausruestung" class="seite" hidden>
+  <h2>Ballone</h2>
   <div class="row"><button id="gNeu" class="ok">+ Ballon hinzufügen</button></div>
   <div id="gListe"></div>
-  <p class="note">Der aktive Ballon wird für neue Fahrten, den Auftriebsrechner und die Übersicht verwendet. Die Ballons werden mit deinem Konto auf alle Geräte übertragen.</p>
+  <h2 style="margin-top:22px">Auto und Anhänger</h2>
+  <div class="row"><button id="vNeu" class="ok">+ Fahrzeug hinzufügen</button></div>
+  <div id="vListe"></div>
+  <p class="note">Der aktive Ballon wird für neue Fahrten, den Auftriebsrechner und die Übersicht verwendet. Vier Wochen vor Ablauf eines Termins (Ballon, Gasflasche, Auto, Anhänger) erscheint ein Hinweis ganz oben auf der Startseite. Alles wird mit deinem Konto auf alle Geräte übertragen.</p>
 </section>
 
 <section id="gas" class="seite" hidden>
@@ -216,6 +220,16 @@
   <label>Max. Hüllentemperatur (°C)<input id="gMax" type="number" inputmode="numeric"></label>
   <div class="row"><label>Nächste Wartung<input id="gWart" type="date"></label><label>Nächste Nachprüfung<input id="gPruef" type="date"></label></div>
   <label>Notiz<textarea id="gNotiz" rows="2"></textarea></label>
+  <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="vDlg"><form method="dialog">
+  <h2>Auto / Anhänger</h2>
+  <label>Art<select id="vArt"><option>Auto</option><option>Anhänger</option></select></label>
+  <label>Bezeichnung<input id="vName" placeholder="z. B. VW Bus" autocomplete="off"></label>
+  <label>Kennzeichen<input id="vKz" autocomplete="off"></label>
+  <label>Nächste Prüfung (Pickerl)<input id="vPruef" type="date"></label>
+  <label>Notiz<textarea id="vNotiz" rows="2"></textarea></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
 </form></dialog>
 

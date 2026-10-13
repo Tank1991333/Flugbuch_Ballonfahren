@@ -129,3 +129,5 @@ select{margin-bottom:8px}
 
 .chk{display:flex;gap:10px;align-items:flex-start;margin:0 0 6px;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:.9rem}.chk input{width:auto;margin:3px 0 0}
 details.plan summary{cursor:pointer;color:var(--acc);font-weight:600;margin:8px 0}
+
+#termine{border:2px solid var(--warn)}#termine h2{color:var(--warn)}
