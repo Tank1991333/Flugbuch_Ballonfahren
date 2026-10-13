@@ -126,3 +126,6 @@ select{margin-bottom:8px}
 .zrow input{margin:0;padding:9px 8px;min-width:0}
 .zs{text-align:right;font-weight:600;font-size:.9rem}
 .zx{min-height:34px;width:34px;padding:0}
+
+.chk{display:flex;gap:10px;align-items:flex-start;margin:0 0 6px;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:.9rem}.chk input{width:auto;margin:3px 0 0}
+details.plan summary{cursor:pointer;color:var(--acc);font-weight:600;margin:8px 0}

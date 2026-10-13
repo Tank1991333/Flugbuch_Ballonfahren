@@ -88,18 +88,19 @@ const trajektorenOeffnen = (() => {
       await Promise.all([...gruppen].map(async ([model, v]) => daten.set(model, await ladeModell(model, lat, lon, v))));
       if (id !== reqId) return;
       let zeilen = "";
-      const alle = [];
+      const alle = [], trajRows = [];
       sel.forEach((x, i) => {
         const def = DEF.find(q => q.h === x), fc = daten.get(def.model), pts = bahn(def, fc, lat, lon, start, h), w = windAt(def, fc, start), f = FARBEN[i % FARBEN.length];
         linien.push(
           L.polyline(pts, { color: f, weight: 4, opacity: .85 }).addTo(map).bindPopup(`<b>Windroute</b><br>${x} m<br>${w.label}`),
           L.circleMarker(pts.at(-1), { radius: 7, fillColor: f, color: "#fff", weight: 2, fillOpacity: 1 }).addTo(map)
         );
-        alle.push(...pts);
+        alle.push(...pts); trajRows.push({ h: x, modell: w.label, richtung: Math.round(w.direction), tempo: +w.speed.toFixed(1), dist: +dist([lat, lon], pts.at(-1)).toFixed(2) });
         zeilen += `<tr><td><i class="fk" style="background:${f}"></i>${x} m</td><td>${w.label}</td><td>${richtung(w.direction)}</td><td>${w.speed.toFixed(1).replace(".", ",")} km/h</td><td>${dist([lat, lon], pts.at(-1)).toFixed(2).replace(".", ",")} km</td></tr>`;
       });
       E("tErg").innerHTML = `<div class="tabelle"><table><thead><tr><th>Höhe</th><th>Modell</th><th>Wind</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${zeilen}</tbody></table></div>`;
       map.fitBounds(L.latLngBounds(alle).pad(.12), { maxZoom: 13 });
+      if (typeof planTrajSpeichern === "function") planTrajSpeichern({ erstellt: Date.now(), start, lat, lon, dauer: h, rows: trajRows });
       const g = daten.get("gfs_seamless");
       meldung(`${sel.length} Trajektorien berechnet.` + (g && Number.isFinite(+g.elevation) ? ` Geländehöhe Startplatz: ${Math.round(g.elevation)} m.` : ""));
     } catch (e) {

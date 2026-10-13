@@ -34,7 +34,7 @@ let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überle
 let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
 fluege.forEach(f => { f.id ??= nid(); });
 
-const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "ausruestung", "einstellungen"];
+const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "ausruestung", "gas", "einstellungen"];
 function zeige(id) {
   menue(false);
   replayStop();
@@ -48,8 +48,9 @@ function zeige(id) {
   if (id === "fahrt") standbyStart(); else standbyStop();
   if (id === "wetter") wetter();
   if (id === "trajektoren") trajektorenOeffnen();
-  if (id === "rechner") { rBallonFuellen(); zRender(); rechnen(); }
+  if (id === "rechner") { rBallonFuellen(); gSelRender(); zRender(); rechnen(); }
   if (id === "ausruestung") ausruestungRender();
+  if (id === "gas") gasRender();
   if (id === "fahrt") hoehe();
 }
 
@@ -111,6 +112,9 @@ function start() {
   navigator.geolocation.getCurrentPosition(p => {
     const now = new Date().toISOString();
     aktiv = { f: { id: nid(), datum: now, startzeit: now, pilot: stamm.pilot, ballon: stamm.ballon, ballontyp: stamm.ballontyp || "", startLat: p.coords.latitude, startLng: p.coords.longitude, startOrt: null }, t: [] };
+    if (planFuerStart && Date.now() - planFuerStart.t < 60000) { // geplante Fahrt: Planung zur Fahrt speichern
+      aktiv.f.plan = planFuerStart.plan; planFuerStart = null; planCheck = {}; planTraj = null; localStorage.removeItem("planTraj"); planSpeichern(); planAktualisieren();
+    }
     lastSave = 0;
     aufnehmen();
     punkt(p);
@@ -146,13 +150,22 @@ function ende() {
   f.avgSpeed = +(d / (f.flugzeit / 60)).toFixed(1);
   f.landungen = Math.max(1, parseInt($("landungen").value, 10) || 1);
   f.bemerkung = $("bemerkung").value.trim();
+  let gk = 0; // Gasverbrauch dieser Fahrt je Flasche, wird von der Flasche abgebucht
+  document.querySelectorAll("#gasZeilen .gk").forEach(inp => {
+    const v = zf(inp.value);
+    if (v <= 0) return;
+    gk += v;
+    const fl = (stamm.flaschen || []).find(x => x.id === (inp.dataset.id || document.getElementById("gasFl")?.value));
+    if (fl) { fl.fuell = String(Math.max(0, Math.round((zf(fl.fuell) - v) * 10) / 10)); (f.gasDetails ||= []).push({ name: fl.name, kg: v }); }
+  });
+  if (gk > 0) { f.gas = gk; save("stammdaten", stamm); }
   f.bearbeitet = Date.now();
   fluege.push(f);
   if (!save("fluege", fluege)) { fluege.pop(); aufnehmen(); return; } // Fahrt bleibt erhalten
   localStorage.removeItem("aktiveFahrt");
   aktiv = null;
   wakeEnde();
-  $("bemerkung").value = ""; $("landungen").value = 1;
+  $("bemerkung").value = ""; $("landungen").value = 1; $("gasZeilen").innerHTML = "";
   ui(); render(); orteNachladen();
   zeige("flugbuch");
 }
@@ -220,7 +233,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen(); ausruestungRender(); termineRender();
+  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -238,8 +251,8 @@ function render() {
   $("liste").innerHTML = fluege.length
     ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => `<article class="card"><h3>${esc(datum(f.startzeit))}</h3>
       <p>${esc(f.startOrt || "Ort wird ermittelt …")} → ${esc(f.landeOrt || "…")}</p>
-      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · max. ${f.maxHoehe || 0} m · ${f.landungen || 1} Landung(en) · ${esc(f.ballon)}</p>
-      <p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>
+      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · max. ${f.maxHoehe || 0} m · ${f.landungen || 1} Landung(en) · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
+      <p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>${planHtml(f.plan)}
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
       <div class="row"><button data-a="karte" data-id="${esc(f.id)}">Karte</button><button data-a="play" data-id="${esc(f.id)}">Abspielen</button><button data-a="gpx" data-id="${esc(f.id)}">GPX</button><button data-a="edit" data-id="${esc(f.id)}">Bearbeiten</button><button data-a="del" data-id="${esc(f.id)}" class="gef">Löschen</button></div></article>`).join("")
     : '<p class="leer">Noch keine Fahrten gespeichert.</p>';
@@ -253,7 +266,7 @@ $("liste").onclick = e => {
   } else if (b.dataset.a === "edit") {
     bearbeite = f;
     $("ePilot").value = f.pilot || ""; $("eBallon").value = f.ballon || ""; $("eStart").value = f.startOrt || ""; $("eLande").value = f.landeOrt || "";
-    $("eLand").value = f.landungen || 1; $("eBem").value = f.bemerkung || "";
+    $("eLand").value = f.landungen || 1; $("eBem").value = f.bemerkung || ""; $("eGas").value = f.gas || "";
     $("dlg").returnValue = ""; $("dlg").showModal();
   } else if (b.dataset.a === "gpx") gpxExport(f);
   else if (b.dataset.a === "play") { zeige("karte"); setTimeout(() => abspielen(f), 150); }
@@ -261,7 +274,7 @@ $("liste").onclick = e => {
 };
 $("dlg").addEventListener("close", () => {
   if ($("dlg").returnValue === "ok" && bearbeite) {
-    Object.assign(bearbeite, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), bemerkung: $("eBem").value.trim() });
+    Object.assign(bearbeite, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), bemerkung: $("eBem").value.trim(), gas: zf($("eGas").value) > 0 ? zf($("eGas").value) : undefined });
     save("fluege", fluege); render();
   }
   bearbeite = null;
@@ -528,6 +541,75 @@ function abspielen(f) {
   }, 250);
 }
 
+// ---------- Gas: Flaschen, Nachfüllungen, Verbrauch ----------
+const zf = v => parseFloat(String(v ?? "").replace(",", ".")) || 0;
+const kg1 = v => num(zf(v), 1).replace(",0", "");
+const fFelder = { fName: "name", fKap: "kap", fTara: "tara", fFuell: "fuell", fPruef: "pruefung", fNotiz: "notiz" };
+let fBearb = null, nFlasche = null;
+const flaschenName = id => (stamm.flaschen || []).find(x => x.id === id)?.name || "Flasche";
+function gasFlFuellen() { // Verbrauch je Flasche der geplanten Fahrt, sonst einfache Eingabe
+  const pf = aktiv?.f.plan?.flaschen || [], inp = (id, ph) => `<input class="gk" data-id="${esc(id)}" type="number" min="0" step="0.5" inputmode="decimal"${ph ? ` placeholder="${esc(ph)}"` : ""}>`;
+  $("gasZeilen").innerHTML = pf.length
+    ? pf.map(x => `<label>Gasverbrauch ${esc(x.name)} (kg)${inp(x.id, `vorher ${kg1(x.gas)} kg`)}</label>`).join("")
+    : `<label>Gasverbrauch (kg, optional)${inp("")}</label><label>Von Flasche abbuchen<select id="gasFl"><option value="">nicht abbuchen</option>${(stamm.flaschen || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${kg1(x.fuell)} kg)</option>`).join("")}</select></label>`;
+}
+function gasRender() {
+  const F = stamm.flaschen || [], vorrat = F.reduce((s, x) => s + zf(x.fuell), 0), kap = F.reduce((s, x) => s + zf(x.kap), 0);
+  const mit = fluege.filter(f => zf(f.gas) > 0), kgSum = mit.reduce((s, f) => s + zf(f.gas), 0), std = mit.reduce((s, f) => s + (f.flugzeit || 0), 0) / 60;
+  const proFahrt = mit.length ? kgSum / mit.length : 0, proH = std > 0 ? kgSum / std : 0;
+  const L = [...(stamm.gasLog || [])].sort((a, b) => String(b.datum).localeCompare(String(a.datum)));
+  const kosten = L.reduce((s, e) => s + zf(e.preis), 0), kgPreis = L.filter(e => zf(e.preis) > 0).reduce((s, e) => s + zf(e.kg), 0), eurKg = kgPreis ? kosten / kgPreis : 0;
+  const kp = (a, b, c) => `<div class="kpi"><small>${a}</small><b>${b}</b>${c ? `<small>${c}</small>` : ""}</div>`;
+  $("gSumm").innerHTML = kp("Vorrat", `${kg1(vorrat)} kg`, kap ? `von ${kg1(kap)} kg` : "") + kp("Ø je Fahrt", proFahrt ? `${kg1(proFahrt)} kg` : "–", mit.length ? `${mit.length} ${mit.length === 1 ? "Fahrt" : "Fahrten"}` : "noch keine Angabe") +
+    kp("Ø je Flugstunde", proH ? `${kg1(proH)} kg` : "–", proH && eurKg ? `ca. ${num(proH * eurKg, 2)} €` : "") + kp("Reicht noch für", proH && vorrat ? `${num(vorrat / proH, 1)} h` : "–", "bei gleichem Verbrauch");
+  $("fListe").innerHTML = F.length ? F.map(x => {
+    const p = zf(x.kap) > 0 ? Math.min(100, zf(x.fuell) / zf(x.kap) * 100) : 0, b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(x.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
+    return `<article class="card"><h3>${esc(x.name)}</h3>
+      <div class="bar"><span>${kg1(x.fuell)} von ${kg1(x.kap)} kg Gas · ${num(p)} %${zf(x.tara) ? ` · mit Flasche ${kg1(zf(x.tara) + zf(x.fuell))} kg` : ""}</span><i><u style="width:${p}%"${p >= 20 ? ' class="ok"' : ""}></u></i></div>
+      ${terminZeile(x.pruefung, "Prüfung")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
+      <div class="row">${b("fill", "Nachfüllen", "ok")}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
+  }).join("") : '<p class="leer">Noch keine Gasflasche eingetragen.</p>';
+  $("gLog").innerHTML = L.length ? L.slice(0, 8).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><b>${kg1(e.kg)} kg${zf(e.preis) > 0 ? ` · ${num(zf(e.preis), 2)} €` : ""}</b></div>`).join("") +
+    (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
+  gSelRender();
+}
+function fDialog(x) {
+  fBearb = x || null;
+  Object.entries(fFelder).forEach(([id, k]) => { $(id).value = x?.[k] ?? ""; });
+  $("fDlg").returnValue = ""; $("fDlg").showModal();
+}
+function nDialog(x) {
+  nFlasche = x;
+  $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
+  $("nDatum").value = new Date().toISOString().slice(0, 10);
+  $("nDlg").returnValue = ""; $("nDlg").showModal();
+}
+$("fNeu").onclick = () => fDialog();
+$("fListe").onclick = e => {
+  const bt = e.target.closest("button"), x = bt && (stamm.flaschen || []).find(y => y.id === bt.dataset.id);
+  if (!x) return;
+  if (bt.dataset.a === "fill") nDialog(x);
+  else if (bt.dataset.a === "edit") fDialog(x);
+  else if (confirm(`${x.name} löschen? Die Nachfüllungen bleiben im Verlauf erhalten.`)) { stamm.flaschen = stamm.flaschen.filter(y => y !== x); save("stammdaten", stamm); render(); }
+};
+$("fDlg").addEventListener("close", () => {
+  if ($("fDlg").returnValue !== "ok") return;
+  const n = {};
+  Object.entries(fFelder).forEach(([id, k]) => { n[k] = $(id).value.trim(); });
+  if (!n.name) return alert("Bitte einen Namen eintragen, zum Beispiel Flasche 1.");
+  const L = stamm.flaschen ||= [];
+  if (fBearb) Object.assign(fBearb, n); else L.push({ id: nid(), ...n });
+  fBearb = null; save("stammdaten", stamm); render();
+});
+$("nDlg").addEventListener("close", () => {
+  if ($("nDlg").returnValue !== "ok" || !nFlasche) return;
+  const kg = zf($("nKg").value), x = nFlasche;
+  if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
+  x.fuell = String(Math.round(Math.min(zf(x.kap) || Infinity, zf(x.fuell) + kg) * 10) / 10);
+  (stamm.gasLog ||= []).push({ id: nid(), datum: $("nDatum").value || new Date().toISOString().slice(0, 10), flasche: x.id, kg, preis: $("nPreis").value.trim(), notiz: $("nNotiz").value.trim() });
+  nFlasche = null; save("stammdaten", stamm); render();
+});
+
 // ---------- Ausrüstung: mehrere Ballone mit Terminen ----------
 const gFelder = { gBallon: "ballon", gTyp: "ballontyp", gVol: "volumen", gLeer: "leergewicht", gMax: "maxtemp", gWart: "wartung", gPruef: "pruefung", gNotiz: "notiz" };
 let gBearb = null;
@@ -561,12 +643,15 @@ function ausruestungRender() {
 function termineRender() {
   const f = [];
   (stamm.ausruestung || []).forEach(g => [["Wartung", g.wartung], ["Nachprüfung", g.pruefung]].forEach(([n, d]) => { const t = tage(d); if (t !== null && t <= 30) f.push({ t, d, n: `${g.ballon} · ${n}` }); }));
+  (stamm.flaschen || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= 30) f.push({ t, d: x.pruefung, n: `${x.name} · Prüfung` }); });
   $("termine").hidden = !f.length;
   if (f.length) $("termine").innerHTML = "<h2>Fällige Termine</h2>" + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
 }
 function rBallonFuellen() {
   const L = stamm.ausruestung || [];
   $("rBallon").innerHTML = L.length ? L.map(g => `<option value="${esc(g.id)}"${g.ballon === stamm.ballon ? " selected" : ""}>${esc(g.ballon)}${g.ballontyp ? " · " + esc(g.ballontyp) : ""}${g.volumen ? " · " + esc(g.volumen) + " m³" : ""}</option>`).join("") : '<option value="">Noch kein Ballon</option>';
+  const g = L.find(x => x.id === $("rBallon").value) || L.find(x => x.ballon === stamm.ballon);
+  $("rBInfo").innerHTML = g ? `<p class="m">${g.volumen ? esc(g.volumen) + " m³" : "Volumen –"} · Leergewicht ${g.leergewicht ? esc(g.leergewicht) + " kg" : "–"} · max. ${g.maxtemp ? esc(g.maxtemp) + " °C" : "–"}</p>${terminZeile(g.wartung, "Wartung")}${terminZeile(g.pruefung, "Nachprüfung")}` : '<p class="warn">Bitte unter Ausrüstung einen Ballon anlegen.</p>';
 }
 function aktivSetzen(g) {
   $("ballon").value = g.ballon; $("ballontyp").value = g.ballontyp || ""; $("volumen").value = g.volumen || "";
@@ -609,23 +694,99 @@ $("gDlg").addEventListener("close", () => {
 function rechnen() {
   const zahl = id => parseFloat(String($(id).value).replace(",", ".")), box = $("rErg");
   const V = parseFloat(stamm.volumen), leer = parseFloat(stamm.leergewicht) || 0, maxT = parseFloat(stamm.maxtemp);
-  if (!(V > 0)) { box.innerHTML = '<p class="warn">Bitte unter Ausrüstung beim Ballon Hüllenvolumen und Leergewicht eintragen.</p>'; return; }
-  const Ta = zahl("rT"), h = zahl("rH"), qnh = zahl("rQ") || 1013.25, Ti = zahl("rI"), last = zulSumme();
-  if (![Ta, h, Ti].every(Number.isFinite)) { box.innerHTML = '<p class="note">Bitte Außentemperatur, Starthöhe und Hüllentemperatur eintragen.</p>'; return; }
-  save("auftrieb", { rT: $("rT").value, rH: $("rH").value, rQ: $("rQ").value, rI: $("rI").value, zul });
+  if (!(V > 0)) { planErg = null; box.innerHTML = '<p class="warn">Bitte unter Ausrüstung beim Ballon Hüllenvolumen und Leergewicht eintragen.</p>'; planAktualisieren(); return; }
+  const Ta = zahl("rT"), h = zahl("rH"), qnh = zahl("rQ") || 1013.25, Ti = zahl("rI"), last = zulSumme() + gasLast();
+  if (![Ta, h, Ti].every(Number.isFinite)) { planErg = null; box.innerHTML = '<p class="note">Bitte Außentemperatur, Starthöhe und Hüllentemperatur eintragen.</p>'; planAktualisieren(); return; }
+  planSpeichern();
   const R = 287.05, p = qnh * Math.pow(1 - 2.25577e-5 * h, 5.25588) * 100;           // Luftdruck in Pa
   const rhoA = p / (R * (Ta + 273.15)), rhoI = p / (R * (Ti + 273.15));
   const brutto = V * (rhoA - rhoI), nutz = brutto - leer, frei = nutz - last;
   const rhoN = rhoA - (leer + last) / V, tN = rhoN > 0 ? p / (R * rhoN) - 273.15 : null; // nötige Hüllentemperatur zum Schweben
+  planErg = { p: p / 100, brutto, leer, nutz, last, frei, tN, maxT: maxT || null, bed: { T: Ta, h, qnh, Ti } };
   const z = (a, b, c) => `<div class="zeile"><span>${a}</span><b${c ? ` style="color:var(--${c})"` : ""}>${b}</b></div>`;
   let urteil = "";
   if (tN === null) urteil = z("Bewertung", "Nicht erreichbar: Last zu groß", "gef");
   else if (maxT > 0) urteil = tN > maxT ? z("Bewertung", `Reicht nicht: nötig ${num(tN)} °C, max. ${num(maxT)} °C`, "gef") : z("Reserve bis max. Hüllentemperatur", `${num(maxT - tN)} °C`, maxT - tN < 10 ? "warn" : "ok");
   box.innerHTML = z("Luftdruck am Startplatz", `${num(p / 100, 1)} hPa`) + z("Luftdichte außen / innen", `${num(rhoA, 3)} / ${num(rhoI, 3)} kg/m³`) +
     z("Auftrieb je m³", `${num(rhoA - rhoI, 3)} kg`) + z("Bruttoauftrieb", `${num(brutto)} kg`) + z("abzüglich Leergewicht", `${num(leer)} kg`) +
-    z("Nutzlast (maximale Zuladung)", `${num(nutz)} kg`) + zulZeilen(z) + z("Zuladung gesamt", `${num(last)} kg`) +
+    z("Nutzlast (maximale Zuladung)", `${num(nutz)} kg`) + zulZeilen(z) + gasZeilen(z) + z("Zuladung gesamt", `${num(last)} kg`) +
     z("Freier Auftrieb", `${num(frei)} kg`, frei < 0 ? "gef" : "ok") + z("Nötige Hüllentemperatur zum Schweben", tN === null ? "–" : `${num(tN)} °C`) + urteil;
+  planAktualisieren();
 }
+// ---------- Fahrtplanung: Checkliste, Gasflaschen je Fahrt, Planung wird zur Fahrt gespeichert ----------
+let planSel = [], planCheck = {}, planTraj = null, planErg = null, planFuerStart = null;
+const PLANMANUELL = [["w", "Wetter und Windprofil geprüft"], ["l", "Luftraum und NOTAM geprüft"], ["b", "Brenner, Flaschen und Armaturen geprüft"], ["p", "Passagiere eingewiesen"], ["f", "Funk und Handy geladen"], ["r", "Rückholteam informiert"]];
+const selFlaschen = () => planSel.map(id => (stamm.flaschen || []).find(y => y.id === id)).filter(Boolean);
+const gasLast = () => selFlaschen().reduce((s, x) => s + zf(x.tara) + zf(x.fuell), 0);
+const planSpeichern = () => save("auftrieb", { rT: $("rT").value, rH: $("rH").value, rQ: $("rQ").value, rI: $("rI").value, zul, sel: planSel, check: planCheck });
+function gasZeilen(z) {
+  return selFlaschen().map(x => z("· " + esc(x.name), `${kg1(x.fuell)} kg Gas + ${kg1(x.tara)} kg Flasche = ${kg1(zf(x.fuell) + zf(x.tara))} kg`)).join("");
+}
+function gSelRender() {
+  const F = stamm.flaschen || [];
+  planSel = planSel.filter(id => F.some(x => x.id === id));
+  $("gSel").innerHTML = F.length ? F.map(x => {
+    const t = tage(x.pruefung);
+    return `<label class="chk"><input type="checkbox" data-id="${esc(x.id)}"${planSel.includes(x.id) ? " checked" : ""}><span>${esc(x.name)} · ${kg1(x.fuell)} von ${kg1(x.kap)} kg Gas · gesamt ${kg1(zf(x.tara) + zf(x.fuell))} kg${t !== null && t < 0 ? ' · <b style="color:var(--gef)">Prüfung überfällig</b>' : ""}</span></label>`;
+  }).join("") : '<p class="note">Noch keine Gasflasche angelegt.</p>';
+}
+function planPruefen() {
+  const L = stamm.ausruestung || [], g = L.find(x => x.id === $("rBallon").value) || L.find(x => x.ballon === stamm.ballon), F = selFlaschen();
+  const ueber = d => tage(d) !== null && tage(d) < 0, zs = zulSumme();
+  return [
+    { text: "Ballon gewählt", ok: !!g && !ueber(g.wartung) && !ueber(g.pruefung), detail: !g ? "kein Ballon" : ueber(g.wartung) ? "Wartung überfällig" : ueber(g.pruefung) ? "Nachprüfung überfällig" : g.ballon },
+    { text: "Gasflaschen gewählt", ok: F.length > 0 && !F.some(x => ueber(x.pruefung)) && F.every(x => zf(x.fuell) > 0), detail: !F.length ? "keine Flasche" : F.some(x => ueber(x.pruefung)) ? "Flaschenprüfung überfällig" : F.some(x => zf(x.fuell) <= 0) ? "Flasche leer" : `${F.length} Flasche(n), ${kg1(F.reduce((s, x) => s + zf(x.fuell), 0))} kg Gas` },
+    { text: "Besatzung und Zuladung eingetragen", ok: zs > 0, detail: zs > 0 ? `${num(zs)} kg` : "keine Gewichte" },
+    { text: "Auftrieb ausreichend", ok: !!planErg && planErg.frei >= 0 && planErg.tN !== null && !(planErg.maxT && planErg.tN > planErg.maxT), detail: !planErg ? "nicht berechnet" : `${num(planErg.frei)} kg frei` },
+    { text: "Trajektoren berechnet", ok: !!planTraj && Date.now() - planTraj.erstellt < 6 * 36e5, detail: !planTraj ? "noch nicht" : Date.now() - planTraj.erstellt >= 6 * 36e5 ? "älter als 6 Stunden" : "aktuell" }
+  ];
+}
+function planAktualisieren() {
+  const row = x => `<div class="zeile"><span>${x.ok ? "✓" : "✕"} ${x.text}</span><b style="color:var(--${x.ok ? "ok" : "gef"})">${esc(x.detail)}</b></div>`;
+  $("pCheck").innerHTML = planPruefen().map(row).join("") + PLANMANUELL.map(([k, t]) => `<label class="chk"><input type="checkbox" data-k="${k}"${planCheck[k] ? " checked" : ""}><span>${t}</span></label>`).join("");
+  const t = planTraj;
+  $("pTraj").innerHTML = t ? `<p class="m">Berechnet für ${esc(new Date(t.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${num(t.dauer, 1)} h · ${esc(utmText(t.lat, t.lon))}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${t.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${num(r.tempo, 1)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>`
+    : '<p class="note">Noch nicht berechnet. Das Ergebnis wird zur Fahrt gespeichert.</p>';
+}
+function planSnapshot() {
+  const g = (stamm.ausruestung || []).find(x => x.id === $("rBallon").value) || {}, a = planErg;
+  return { erstellt: new Date().toISOString(), ballon: { ballon: g.ballon, ballontyp: g.ballontyp, volumen: g.volumen, leergewicht: g.leergewicht, maxtemp: g.maxtemp },
+    flaschen: selFlaschen().map(x => ({ id: x.id, name: x.name, gas: zf(x.fuell), tara: zf(x.tara) })),
+    zuladung: zul.filter(x => zf(x.a) * zf(x.k) > 0).map(x => ({ n: x.n, a: zf(x.a), k: zf(x.k) })),
+    bedingungen: a?.bed || null, auftrieb: a ? { last: a.last, brutto: a.brutto, nutz: a.nutz, frei: a.frei, tN: a.tN, maxT: a.maxT, p: a.p } : null,
+    check: { ...planCheck }, traj: planTraj };
+}
+function planStarten() {
+  const offen = planPruefen().filter(x => !x.ok);
+  if (offen.length && !confirm("Noch offen:\n• " + offen.map(x => `${x.text} (${x.detail})`).join("\n• ") + "\n\nTrotzdem starten?")) return;
+  const g = (stamm.ausruestung || []).find(x => x.id === $("rBallon").value);
+  if (g && g.ballon !== stamm.ballon) aktivSetzen(g);
+  planFuerStart = { t: Date.now(), plan: planSnapshot() };
+  zeige("fahrt");
+  start();
+}
+function planTrajSpeichern(t) { planTraj = t; planSpeichern(); planAktualisieren(); }
+function planHtml(p) {
+  if (!p) return "";
+  const z = (a, b) => `<div class="zeile"><span>${a}</span><b>${b}</b></div>`, a = p.auftrieb, b = p.ballon || {}, bd = p.bedingungen, k1 = v => num(zf(v), 1).replace(",0", "");
+  return `<details class="plan"><summary>Planung ansehen</summary>` +
+    z("Ballon", esc([b.ballon, b.ballontyp, b.volumen ? b.volumen + " m³" : ""].filter(Boolean).join(" · "))) +
+    (p.flaschen || []).map(x => z("· " + esc(x.name), `${k1(x.gas)} kg Gas + ${k1(x.tara)} kg Flasche`)).join("") +
+    (p.zuladung || []).map(x => z("· " + esc(x.n || "Position"), `${k1(zf(x.a) * zf(x.k))} kg`)).join("") +
+    (a ? z("Zuladung gesamt", `${num(a.last)} kg`) + z("Bruttoauftrieb / frei", `${num(a.brutto)} / ${num(a.frei)} kg`) + z("Nötige Hüllentemperatur", a.tN == null ? "–" : `${num(a.tN)} °C`) : "") +
+    (bd ? z("Bedingungen", `${k1(bd.T)} °C · ${num(bd.h)} m · QNH ${k1(bd.qnh)} hPa · Hülle ${num(bd.Ti)} °C`) : "") +
+    (p.traj ? `<p class="m">Trajektoren für ${esc(new Date(p.traj.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))}, ${k1(p.traj.dauer)} h</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${p.traj.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${k1(r.tempo)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>` : "") +
+    (p.check && Object.values(p.check).some(Boolean) ? z("Checkliste", `${Object.values(p.check).filter(Boolean).length} von ${PLANMANUELL.length} abgehakt`) : "") + `</details>`;
+}
+$("gSel").addEventListener("change", e => {
+  const id = e.target.dataset.id;
+  if (!id) return;
+  planSel = e.target.checked ? [...new Set([...planSel, id])] : planSel.filter(x => x !== id);
+  rechnen();
+});
+$("pCheck").addEventListener("change", e => { const k = e.target.dataset.k; if (k) { planCheck[k] = e.target.checked; planSpeichern(); } });
+$("gVerw").onclick = () => zeige("gas"); $("pTrajB").onclick = () => zeige("trajektoren"); $("pStart").onclick = planStarten;
+
 // Zuladung: einzelne Positionen mit Anzahl und Gewicht je Stück
 let zul = [];
 const zulSumme = () => zul.reduce((s, x) => s + (parseFloat(x.a) || 0) * (parseFloat(x.k) || 0), 0);
@@ -651,13 +812,12 @@ $("zList").addEventListener("input", e => {
 });
 $("zList").addEventListener("click", e => { const b = e.target.closest(".zx"); if (b) { zul.splice(+b.closest(".zrow").dataset.i, 1); zRender(); rechnen(); } });
 const zAdd = n => { zul.push({ n, a: 1, k: "" }); zRender(); rechnen(); };
-$("zPass").onclick = () => zAdd("Passagier"); $("zGas").onclick = () => zAdd("Gasflasche (gefüllt)"); $("zNeu").onclick = () => zAdd("Sonstiges");
+$("zPass").onclick = () => zAdd("Passagier"); $("zGas").onclick = () => zAdd("Gepäck"); $("zFl").onclick = () => zAdd("Instrumente / Funk"); $("zNeu").onclick = () => zAdd("Sonstiges");
 (() => {
   const g = load("auftrieb", {});
   ["rT", "rH", "rQ", "rI"].forEach(id => { if (g[id] !== undefined) $(id).value = g[id]; $(id).oninput = rechnen; });
-  zul = Array.isArray(g.zul) ? g.zul : g.rP !== undefined
-    ? [{ n: "Pilot + Passagiere", a: 1, k: g.rP }, { n: "Gasflaschen", a: 1, k: g.rG ?? "" }]   // alte Eingaben übernehmen
-    : [{ n: "Pilot", a: 1, k: "" }, { n: "Passagier", a: 1, k: "" }, { n: "Gasflasche (gefüllt)", a: 4, k: "" }];
+  zul = (Array.isArray(g.zul) ? g.zul : [{ n: "Pilot", a: 1, k: "" }, { n: "Passagier", a: 1, k: "" }]).filter(x => !x.fl && !/^Gasflasche/i.test(x.n || "")); // Gas kommt jetzt aus der Flaschenwahl
+  planSel = Array.isArray(g.sel) ? g.sel : []; planCheck = g.check || {}; planTraj = load("planTraj", null);
   zRender();
 })();
 
@@ -685,7 +845,7 @@ $("menuB").onclick = () => menue(!$("menue").classList.contains("offen"));
 $("schleier").onclick = () => menue(false);
 document.addEventListener("keydown", e => { if (e.key === "Escape") menue(false); });
 $("startB").onclick = start;
-$("stopB").onclick = () => { $("endDlg").returnValue = ""; $("endDlg").showModal(); };
+$("stopB").onclick = () => { gasFlFuellen(); $("endDlg").returnValue = ""; $("endDlg").showModal(); };
 $("endDlg").addEventListener("close", () => { if ($("endDlg").returnValue === "ok") ende(); });
 $("mB").onclick = () => {
   if (!aktiv || !pos) return status("Markierungen sind nur während der Aufzeichnung möglich.");
