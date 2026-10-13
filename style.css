@@ -120,3 +120,9 @@ header h1{margin-right:auto}
 
 .badge{font:600 .75rem 'Barlow',system-ui,sans-serif;background:var(--acc);color:var(--onacc);border-radius:8px;padding:2px 8px;margin-left:6px;vertical-align:middle}
 select{margin-bottom:8px}
+
+.zkopf,.zrow{display:grid;grid-template-columns:1fr 52px 66px 62px 34px;gap:6px;align-items:center}
+.zkopf{font-size:.78rem;color:var(--mut);margin-bottom:4px}.zrow{margin-bottom:6px}
+.zrow input{margin:0;padding:9px 8px;min-width:0}
+.zs{text-align:right;font-weight:600;font-size:.9rem}
+.zx{min-height:34px;width:34px;padding:0}

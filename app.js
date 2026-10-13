@@ -48,7 +48,7 @@ function zeige(id) {
   if (id === "fahrt") standbyStart(); else standbyStop();
   if (id === "wetter") wetter();
   if (id === "trajektoren") trajektorenOeffnen();
-  if (id === "rechner") { rBallonFuellen(); rechnen(); }
+  if (id === "rechner") { rBallonFuellen(); zRender(); rechnen(); }
   if (id === "ausruestung") ausruestungRender();
   if (id === "fahrt") hoehe();
 }
@@ -610,9 +610,9 @@ function rechnen() {
   const zahl = id => parseFloat(String($(id).value).replace(",", ".")), box = $("rErg");
   const V = parseFloat(stamm.volumen), leer = parseFloat(stamm.leergewicht) || 0, maxT = parseFloat(stamm.maxtemp);
   if (!(V > 0)) { box.innerHTML = '<p class="warn">Bitte unter Ausrüstung beim Ballon Hüllenvolumen und Leergewicht eintragen.</p>'; return; }
-  const Ta = zahl("rT"), h = zahl("rH"), qnh = zahl("rQ") || 1013.25, Ti = zahl("rI"), last = (zahl("rP") || 0) + (zahl("rG") || 0);
+  const Ta = zahl("rT"), h = zahl("rH"), qnh = zahl("rQ") || 1013.25, Ti = zahl("rI"), last = zulSumme();
   if (![Ta, h, Ti].every(Number.isFinite)) { box.innerHTML = '<p class="note">Bitte Außentemperatur, Starthöhe und Hüllentemperatur eintragen.</p>'; return; }
-  save("auftrieb", { rT: $("rT").value, rH: $("rH").value, rQ: $("rQ").value, rI: $("rI").value, rP: $("rP").value, rG: $("rG").value });
+  save("auftrieb", { rT: $("rT").value, rH: $("rH").value, rQ: $("rQ").value, rI: $("rI").value, zul });
   const R = 287.05, p = qnh * Math.pow(1 - 2.25577e-5 * h, 5.25588) * 100;           // Luftdruck in Pa
   const rhoA = p / (R * (Ta + 273.15)), rhoI = p / (R * (Ti + 273.15));
   const brutto = V * (rhoA - rhoI), nutz = brutto - leer, frei = nutz - last;
@@ -623,10 +623,43 @@ function rechnen() {
   else if (maxT > 0) urteil = tN > maxT ? z("Bewertung", `Reicht nicht: nötig ${num(tN)} °C, max. ${num(maxT)} °C`, "gef") : z("Reserve bis max. Hüllentemperatur", `${num(maxT - tN)} °C`, maxT - tN < 10 ? "warn" : "ok");
   box.innerHTML = z("Luftdruck am Startplatz", `${num(p / 100, 1)} hPa`) + z("Luftdichte außen / innen", `${num(rhoA, 3)} / ${num(rhoI, 3)} kg/m³`) +
     z("Auftrieb je m³", `${num(rhoA - rhoI, 3)} kg`) + z("Bruttoauftrieb", `${num(brutto)} kg`) + z("abzüglich Leergewicht", `${num(leer)} kg`) +
-    z("Nutzlast (Piloten, Passagiere, Gas)", `${num(nutz)} kg`) + z("geplante Zuladung", `${num(last)} kg`) +
+    z("Nutzlast (maximale Zuladung)", `${num(nutz)} kg`) + zulZeilen(z) + z("Zuladung gesamt", `${num(last)} kg`) +
     z("Freier Auftrieb", `${num(frei)} kg`, frei < 0 ? "gef" : "ok") + z("Nötige Hüllentemperatur zum Schweben", tN === null ? "–" : `${num(tN)} °C`) + urteil;
 }
-(() => { const g = load("auftrieb", {}); ["rT", "rH", "rQ", "rI", "rP", "rG"].forEach(id => { if (g[id] !== undefined) $(id).value = g[id]; $(id).oninput = rechnen; }); })();
+// Zuladung: einzelne Positionen mit Anzahl und Gewicht je Stück
+let zul = [];
+const zulSumme = () => zul.reduce((s, x) => s + (parseFloat(x.a) || 0) * (parseFloat(x.k) || 0), 0);
+function zulZeilen(z) {
+  return zul.filter(x => (parseFloat(x.a) || 0) * (parseFloat(x.k) || 0) > 0).map(x => {
+    const a = parseFloat(x.a) || 0, k = parseFloat(x.k) || 0;
+    return z("· " + esc(x.n || "Position"), `${a !== 1 ? `${num(a)} × ${num(k, 1).replace(",0", "")} = ` : ""}${num(a * k)} kg`);
+  }).join("");
+}
+function zRender() {
+  $("zList").innerHTML = '<div class="zkopf"><span>Bezeichnung</span><span>Anz.</span><span>kg/Stk.</span><span>Summe</span><span></span></div>' + zul.map((x, i) =>
+    `<div class="zrow" data-i="${i}"><input class="zn" value="${esc(x.n)}" aria-label="Bezeichnung" autocomplete="off"><input class="za" type="number" min="0" step="1" value="${esc(x.a)}" aria-label="Anzahl" inputmode="numeric"><input class="zk" type="number" min="0" step="0.5" value="${esc(x.k)}" placeholder="kg" aria-label="Gewicht je Stück in kg" inputmode="decimal"><span class="zs">${num((parseFloat(x.a) || 0) * (parseFloat(x.k) || 0))} kg</span><button class="zx" aria-label="Position entfernen">✕</button></div>`).join("");
+  $("zSumme").textContent = num(zulSumme()) + " kg";
+}
+$("zList").addEventListener("input", e => {
+  const r = e.target.closest(".zrow");
+  if (!r) return;
+  const i = +r.dataset.i;
+  zul[i] = { n: r.querySelector(".zn").value, a: r.querySelector(".za").value, k: r.querySelector(".zk").value };
+  r.querySelector(".zs").textContent = num((parseFloat(zul[i].a) || 0) * (parseFloat(zul[i].k) || 0)) + " kg";
+  $("zSumme").textContent = num(zulSumme()) + " kg";
+  rechnen();
+});
+$("zList").addEventListener("click", e => { const b = e.target.closest(".zx"); if (b) { zul.splice(+b.closest(".zrow").dataset.i, 1); zRender(); rechnen(); } });
+const zAdd = n => { zul.push({ n, a: 1, k: "" }); zRender(); rechnen(); };
+$("zPass").onclick = () => zAdd("Passagier"); $("zGas").onclick = () => zAdd("Gasflasche (gefüllt)"); $("zNeu").onclick = () => zAdd("Sonstiges");
+(() => {
+  const g = load("auftrieb", {});
+  ["rT", "rH", "rQ", "rI"].forEach(id => { if (g[id] !== undefined) $(id).value = g[id]; $(id).oninput = rechnen; });
+  zul = Array.isArray(g.zul) ? g.zul : g.rP !== undefined
+    ? [{ n: "Pilot + Passagiere", a: 1, k: g.rP }, { n: "Gasflaschen", a: 1, k: g.rG ?? "" }]   // alte Eingaben übernehmen
+    : [{ n: "Pilot", a: 1, k: "" }, { n: "Passagier", a: 1, k: "" }, { n: "Gasflasche (gefüllt)", a: 4, k: "" }];
+  zRender();
+})();
 
 function cloudUebernehmen(d) {
   if (d.fluege) { fluege = d.fluege; localStorage.setItem("fluege", JSON.stringify(fluege)); }

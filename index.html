@@ -86,7 +86,10 @@
     <div class="row"><label>QNH (hPa, optional)<input id="rQ" type="number" step="0.1" placeholder="1013,25" inputmode="decimal"></label><label>Mittlere Hüllentemperatur (°C)<input id="rI" type="number" value="100" inputmode="numeric"></label></div>
   </div>
   <div class="card"><h2>Zuladung</h2>
-    <div class="row"><label>Piloten + Passagiere (kg)<input id="rP" type="number" inputmode="decimal"></label><label>Gas, Flaschen (kg)<input id="rG" type="number" inputmode="decimal"></label></div>
+    <div id="zList"></div>
+    <div class="row"><button id="zPass">+ Passagier</button><button id="zGas">+ Gasflasche</button><button id="zNeu">+ Sonstiges</button></div>
+    <div class="zeile"><span>Zuladung gesamt</span><b id="zSumme">0 kg</b></div>
+    <p class="note">Gewicht je Stück eintragen. Bei mehreren gleichen Positionen (zum Beispiel Gasflaschen) die Anzahl erhöhen.</p>
     <p class="note">Hüllenvolumen, Leergewicht und maximale Hüllentemperatur werden beim aktiven Ballon unter Ausrüstung eingetragen.</p>
   </div>
   <div class="card"><h2>Ergebnis</h2><div id="rErg"></div></div>
