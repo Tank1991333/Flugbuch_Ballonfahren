@@ -5,8 +5,9 @@
   const CDN = "https://www.gstatic.com/firebasejs/10.14.1/", MAXPKT = 4000;
   const cfg = window.FIREBASE_CONFIG || {};
   const konfiguriert = !!(cfg.apiKey && cfg.projectId && cfg.appId);
+  const adminUid = cfg.adminUid || ""; // gesetzt = Freigabe-Modus: nur freigeschaltete Konten synchronisieren
   const E = id => document.getElementById(id);
-  let fb = null, user = null, timer = null, laeuft = false, nochmal = false;
+  let fb = null, user = null, timer = null, laeuft = false, nochmal = false, freigegeben = false, angefragt = false;
 
   const status = (t, fehler) => { E("cStatus").textContent = t; E("cStatus").style.color = fehler ? "var(--gef)" : ""; };
   const meldung = e => ({
@@ -21,7 +22,8 @@
     E("cNote").hidden = konfiguriert;
     E("cOff").hidden = !konfiguriert || !!user;
     E("cOn").hidden = !user;
-    if (user) E("cMail").textContent = user.email;
+    if (user) { E("cMail").textContent = user.email; E("cUid").textContent = user.uid; }
+    E("cAdmin").hidden = !(user && adminUid && user.uid === adminUid);
   }
 
   async function laden() {
@@ -45,6 +47,15 @@
     laeuft = true; status("Synchronisiere …");
     try {
       const { db, F } = await laden();
+      if (adminUid && user.uid !== adminUid && !freigegeben) { // Freigabe prüfen, sonst Anfrage an den Administrator
+        const fr = await F.getDoc(F.doc(db, "freigaben", user.uid));
+        if (!fr.exists()) {
+          if (!angefragt) { await F.setDoc(F.doc(db, "anfragen", user.uid), { email: user.email, zeit: Date.now() }, { merge: true }); angefragt = true; }
+          status("Dein Konto wartet auf Freischaltung durch den Administrator. Bis dahin arbeitet die App lokal weiter.");
+          laeuft = false; return;
+        }
+        freigegeben = true;
+      }
       const metaRef = F.doc(db, "users", user.uid), col = F.collection(db, "users", user.uid, "fluege");
       const [metaSnap, snap] = await Promise.all([F.getDoc(metaRef), F.getDocs(col)]);
       const meta = metaSnap.exists() ? metaSnap.data() : {};
@@ -93,6 +104,30 @@
     return true;
   }
 
+  // Administrator: Anfragen freischalten oder ablehnen, Freigaben sperren
+  async function adminLaden() {
+    try {
+      const { db, F } = await laden();
+      const [a, f] = await Promise.all([F.getDocs(F.collection(db, "anfragen")), F.getDocs(F.collection(db, "freigaben"))]);
+      const frei = new Map(f.docs.map(d => [d.id, d.data()])), offen = a.docs.filter(d => !frei.has(d.id));
+      const b = (akt, uid, mail, t, c = "") => `<button data-a="${akt}" data-uid="${esc(uid)}" data-mail="${esc(mail || "")}"${c ? ` class="${c}"` : ""} style="min-height:36px;padding:0 12px">${t}</button>`;
+      const z = (uid, mail, knoepfe) => `<div class="zeile"><span>${esc(mail || uid)}</span><span>${knoepfe}</span></div>`;
+      E("aListe").innerHTML = "<h3>Offene Anfragen</h3>" + (offen.length ? offen.map(d => z(d.id, d.data().email, b("ok", d.id, d.data().email, "Freischalten", "ok") + " " + b("nein", d.id, "", "Ablehnen"))).join("") : '<p class="note">Keine offenen Anfragen.</p>') +
+        '<h3 style="margin-top:14px">Freigeschaltet</h3>' + (frei.size ? [...frei].map(([uid, x]) => z(uid, x.email, b("sperr", uid, "", "Sperren", "gef"))).join("") : '<p class="note">Noch niemand freigeschaltet.</p>');
+    } catch (e) { E("aListe").textContent = meldung(e); }
+  }
+  async function adminAktion(e) {
+    const bt = e.target.closest("button");
+    if (!bt) return;
+    try {
+      const { db, F } = await laden(), uid = bt.dataset.uid;
+      if (bt.dataset.a === "ok") { await F.setDoc(F.doc(db, "freigaben", uid), { email: bt.dataset.mail, zeit: Date.now() }); await F.deleteDoc(F.doc(db, "anfragen", uid)); }
+      else if (bt.dataset.a === "nein") await F.deleteDoc(F.doc(db, "anfragen", uid));
+      else if (bt.dataset.a === "sperr" && confirm("Den Zugang für dieses Konto sperren?")) await F.deleteDoc(F.doc(db, "freigaben", uid));
+    } catch (err) { status(meldung(err), true); }
+    adminLaden();
+  }
+
   async function anmelden(neu) {
     const mail = E("cEmail").value.trim(), pw = E("cPass").value;
     if (!mail || !pw) return status("Bitte E-Mail und Passwort eingeben.", true);
@@ -115,13 +150,15 @@
       try { const { auth, A } = await laden(); await A.sendPasswordResetEmail(auth, mail); status("E-Mail zum Zurücksetzen wurde gesendet."); } catch (e) { status(meldung(e), true); }
     };
     E("cSync").onclick = abgleichen;
+    E("aListe").onclick = adminAktion; E("aRefresh").onclick = adminLaden;
     E("cOut").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); status("Abgemeldet. Die Daten bleiben auf diesem Gerät."); };
     window.addEventListener("online", abgleichen);
     try {
       const { auth, A } = await laden();
       A.onAuthStateChanged(auth, async u => {
-        user = u; ansicht();
+        user = u; freigegeben = false; angefragt = false; ansicht();
         if (!u) return;
+        if (adminUid && u.uid === adminUid) adminLaden();
         if (!kontoPruefen()) { await A.signOut(auth); return; }
         abgleichen();
       });
