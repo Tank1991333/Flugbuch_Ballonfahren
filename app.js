@@ -237,7 +237,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender();
+  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -344,7 +344,7 @@ function kartePrep() {
     karte.invalidateSize();
     zentriert = false;
     if (!$("fahrt").hidden) ebene.clearLayers(); // Fahrt-Seite: nur die aktuelle Fahrt, keine gespeicherten Tracks
-    else zeichne(fluege, !aktiv);               // Karte-Seite: alle Fahrten (während einer Fahrt ohne Kartensprung)
+    else zeichne(kartenFluege(), !aktiv);       // Karte-Seite: ausgewählte Fahrten (während einer Fahrt ohne Kartensprung)
     if (aktiv) folgeBis = 0;
     liveKarte();
   }, 50);
@@ -354,15 +354,18 @@ const linie = (t, farbe, g) => {
   L.polyline(t, { color: "#000", weight: 8, opacity: .35, lineCap: "round", lineJoin: "round" }).addTo(g);
   L.polyline(t, { color: farbe, weight: 4, lineCap: "round", lineJoin: "round" }).addTo(g);
 };
+// Jede Fahrt bekommt eine eigene Farbe (Reihenfolge wie in der Auswahl), Antippen der Linie zeigt die Fahrt
+const TRACKFARBEN = ["#4cc9f0", "#f72585", "#ffb703", "#80ed99", "#b388ff", "#ff7b54", "#00b4d8", "#e9c46a"];
+const trackFarbe = i => TRACKFARBEN[i % TRACKFARBEN.length];
 function zeichne(l, anpassen = true) {
   if (!karte) return;
   ebene.clearLayers();
   const b = [];
-  l.forEach(f => {
-    const t = (f.track || []).map(p => [p.lat, p.lng]);
-    if (t.length > 1) { linie(t, "#4cc9f0", ebene); b.push(...t); }
-    if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b><br>" + esc(f.startOrt || "–") + "<br>" + utmText(f.startLat, f.startLng)); b.push([f.startLat, f.startLng]); }
-    if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b><br>" + esc(f.landeOrt || "–") + "<br>" + utmText(f.landeLat, f.landeLng));
+  l.forEach((f, i) => {
+    const t = (f.track || []).map(p => [p.lat, p.lng]), info = `<b>${esc(datum(f.startzeit))}</b><br>${esc(f.startOrt || "–")} → ${esc(f.landeOrt || "–")}<br>${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km`;
+    if (t.length > 1) { linie(t, trackFarbe(i), ebene); L.polyline(t, { opacity: 0, weight: 18 }).addTo(ebene).bindPopup(info); b.push(...t); }
+    if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b> · " + info + "<br>" + utmText(f.startLat, f.startLng)); b.push([f.startLat, f.startLng]); }
+    if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b> · " + info + "<br>" + utmText(f.landeLat, f.landeLng));
     (f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke") }).addTo(ebene).bindPopup("<b>Markierung</b><br>" + esc(datum(m.zeit)) + "<br>" + utmText(m.lat, m.lng)));
   });
   if (b.length && anpassen) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
@@ -380,14 +383,38 @@ function liveKarte() {
       else karte.panTo([pos.lat, pos.lng], { animate: true, duration: .5 });
     }
   }
-  $("folgeB").textContent = !aktiv ? "◎ Folgen" : Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
+  $("folgeB").hidden = !aktiv; // Folgen gibt es nur während einer Aufzeichnung
+  $("folgeB").textContent = Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
 }
+// Auswahl der Fahrten auf der Karte (pro Gerät): null = alle, auch künftige; sonst Liste der IDs
+const mitOrt = f => Number.isFinite(f.startLat) || (f.track || []).length > 1;
+const kartenFluege = () => { const w = load("kartenAuswahl", null); return [...fluege].filter(mitOrt).filter(f => !w || w.includes(f.id)).sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)); };
+function fwKnopf() { const n = fluege.filter(mitOrt).length, w = load("kartenAuswahl", null); $("fwB").textContent = w ? `Fahrten: ${kartenFluege().length} von ${n}` : `Fahrten: alle (${n})`; }
+function fwFarben() { let i = 0; document.querySelectorAll("#fwListe input").forEach(c => { c.parentNode.querySelector(".fk").style.background = c.checked ? trackFarbe(i++) : "transparent"; }); }
+$("fwB").onclick = () => {
+  const alle = [...fluege].filter(mitOrt).sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)), w = load("kartenAuswahl", null);
+  $("fwListe").innerHTML = alle.length ? alle.map(f => `<label class="chk"><input type="checkbox" data-id="${esc(f.id)}"${!w || w.includes(f.id) ? " checked" : ""}><span><i class="fk"></i>${esc(datum(f.startzeit))}<small>${esc(f.startOrt || "–")} → ${esc(f.landeOrt || "–")} · ${dur(f.flugzeit || 0)} · ${esc(f.ballon)}</small></span></label>`).join("")
+    : '<p class="note">Noch keine Fahrt mit Positionsdaten. Nachgetragene Fahrten ohne GPS erscheinen nicht auf der Karte.</p>';
+  fwFarben(); $("fwDlg").returnValue = ""; $("fwDlg").showModal();
+};
+$("fwListe").onchange = fwFarben;
+$("fwDlg").querySelector(".row").onclick = e => {
+  const w = e.target.closest("[data-w]")?.dataset.w, jahr = String(new Date().getFullYear());
+  if (!w) return;
+  document.querySelectorAll("#fwListe input").forEach((c, i) => { const f = fluege.find(x => x.id === c.dataset.id); c.checked = w === "alle" || (w === "5" && i < 5) || (w === "jahr" && tagText(new Date(f.startzeit)).startsWith(jahr)); });
+  fwFarben();
+};
+$("fwDlg").addEventListener("close", () => {
+  if ($("fwDlg").returnValue !== "ok") return;
+  const c = [...document.querySelectorAll("#fwListe input")], ids = c.filter(x => x.checked).map(x => x.dataset.id);
+  if (ids.length === c.length) localStorage.removeItem("kartenAuswahl"); else localStorage.setItem("kartenAuswahl", JSON.stringify(ids));
+  fwKnopf(); replayStop(); replayF = null; folgeBis = Date.now() + 10000; zeichne(kartenFluege());
+});
 $("playB").onclick = () => {
   if (replayT) return replayStop();
-  const letzte = replayF || [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit))[0];
+  const letzte = replayF || kartenFluege().find(f => (f.track || []).length > 1);
   if (letzte) abspielen(letzte); else alert("Es gibt noch keine Fahrt zum Abspielen.");
 };
-$("allB").onclick = () => { folgeBis = Date.now() + 10000; zeichne(fluege); };
 $("folgeB").onclick = () => { folgeBis = 0; liveKarte(); };
 $("posB").onclick = () => {
   if (!karte) return;
