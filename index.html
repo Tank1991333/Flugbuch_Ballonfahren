@@ -76,7 +76,7 @@
 
 <section id="karte" class="seite" hidden>
   <div class="row">
-    <button id="allB">Meine Fahrten</button>
+    <button id="fwB">Fahrten wählen</button>
     <button id="playB">▶ Wiedergabe</button>
     <button id="posB">Standort</button>
     <button id="folgeB">◎ Folgen</button>
@@ -250,6 +250,13 @@
   <label>Bemerkungen<textarea id="eBem" rows="3"></textarea></label>
   <p id="eFehler" class="warn" hidden></p>
   <div class="row"><button value="x">Abbrechen</button><button id="eOk" value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="fwDlg"><form method="dialog">
+  <h2>Fahrten auf der Karte</h2>
+  <div class="row"><button type="button" data-w="alle">Alle</button><button type="button" data-w="keine">Keine</button><button type="button" data-w="5">Letzte 5</button><button type="button" data-w="jahr">Dieses Jahr</button></div>
+  <div id="fwListe" class="fwliste"></div>
+  <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Anzeigen</button></div>
 </form></dialog>
 
 <dialog id="kDlg"><form method="dialog">
