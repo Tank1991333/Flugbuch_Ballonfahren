@@ -4,6 +4,7 @@ const load = (k, f) => { try { const v = JSON.parse(localStorage.getItem(k)); re
 const SYNCKEYS = ["fluege", "geloescht", "stammdaten", "monitorEinstellungen", "theme"];
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); if (SYNCKEYS.includes(k)) window.cloudGeaendert?.(k); return true; } catch { alert("Speichern fehlgeschlagen (Speicher voll?). Bitte Backup erstellen."); return false; } };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nb = s => String(s).replace(/(\d) (?=\S)/g, "$1\u00a0"); // Zahl und Einheit nicht trennen (z. B. „44 °C“)
 const num = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString("de-AT", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–";
 const dur = m => `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, "0")}m`;
 const datum = iso => new Date(iso).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" });
@@ -572,8 +573,8 @@ function gasRender() {
       ${terminZeile(x.pruefung, "Prüfung")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
       <div class="row">${b("fill", "Nachfüllen", "ok")}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
   }).join("") : '<p class="leer">Noch keine Gasflasche eingetragen.</p>';
-  $("gLog").innerHTML = L.length ? L.slice(0, 8).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><b>${kg1(e.kg)} kg${zf(e.preis) > 0 ? ` · ${num(zf(e.preis), 2)} €` : ""}</b></div>`).join("") +
-    (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
+  $("gLog").innerHTML = L.length ? L.slice(0, 8).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><b>${nb(`${kg1(e.kg)} kg${zf(e.preis) > 0 ? ` · ${num(zf(e.preis), 2)} €` : ""}`)}</b></div>`).join("") +
+    (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${nb(`${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}`)}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
   gSelRender();
 }
 function fDialog(x) {
@@ -625,7 +626,7 @@ function terminZeile(d, name) {
   const t = tage(d);
   if (t === null) return "";
   const f = t < 0 ? "gef" : t <= WARNTAGE ? "warn" : "ok", txt = t < 0 ? `überfällig seit ${-t} Tagen` : t === 0 ? "heute fällig" : t <= WARNTAGE ? `fällig in ${t} Tagen` : "in Ordnung";
-  return `<div class="zeile"><span>${esc(name)}: ${esc(new Date(d + "T00:00:00").toLocaleDateString("de-AT"))}</span><b style="color:var(--${f})">${txt}</b></div>`;
+  return `<div class="zeile"><span>${esc(name)}: ${esc(new Date(d + "T00:00:00").toLocaleDateString("de-AT"))}</span><b style="color:var(--${f})">${nb(txt)}</b></div>`;
 }
 function ausruestungRender() {
   // Altbestand: der in den Einstellungen eingetragene Ballon wird einmalig in die Ausrüstung übernommen
@@ -740,7 +741,7 @@ function rechnen() {
   const brutto = V * (rhoA - rhoI), nutz = brutto - leer, frei = nutz - last;
   const rhoN = rhoA - (leer + last) / V, tN = rhoN > 0 ? p / (R * rhoN) - 273.15 : null; // nötige Hüllentemperatur zum Schweben
   planErg = { p: p / 100, brutto, leer, nutz, last, frei, tN, maxT: maxT || null, bed: { T: Ta, h, qnh, Ti } };
-  const z = (a, b, c) => `<div class="zeile"><span>${a}</span><b${c ? ` style="color:var(--${c})"` : ""}>${b}</b></div>`;
+  const z = (a, b, c) => `<div class="zeile"><span>${a}</span><b${c ? ` style="color:var(--${c})"` : ""}>${nb(b)}</b></div>`;
   let urteil = "";
   if (tN === null) urteil = z("Bewertung", "Nicht erreichbar: Last zu groß", "gef");
   else if (maxT > 0) urteil = tN > maxT ? z("Bewertung", `Reicht nicht: nötig ${num(tN)} °C, max. ${num(maxT)} °C`, "gef") : z("Reserve bis max. Hüllentemperatur", `${num(maxT - tN)} °C`, maxT - tN < 10 ? "warn" : "ok");
@@ -836,7 +837,7 @@ function zulZeilen(z) {
 }
 function zRender() {
   $("zList").innerHTML = '<div class="zkopf"><span>Bezeichnung</span><span>Anz.</span><span>kg/Stk.</span><span>Summe</span><span></span></div>' + zul.map((x, i) =>
-    `<div class="zrow" data-i="${i}"><input class="zn" value="${esc(x.n)}" aria-label="Bezeichnung" autocomplete="off"><input class="za" type="number" min="0" step="1" value="${esc(x.a)}" aria-label="Anzahl" inputmode="numeric"><input class="zk" type="number" min="0" step="0.5" value="${esc(x.k)}" placeholder="kg" aria-label="Gewicht je Stück in kg" inputmode="decimal"><span class="zs">${num((parseFloat(x.a) || 0) * (parseFloat(x.k) || 0))} kg</span><button class="zx" aria-label="Position entfernen">✕</button></div>`).join("");
+    `<div class="zrow" data-i="${i}"><input class="zn" value="${esc(x.n)}" aria-label="Bezeichnung" autocomplete="off"><input class="za" type="number" min="0" step="1" value="${esc(x.a)}" placeholder="Anz." aria-label="Anzahl" inputmode="numeric"><input class="zk" type="number" min="0" step="0.5" value="${esc(x.k)}" placeholder="kg" aria-label="Gewicht je Stück in kg" inputmode="decimal"><span class="zs">${num((parseFloat(x.a) || 0) * (parseFloat(x.k) || 0))} kg</span><button class="zx" aria-label="Position entfernen">✕</button></div>`).join("");
   $("zSumme").textContent = num(zulSumme()) + " kg";
 }
 $("zList").addEventListener("input", e => {
