@@ -116,7 +116,10 @@
   </div>
   <div class="card"><h2>Fahrtdaten</h2>
     <div class="row"><label>Datum<input id="tDatum" type="date"></label><label>Startzeit<input id="tStart" type="time" value="07:00"></label></div>
-    <label>Flugdauer: <b id="tDauerW">1,5 Stunden</b><input id="tDauer" type="range" min="0.5" max="6" step="0.5" value="1.5"></label>
+    <label for="tDauer">Flugdauer: <b id="tDauerW">1 h 30 min</b></label>
+    <div class="dauer"><button id="tMinus" aria-label="5 bzw. 10 Minuten weniger">−</button><input id="tDauer" type="range" min="0" max="63" step="1" value="15"><button id="tPlus" aria-label="5 bzw. 10 Minuten mehr">+</button></div>
+    <div class="skala"><span>15 min</span><span style="left:52.4%">3 h</span><span style="left:100%">8 h</span></div>
+    <div class="row" id="tSchnell"><button data-m="60">1 h</button><button data-m="90">1½ h</button><button data-m="120">2 h</button><button data-m="180">3 h</button></div>
   </div>
   <div class="card"><h2>Höhen über Grund</h2>
     <p class="note">Bis 180 m ICON-D2, ab 200 m GFS (auf die Höhe über Grund interpoliert).</p>

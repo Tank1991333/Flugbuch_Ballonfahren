@@ -784,7 +784,7 @@ function planAktualisieren() {
   const row = x => `<div class="zeile"><span>${x.ok ? "✓" : "✕"} ${x.text}</span><b style="color:var(--${x.ok ? "ok" : "gef"})">${esc(x.detail)}</b></div>`;
   $("pCheck").innerHTML = planPruefen().map(row).join("") + PLANMANUELL.map(([k, t]) => `<label class="chk"><input type="checkbox" data-k="${k}"${planCheck[k] ? " checked" : ""}><span>${t}</span></label>`).join("");
   const t = planTraj;
-  $("pTraj").innerHTML = t ? `<p class="m">Berechnet für ${esc(new Date(t.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${num(t.dauer, 1)} h · ${esc(utmText(t.lat, t.lon))}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${t.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${num(r.tempo, 1)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>`
+  $("pTraj").innerHTML = t ? `<p class="m">Berechnet für ${esc(new Date(t.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${dur(t.dauer * 60)} · ${esc(utmText(t.lat, t.lon))}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${t.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${num(r.tempo, 1)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>`
     : '<p class="note">Noch nicht berechnet. Das Ergebnis wird zur Fahrt gespeichert.</p>';
 }
 function planSnapshot() {
@@ -814,7 +814,7 @@ function planHtml(p) {
     (p.zuladung || []).map(x => z("· " + esc(x.n || "Position"), `${k1(zf(x.a) * zf(x.k))} kg`)).join("") +
     (a ? z("Zuladung gesamt", `${num(a.last)} kg`) + z("Bruttoauftrieb / frei", `${num(a.brutto)} / ${num(a.frei)} kg`) + z("Nötige Hüllentemperatur", a.tN == null ? "–" : `${num(a.tN)} °C`) : "") +
     (bd ? z("Bedingungen", `${k1(bd.T)} °C · ${num(bd.h)} m · QNH ${k1(bd.qnh)} hPa · Hülle ${num(bd.Ti)} °C`) : "") +
-    (p.traj ? `<p class="m">Trajektoren für ${esc(new Date(p.traj.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))}, ${k1(p.traj.dauer)} h</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${p.traj.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${k1(r.tempo)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>` : "") +
+    (p.traj ? `<p class="m">Trajektoren für ${esc(new Date(p.traj.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))}, ${dur(p.traj.dauer * 60)}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${p.traj.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${k1(r.tempo)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>` : "") +
     (p.check && Object.values(p.check).some(Boolean) ? z("Checkliste", `${Object.values(p.check).filter(Boolean).length} von ${PLANMANUELL.length} abgehakt`) : "") + `</details>`;
 }
 $("gSel").addEventListener("change", e => {
