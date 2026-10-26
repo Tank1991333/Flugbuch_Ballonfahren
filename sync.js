@@ -82,7 +82,10 @@
       await F.setDoc(metaRef, { geloescht: [...tote], updatedAt: cloudNeuer ? cz : lz, stammdaten: load("stammdaten", {}), monitor: load("monitorEinstellungen", {}), theme: load("theme", null) }, { merge: true });
       localStorage.setItem("localUid", user.uid);
       status(`Zuletzt synchronisiert: ${new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} · ${neu.length} Fahrten`);
-    } catch (e) { status(meldung(e), true); }
+    } catch (e) {
+      if (e?.code === "permission-denied" && adminUid && user.uid !== adminUid) { freigegeben = false; status("Dein Konto ist nicht freigeschaltet. Bitte beim Administrator nachfragen. Die App arbeitet lokal weiter.", true); }
+      else status(meldung(e), true);
+    }
     laeuft = false;
     if (nochmal) { nochmal = false; abgleichen(); }
   }

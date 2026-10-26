@@ -174,7 +174,10 @@ async function wakeLock() {
   try { if (aktiv && !wake && "wakeLock" in navigator) { wake = await navigator.wakeLock.request("screen"); wake.onrelease = () => { wake = null; }; } } catch { wake = null; }
 }
 const wakeEnde = () => { wake?.release().catch(() => {}); wake = null; };
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") wakeLock(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") wakeLock();
+  else if (aktiv) save("aktiveFahrt", aktiv); // beim Wechsel in den Hintergrund sofort sichern (Handy kann die App beenden)
+});
 
 // ---------- Anzeige ----------
 function ui() {
@@ -431,7 +434,7 @@ $("imp").onchange = async e => {
     const name = file.name.toLowerCase(), text = await file.text();
     if (name.endsWith(".gpx") || name.endsWith(".igc")) {
       const f = fahrtAusTrack(name.endsWith(".igc") ? parseIgc(text) : parseGpx(text), file.name);
-      if (fluege.some(x => x.startzeit === f.startzeit && x.ballon === f.ballon)) throw new Error("Diese Fahrt ist bereits im Flugbuch.");
+      if (fluege.some(x => x.ballon === f.ballon && Math.abs(new Date(x.startzeit) - new Date(f.startzeit)) < 12e4)) throw new Error("Diese Fahrt ist bereits im Flugbuch.");
       fluege.push(f); save("fluege", fluege); render(); orteNachladen();
       e.target.value = "";
       return alert(`Fahrt aus ${file.name} importiert (${f.strecke} km, ${f.flugzeit} min).`);
@@ -581,7 +584,7 @@ function fDialog(x) {
 function nDialog(x) {
   nFlasche = x;
   $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
-  $("nDatum").value = new Date().toISOString().slice(0, 10);
+  const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
   $("nDlg").returnValue = ""; $("nDlg").showModal();
 }
 $("fNeu").onclick = () => fDialog();
