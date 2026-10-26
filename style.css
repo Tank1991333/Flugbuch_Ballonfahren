@@ -65,7 +65,7 @@ dialog::backdrop{background:#000a}
 .kc small,.kc em{color:var(--mut);font-weight:600;font-size:.78rem;font-style:normal}.kc em{font-size:1.05rem}
 .kc b{display:block;font-size:2.4rem;line-height:1.1;margin-top:6px}
 .kc p{margin:8px 0 0;padding-top:6px;border-top:1px solid var(--line);color:var(--mut);font-size:.75rem;min-height:1.9em}
-.mapbox{position:relative;height:46vh;min-height:300px;margin-bottom:10px}
+.mapbox{position:relative;isolation:isolate;height:46vh;min-height:300px;margin-bottom:10px} /* eigene Ebene: Leaflet-z-Index bleibt unter Menü und Kopfzeile */
 #kbox{height:62vh}
 .mapbox #map{height:100%;min-height:0}
 .ovl{position:absolute;left:10px;bottom:34px;z-index:1000;display:flex;flex-direction:column;gap:8px}
