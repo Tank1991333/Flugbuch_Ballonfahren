@@ -7,7 +7,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
 - **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte
-- **Karte:** gespeicherte Fahrten und Live-Standort, Kartenstile Standard, Hybrid und VFR/ICAO (open flightmaps) – auch auf der Fahrt-Seite über 🗺 wählbar; die VFR-Ebene (Lufträume, Flugplätze) lässt sich zusätzlich über Standard oder Hybrid legen; „Folgen“ hält die Karte während der Aufzeichnung auf der eigenen Position; Link zur offiziellen VFR/ICAO-Karte
+- **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, Link zur VFR/ICAO-Karte
 - **Wetter:** Temperatur, Wind in 10 m und 80 m, Böen, Sonnenaufgang und -untergang
 - **Trajektoren:** Winddrift-Simulation (ICON-D2 bis 180 m, GFS ab 200 m) für heute und morgen
 - **Einstellungen:** Pilot und Ballon (mit Auswahl zuletzt benutzter), Wartung, Aktivitätsmonitor, Backup und Import
@@ -69,6 +69,31 @@ service cloud.firestore {
 ```
 
 5. **Authentication → Einstellungen → Autorisierte Domains:** die GitHub-Pages-Domain (`name.github.io`) hinzufügen.
+
+### Freigabe für andere Benutzer (optional)
+
+Mit `adminUid` in `firebase-config.js` darf zwar jeder ein Konto anlegen, die Cloud funktioniert aber erst nach Freischaltung durch den Administrator (Einstellungen → Freischaltung). Dazu in Firestore diese Regeln verwenden und `ADMIN_UID` durch die eigene Benutzer-ID (Einstellungen → Konto) ersetzen:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function istAdmin() { return request.auth != null && request.auth.uid == "ADMIN_UID"; }
+    function freigegeben() { return request.auth != null && exists(/databases/$(database)/documents/freigaben/$(request.auth.uid)); }
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid && (istAdmin() || freigegeben());
+    }
+    match /anfragen/{uid} {
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow read, delete: if request.auth != null && (request.auth.uid == uid || istAdmin());
+    }
+    match /freigaben/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || istAdmin());
+      allow write: if istAdmin();
+    }
+  }
+}
+```
 
 Hinweise: Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
 

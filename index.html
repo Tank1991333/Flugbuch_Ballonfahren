@@ -175,9 +175,14 @@
     </div>
     <div id="cOn" hidden>
       <p>Angemeldet als <b id="cMail"></b></p>
+      <p class="note">Benutzer-ID: <b id="cUid" style="word-break:break-all"></b></p>
       <div class="row"><button id="cSync" class="ok">Jetzt synchronisieren</button><button id="cOut">Abmelden</button></div>
     </div>
     <p id="cStatus" class="note"></p>
+  </div>
+  <div class="card" id="cAdmin" hidden><h2>Freischaltung (Administrator)</h2>
+    <div id="aListe"></div>
+    <button id="aRefresh" style="width:100%;margin-top:8px">Aktualisieren</button>
   </div>
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>
