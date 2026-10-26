@@ -253,12 +253,15 @@ function render() {
   $("rekorde").innerHTML = "<h2>Rekorde</h2>" + [["Max. Höhe", top("maxHoehe") + " m"], ["Längste Fahrt", dur(top("flugzeit"))], ["Weiteste Strecke", num(top("strecke"), 1) + " km"], ["Max. Tempo", num(top("maxSpeed"), 1) + " km/h"]].map(([a, b]) => `<p><span>${a}</span><b>${b}</b></p>`).join("");
 
   $("liste").innerHTML = fluege.length
-    ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => `<article class="card"><h3>${esc(datum(f.startzeit))}</h3>
-      <p>${esc(f.startOrt || "Ort wird ermittelt …")} → ${esc(f.landeOrt || "…")}</p>
-      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · max. ${f.maxHoehe || 0} m · ${f.landungen || 1} Landung(en) · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
-      <p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>${planHtml(f.plan)}
+    ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => {
+      const ort = Number.isFinite(f.startLat), track = (f.track || []).length > 1, b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(f.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
+      return `<article class="card"><h3>${esc(datum(f.startzeit))}${f.manuell ? ' <span class="badge">nachgetragen</span>' : ""}</h3>
+      <p>${esc(f.startOrt || (ort ? "Ort wird ermittelt …" : "–"))} → ${esc(f.landeOrt || (ort ? "…" : "–"))}</p>
+      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${f.maxHoehe || 0} m` : ""} · ${f.landungen || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
+      ${ort ? `<p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>` : ""}${planHtml(f.plan)}
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
-      <div class="row"><button data-a="karte" data-id="${esc(f.id)}">Karte</button><button data-a="play" data-id="${esc(f.id)}">Abspielen</button><button data-a="gpx" data-id="${esc(f.id)}">GPX</button><button data-a="edit" data-id="${esc(f.id)}">Bearbeiten</button><button data-a="del" data-id="${esc(f.id)}" class="gef">Löschen</button></div></article>`).join("")
+      <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
+    }).join("")
     : '<p class="leer">Noch keine Fahrten gespeichert.</p>';
 }
 
@@ -267,18 +270,44 @@ $("liste").onclick = e => {
   if (!f) return;
   if (b.dataset.a === "del") {
     if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
-  } else if (b.dataset.a === "edit") {
-    bearbeite = f;
-    $("ePilot").value = f.pilot || ""; $("eBallon").value = f.ballon || ""; $("eStart").value = f.startOrt || ""; $("eLande").value = f.landeOrt || "";
-    $("eLand").value = f.landungen || 1; $("eBem").value = f.bemerkung || ""; $("eGas").value = f.gas || "";
-    $("dlg").returnValue = ""; $("dlg").showModal();
-  } else if (b.dataset.a === "gpx") gpxExport(f);
+  } else if (b.dataset.a === "edit") fahrtDialog(f);
+  else if (b.dataset.a === "gpx") gpxExport(f);
   else if (b.dataset.a === "play") { zeige("karte"); setTimeout(() => abspielen(f), 150); }
   else { zeige("karte"); setTimeout(() => zeichne([f]), 120); }
 };
+// Bearbeiten und Nachtragen (Fahrt ohne GPS, z. B. aus dem Papierflugbuch) im selben Dialog
+const tagText = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`, zeitText = d => `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+const fahrtEnde = f => new Date(f.endezeit || +new Date(f.startzeit) + (f.flugzeit || 0) * 6e4);
+function fahrtDialog(f) {
+  bearbeite = f || null;
+  const s = f ? new Date(f.startzeit) : null;
+  $("dlgT").textContent = f ? "Fahrt bearbeiten" : "Fahrt nachtragen";
+  $("eDatum").value = tagText(s || new Date()); $("eStartZ").value = s ? zeitText(s) : ""; $("eEndeZ").value = f ? zeitText(fahrtEnde(f)) : "";
+  $("ePilot").value = f ? f.pilot || "" : stamm.pilot || ""; $("eBallon").value = f ? f.ballon || "" : stamm.ballon || "";
+  $("eStart").value = f?.startOrt || ""; $("eLande").value = f?.landeOrt || ""; $("eLand").value = f?.landungen || 1;
+  $("eKm").value = f?.strecke || ""; $("eBem").value = f?.bemerkung || ""; $("eGas").value = f?.gas || "";
+  $("eFehler").hidden = true; $("dlg").returnValue = ""; $("dlg").showModal();
+}
+function fahrtZeiten() { // {start, ende} oder Fehlertext
+  const d = $("eDatum").value, a = $("eStartZ").value, b = $("eEndeZ").value;
+  if (!d || !a || !b) return "Bitte Datum, Start- und Landezeit eintragen.";
+  const start = new Date(`${d}T${a}`), ende = new Date(`${d}T${b}`);
+  return ende > start ? { start, ende } : "Die Landung muss nach dem Start liegen.";
+}
+$("fNach").onclick = () => fahrtDialog();
+$("eOk").onclick = e => { // Dialog bleibt bei fehlenden Angaben offen
+  const z = fahrtZeiten(), fehlt = typeof z === "string" ? z : !$("ePilot").value.trim() || !$("eBallon").value.trim() ? "Bitte Pilot und Ballon eintragen." : "";
+  if (fehlt) { e.preventDefault(); $("eFehler").textContent = fehlt; $("eFehler").hidden = false; }
+};
 $("dlg").addEventListener("close", () => {
-  if ($("dlg").returnValue === "ok" && bearbeite) {
-    Object.assign(bearbeite, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), bemerkung: $("eBem").value.trim(), gas: zf($("eGas").value) > 0 ? zf($("eGas").value) : undefined });
+  if ($("dlg").returnValue === "ok") {
+    const f = bearbeite || { id: nid(), track: [], maxHoehe: 0, manuell: true }, z = fahrtZeiten();
+    // unveränderte Zeiten nicht überschreiben (GPS-Fahrten haben Sekunden)
+    if (!bearbeite || tagText(new Date(f.startzeit)) + zeitText(new Date(f.startzeit)) + zeitText(fahrtEnde(f)) !== $("eDatum").value + $("eStartZ").value + $("eEndeZ").value)
+      Object.assign(f, { datum: z.start.toISOString(), startzeit: z.start.toISOString(), endezeit: z.ende.toISOString(), flugzeit: Math.round((z.ende - z.start) / 6e4) });
+    Object.assign(f, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), strecke: +zf($("eKm").value).toFixed(1), bemerkung: $("eBem").value.trim(), gas: zf($("eGas").value) > 0 ? zf($("eGas").value) : undefined });
+    f.avgSpeed = f.flugzeit ? +(f.strecke / (f.flugzeit / 60)).toFixed(1) : 0;
+    if (!bearbeite) { f.ballontyp = (stamm.ausruestung || []).find(x => x.ballon === f.ballon)?.ballontyp || ""; fluege.push(f); }
     save("fluege", fluege); render();
   }
   bearbeite = null;
@@ -916,7 +945,44 @@ $("themeB").onclick = () => theme(document.documentElement.dataset.theme === "du
 theme(document.documentElement.dataset.theme || "hell", false);
 render(); ui();
 zeige(location.hash.slice(1));
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+// Neue Version: der Service Worker übernimmt sofort, die Seite läuft aber noch mit dem alten Stand -> Hinweis zum Neuladen
+if ("serviceWorker" in navigator) {
+  const hatteSw = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js").then(r => document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") r.update().catch(() => {}); })).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hatteSw) $("update").hidden = false; });
+}
+$("updateB").onclick = () => location.reload();
+window.appVersion = "–";
+if ("caches" in window) caches.keys().then(k => { window.appVersion = k.filter(x => x.startsWith("bfb-")).sort().at(-1) || "–"; $("version").textContent = window.appVersion; }).catch(() => {});
+
+// Erste Schritte für neue Nutzer (pro Gerät einmal, über Einstellungen wieder aufrufbar)
+let installEvent = null;
+const installiert = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function willkommen(zeigen) {
+  $("willkommen").hidden = !zeigen;
+  $("wInstall").hidden = installiert();
+  $("wInstallT").textContent = /iPhone|iPad|iPod/.test(navigator.userAgent) ? "In Safari unten auf Teilen (□↑) tippen, dann „Zum Home-Bildschirm“." : "Im Browser-Menü (⋮) „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen.";
+  $("wInstallB").hidden = !installEvent;
+}
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvent = e; $("wInstallB").hidden = false; });
+$("wInstallB").onclick = async () => { if (!installEvent) return; installEvent.prompt(); await installEvent.userChoice.catch(() => {}); installEvent = null; willkommen(!$("willkommen").hidden); };
+$("willkommen").addEventListener("click", e => {
+  const z = e.target.closest("[data-z]")?.dataset.z;
+  if (z) { zeige("einstellungen"); if (z === "konto") $("kontoK").scrollIntoView(); }
+});
+$("wOk").onclick = () => { localStorage.setItem("willkommen", "1"); willkommen(false); };
+$("wZeigen").onclick = () => { zeige("dashboard"); willkommen(true); };
+willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length); // nur bei neuen Nutzern
+
+// Alle Daten auf diesem Gerät löschen (Cloud-Daten bleiben erhalten)
+function lokalLoeschen() {
+  Object.keys(localStorage).filter(k => k !== "theme").forEach(k => localStorage.removeItem(k));
+  location.replace(location.pathname); // neu starten, auf der Übersicht mit den ersten Schritten
+}
+$("lokalDel").onclick = () => {
+  if (aktiv) return alert("Bitte zuerst die laufende Fahrt beenden.");
+  if (confirm("Alle Fahrten, Ausrüstung und Einstellungen auf diesem Gerät löschen?\nMit Konto bleiben die Daten in der Cloud erhalten und kommen nach dem Anmelden zurück. Ohne Konto sind sie endgültig weg.")) lokalLoeschen();
+};
 orteNachladen();
 if (aktiv) {
   if (confirm("Eine unterbrochene Fahrt wurde gefunden. Fortsetzen?\n(Abbrechen = Fahrt jetzt beenden und speichern)")) { zeige("fahrt"); aufnehmen(); }
