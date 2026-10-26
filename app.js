@@ -687,7 +687,7 @@ function tage(d) {
 function terminZeile(d, name) {
   const t = tage(d);
   if (t === null) return "";
-  const f = t < 0 ? "gef" : t <= WARNTAGE ? "warn" : "ok", txt = t < 0 ? `überfällig seit ${-t} Tagen` : t === 0 ? "heute fällig" : t <= WARNTAGE ? `fällig in ${t} Tagen` : "in Ordnung";
+  const f = t < 0 ? "gef" : t <= WARNTAGE ? "warn" : "ok", txt = t < 0 ? `überfällig seit\u00a0${-t} ${t === -1 ? "Tag" : "Tagen"}` : t === 0 ? "heute fällig" : `noch\u00a0${t} ${t === 1 ? "Tag" : "Tage"}`;
   return `<div class="zeile"><span>${esc(name)}: ${esc(new Date(d + "T00:00:00").toLocaleDateString("de-AT"))}</span><b style="color:var(--${f})">${nb(txt)}</b></div>`;
 }
 function ausruestungRender() {
@@ -706,14 +706,39 @@ function ausruestungRender() {
   }).join("") : '<p class="leer">Noch kein Ballon eingetragen.</p>';
   rBallonFuellen();
 }
+// Startseite: Pilot mit Lizenz und alle Fristen (Pilot, Ballone, Flaschen, Fahrzeuge), die nächste zuerst
 function termineRender() {
-  const f = [];
-  (stamm.ausruestung || []).forEach(g => [["Wartung", g.wartung], ["Nachprüfung", g.pruefung]].forEach(([n, d]) => { const t = tage(d); if (t !== null && t <= WARNTAGE) f.push({ t, d, n: `${g.ballon} · ${n}` }); }));
-  (stamm.flaschen || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= WARNTAGE) f.push({ t, d: x.pruefung, n: `${x.name} · Prüfung` }); });
-  (stamm.fahrzeuge || []).forEach(x => { const t = tage(x.pruefung); if (t !== null && t <= WARNTAGE) f.push({ t, d: x.pruefung, n: `${x.art} ${x.kennzeichen || x.name} · Prüfung` }); });
-  $("termine").hidden = !f.length;
-  if (f.length) $("termine").innerHTML = "<h2>Termine in den nächsten 4 Wochen</h2>" + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
+  const f = [], p = stamm.profil || {}, add = (d, n) => { const t = tage(d); if (t !== null) f.push({ t, d, n }); };
+  add(p.check, "Checkfahrt"); add(p.medical, "Medical");
+  (p.eigene || []).forEach(x => add(x.datum, x.name + (x.wert ? ` (${x.wert})` : "") || "Eintrag"));
+  (stamm.ausruestung || []).forEach(g => { add(g.wartung, `${g.ballon} · Wartung`); add(g.pruefung, `${g.ballon} · Nachprüfung`); });
+  (stamm.flaschen || []).forEach(x => add(x.pruefung, `${x.name} · Prüfung`));
+  (stamm.fahrzeuge || []).forEach(x => add(x.pruefung, `${x.art} ${x.kennzeichen || x.name} · Prüfung`));
+  const info = (p.eigene || []).filter(x => x.name && x.wert && !x.datum).map(x => `<p class="pinfo m">${esc(x.name)}: ${esc(x.wert)}</p>`).join("");
+  const kopf = p.name || p.lizenz ? `<p class="pkopf"><b>${esc(p.name || stamm.pilot || "")}</b>${p.lizenz ? ` · Lizenz ${esc(p.lizenz)}` : ""}</p>` : "";
+  $("termine").hidden = !(kopf || info || f.length);
+  $("termine").classList.toggle("dringend", f.some(x => x.t <= WARNTAGE));
+  $("termine").innerHTML = `<h2>${kopf || info ? "Pilot &amp; Fristen" : "Fristen"}</h2>` + kopf + info + f.sort((a, b) => a.t - b.t).map(x => terminZeile(x.d, x.n)).join("");
 }
+
+// Pilotenprofil des Kontoinhabers (Name, Lizenz, Checkfahrt, Medical, eigene Einträge), wird mit den Stammdaten abgeglichen
+function profilRender() {
+  const p = stamm.profil || {};
+  $("prName").value = p.name || ""; $("prName").placeholder = stamm.pilot || ""; $("prLizenz").value = p.lizenz || "";
+  $("prCheck").value = p.check || ""; $("prMedical").value = p.medical || "";
+  $("prEigene").innerHTML = (p.eigene || []).map(x => `<div class="prow" data-id="${esc(x.id)}"><input class="pn" value="${esc(x.name)}" placeholder="Bezeichnung" aria-label="Bezeichnung" autocomplete="off"><input class="pw" value="${esc(x.wert)}" placeholder="Wert / Nummer" aria-label="Wert" autocomplete="off"><input class="pd" type="date" value="${esc(x.datum)}" aria-label="Gültig bis"><button class="zx" aria-label="Eintrag entfernen">✕</button></div>`).join("");
+}
+function profilSpeichern() {
+  stamm.profil = { name: $("prName").value.trim(), lizenz: $("prLizenz").value.trim(), check: $("prCheck").value, medical: $("prMedical").value,
+    eigene: [...document.querySelectorAll("#prEigene .prow")].map(r => ({ id: r.dataset.id, name: r.querySelector(".pn").value.trim(), wert: r.querySelector(".pw").value.trim(), datum: r.querySelector(".pd").value })).filter(x => x.name || x.wert || x.datum) };
+  save("stammdaten", stamm); termineRender();
+}
+$("prK").addEventListener("change", e => { if (e.target.matches("input")) profilSpeichern(); });
+$("prNeu").onclick = () => {
+  $("prEigene").insertAdjacentHTML("beforeend", `<div class="prow" data-id="${nid()}"><input class="pn" placeholder="Bezeichnung" aria-label="Bezeichnung" autocomplete="off"><input class="pw" placeholder="Wert / Nummer" aria-label="Wert" autocomplete="off"><input class="pd" type="date" aria-label="Gültig bis"><button class="zx" aria-label="Eintrag entfernen">✕</button></div>`);
+  $("prEigene").lastElementChild.querySelector(".pn").focus();
+};
+$("prEigene").onclick = e => { const b = e.target.closest(".zx"); if (b) { b.closest(".prow").remove(); profilSpeichern(); } };
 function rBallonFuellen() {
   const L = stamm.ausruestung || [];
   $("rBallon").innerHTML = L.length ? L.map(g => `<option value="${esc(g.id)}"${g.ballon === stamm.ballon ? " selected" : ""}>${esc(g.ballon)}${g.ballontyp ? " · " + esc(g.ballontyp) : ""}${g.volumen ? " · " + esc(g.volumen) + " m³" : ""}</option>`).join("") : '<option value="">Noch kein Ballon</option>';
@@ -927,6 +952,7 @@ function cloudUebernehmen(d) {
   if (d.stamm) {
     stamm = d.stamm; localStorage.setItem("stammdaten", JSON.stringify(stamm));
     ["pilot", "ballon", "ballontyp", "maintenance", "volumen", "leergewicht", "maxtemp"].forEach(k => { $(k).value = stamm[k] || ""; });
+    profilRender();
   }
   if (d.mon) {
     mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...d.mon }; localStorage.setItem("monitorEinstellungen", JSON.stringify(mon));
@@ -976,7 +1002,7 @@ function theme(t, merken) {
 }
 $("themeB").onclick = () => theme(document.documentElement.dataset.theme === "dunkel" ? "hell" : "dunkel", true);
 theme(document.documentElement.dataset.theme || "hell", false);
-render(); ui();
+profilRender(); render(); ui();
 zeige(location.hash.slice(1));
 // Neue Version: der Service Worker übernimmt sofort, die Seite läuft aber noch mit dem alten Stand -> Hinweis zum Neuladen
 if ("serviceWorker" in navigator) {
