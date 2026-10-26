@@ -7,7 +7,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
 - **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte; Fahrten ohne GPS lassen sich nachtragen
-- **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, Link zur VFR/ICAO-Karte
+- **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, zuschaltbare Luftfahrt-Ebene (open flightmaps, nicht amtlich), Link zur VFR/ICAO-Karte
 - **Wetter:** Temperatur, Wind in 10 m und 80 m, Böen, Sonnenaufgang und -untergang
 - **Trajektoren:** Winddrift-Simulation (ICON-D2 bis 180 m, GFS ab 200 m) für heute und morgen
 - **Einstellungen:** Pilot und Ballon (mit Auswahl zuletzt benutzter), Wartung, Aktivitätsmonitor, Backup und Import
@@ -29,7 +29,7 @@ Der Prüf-Workflow gehört nach `.github/workflows/validate.yml`.
 
 ## Dienste (alle kostenlos, ohne API-Key)
 
-Leaflet (Karte), OpenStreetMap (Standardkarte, Ortssuche über Nominatim), Esri World Imagery mit Straßen und Ortsnamen (Hybridkarte), Open-Meteo (Wetter, ICON-D2 und GFS).
+Leaflet (Karte), OpenStreetMap (Standardkarte, Ortssuche über Nominatim), Esri World Imagery mit Straßen und Ortsnamen (Hybridkarte), open flightmaps (Luftfahrt-Ebene, nicht-kommerziell, nicht amtlich), Open-Meteo (Wetter, ICON-D2 und GFS).
 
 ## Voraussetzungen
 

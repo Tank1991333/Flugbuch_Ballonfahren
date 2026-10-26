@@ -325,8 +325,14 @@ function kartePrep() {
         L.tileLayer(esri("Reference/World_Transportation"), { maxZoom: 18 }),
         L.tileLayer(esri("Reference/World_Boundaries_and_Places"), { maxZoom: 18 })
       ]);
+    // Luftfahrt-Ebene (VFR, open flightmaps): zuschaltbar über Standard/Hybrid, Auswahl wird gemerkt; nicht amtlich
+    const luft = L.tileLayer("https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=latest/aero/latest", { maxNativeZoom: 11, maxZoom: 19, zIndex: 5, attribution: '<a href="https://www.openflightmaps.org" target="_blank" rel="noopener">open flightmaps</a> (nicht amtlich)' });
     hybrid.addTo(karte); stile = [hybrid, standard];
-    L.control.layers({ Hybrid: hybrid, Standard: standard }, null, { position: "topright" }).addTo(karte);
+    if (load("luftEbene", false)) luft.addTo(karte);
+    const ebenen = L.control.layers({ Hybrid: hybrid, Standard: standard }, { "Luftfahrt (VFR)": luft }, { position: "topright" }).addTo(karte);
+    // Menü nur per Tipp öffnen (Tipp auf die Karte schließt es): am Handy klappte es sonst über Maus-Ersatzereignisse sofort wieder zu
+    L.DomEvent.off(ebenen.getContainer(), { mouseenter: ebenen._expandSafely, mouseleave: ebenen.collapse }, ebenen);
+    karte.on("overlayadd overlayremove", e => { if (e.layer === luft) localStorage.setItem("luftEbene", String(e.type === "overlayadd")); });
     L.control.zoom({ position: "topleft" }).addTo(karte);
     L.control.scale({ position: "bottomright", imperial: false }).addTo(karte);
     L.control.attribution({ prefix: false, position: "bottomright" }).addTo(karte);
