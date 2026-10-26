@@ -6,5 +6,5 @@ window.FIREBASE_CONFIG = {
   authDomain: "ballonflugbuch.firebaseapp.com",
   projectId: "ballonflugbuch",
   appId: "1:485227664671:web:5a2697b7999c3f30c44c2a",
-  adminUid: "" // eigene Benutzer-ID (Einstellungen -> Konto) eintragen, um den Freigabe-Modus einzuschalten
+  adminUid: "ahg4hJgbbcflgWxyerVdW7O0vvO2" // eigene Benutzer-ID (Einstellungen -> Konto) eintragen, um den Freigabe-Modus einzuschalten
 };
