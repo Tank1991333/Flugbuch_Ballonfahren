@@ -153,7 +153,7 @@
   <h2 style="margin-top:22px">Auto und Anhänger</h2>
   <div class="row"><button id="vNeu" class="ok">+ Fahrzeug hinzufügen</button></div>
   <div id="vListe"></div>
-  <p class="note">Der aktive Ballon wird für neue Fahrten, den Auftriebsrechner und die Übersicht verwendet. Vier Wochen vor Ablauf eines Termins (Ballon, Gasflasche, Auto, Anhänger) erscheint ein Hinweis ganz oben auf der Startseite. Alles wird mit deinem Konto auf alle Geräte übertragen.</p>
+  <p class="note">Der aktive Ballon wird für neue Fahrten, den Auftriebsrechner und die Übersicht verwendet. Alle Termine (Ballon, Gasflasche, Auto, Anhänger, Pilotenprofil) stehen mit den verbleibenden Tagen auf der Startseite, vier Wochen vor Ablauf orange hervorgehoben. Alles wird mit deinem Konto auf alle Geräte übertragen.</p>
 </section>
 
 <section id="gas" class="seite" hidden>
@@ -165,6 +165,15 @@
 </section>
 
 <section id="einstellungen" class="seite" hidden>
+  <div class="card" id="prK"><h2>Pilotenprofil</h2>
+    <label>Name<input id="prName" autocomplete="name"></label>
+    <label>Lizenznummer<input id="prLizenz" autocomplete="off"></label>
+    <div class="row"><label>Nächste Checkfahrt<input id="prCheck" type="date"></label><label>Nächstes Medical<input id="prMedical" type="date"></label></div>
+    <h3 style="margin-top:12px">Weitere Einträge</h3>
+    <div id="prEigene"></div>
+    <button id="prNeu" style="width:100%">+ Eintrag (z. B. Funkzeugnis, Lizenz gültig bis)</button>
+    <p class="note">Alles mit Datum erscheint als Frist auf der Startseite. Änderungen werden automatisch gespeichert.</p>
+  </div>
   <div class="card"><h2>Pilot &amp; Ballon</h2>
     <label>Pilot<select id="pilotSel"></select><input id="pilot" placeholder="Neuer Pilot oder oben auswählen" autocomplete="name"></label>
     <label>Ballon-Kennzeichen<select id="ballonSel"></select><input id="ballon" placeholder="Neu: z. B. OE-BAL" autocomplete="off"></label>
