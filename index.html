@@ -20,7 +20,17 @@
 <body>
 <header><button id="menuB" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menue">☰</button><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span><button id="themeB" aria-label="Design wechseln">☾</button></header>
 <main>
+<div id="update" class="update" hidden><span>Eine neue Version ist verfügbar.</span><button id="updateB" class="ok">Jetzt laden</button></div>
 <section id="dashboard" class="seite">
+  <div id="willkommen" class="card" hidden><h2>Willkommen im Ballonflugbuch</h2>
+    <ol class="schritte">
+      <li><b>Pilot und Ballon eintragen.</b> Ohne diese Angaben lässt sich keine Fahrt aufzeichnen.<br><button data-z="einstellungen">Zu den Einstellungen</button></li>
+      <li><b>Konto anlegen</b> (empfohlen): Fahrten sind dann gesichert und auf allen Geräten gleich. Neue Konten schaltet der Administrator frei, bis dahin arbeitet die App nur auf diesem Gerät.<br><button data-z="konto">Zum Konto</button></li>
+      <li id="wInstall"><b>App auf den Startbildschirm legen.</b> <span id="wInstallT"></span><br><button id="wInstallB" hidden>App installieren</button></li>
+      <li><b>Während der Fahrt</b> die App im Vordergrund und den Bildschirm an lassen, sonst unterbricht das Handy das GPS. Am besten vorher einmal zu Fuß oder im Auto ausprobieren.</li>
+    </ol>
+    <button id="wOk" class="ok" style="width:100%">Verstanden</button>
+  </div>
   <div id="termine" class="card" hidden></div>
   <div id="kpis" class="kpis"></div>
   <div id="monitor" class="card"></div>
@@ -59,7 +69,10 @@
   </div>
 </section>
 
-<section id="flugbuch" class="seite" hidden><div id="liste"></div></section>
+<section id="flugbuch" class="seite" hidden>
+  <div class="row"><button id="fNach" class="ok">+ Fahrt nachtragen</button></div>
+  <div id="liste"></div>
+</section>
 
 <section id="karte" class="seite" hidden>
   <div class="row">
@@ -167,7 +180,7 @@
     <label>Erforderliche Flugstunden<input id="mS" type="number" min="0" step="0.5"></label>
     <label>Erforderliche Landungen<input id="mL" type="number" min="0" inputmode="numeric"></label>
   </div>
-  <div class="card"><h2>Konto &amp; Synchronisierung</h2>
+  <div class="card" id="kontoK"><h2>Konto &amp; Synchronisierung</h2>
     <p id="cNote" class="note" hidden>Die Cloud ist noch nicht eingerichtet. Trage die Firebase-Daten in firebase-config.js ein (Anleitung siehe README). Bis dahin bleiben die Daten nur auf diesem Gerät.</p>
     <div id="cOff">
       <p class="note">Mit einem Konto hast du auf jedem Gerät dieselben Fahrten und Einstellungen.</p>
@@ -180,16 +193,32 @@
       <p>Angemeldet als <b id="cMail"></b></p>
       <p class="note">Benutzer-ID: <b id="cUid" style="word-break:break-all"></b></p>
       <div class="row"><button id="cSync" class="ok">Jetzt synchronisieren</button><button id="cOut">Abmelden</button></div>
+      <button id="cDel" class="gef" style="width:100%">Konto löschen</button>
     </div>
     <p id="cStatus" class="note"></p>
   </div>
   <div class="card" id="cAdmin" hidden><h2>Freischaltung (Administrator)</h2>
     <div id="aListe"></div>
+    <div id="aRueck"></div>
     <button id="aRefresh" style="width:100%;margin-top:8px">Aktualisieren</button>
+  </div>
+  <div class="card" id="cRueck" hidden><h2>Rückmeldung</h2>
+    <p class="note">Fehler gefunden oder eine Idee? Die Nachricht geht direkt an den Administrator, zusammen mit deiner E-Mail-Adresse, der App-Version und dem Gerätetyp.</p>
+    <label>Nachricht<textarea id="rText" rows="4" maxlength="4000"></textarea></label>
+    <button id="rSend" class="ok" style="width:100%">Senden</button>
+    <p id="rStatus" class="note"></p>
   </div>
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>
     <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,.gpx,.igc,application/json" hidden></label></div>
+  </div>
+  <div class="card"><h2>Datenschutz &amp; Info</h2>
+    <p class="note"><b>Ohne Konto</b> bleiben alle Daten im Browser auf diesem Gerät.</p>
+    <p class="note"><b>Mit Konto</b> werden Fahrten samt GPS-Tracks, Ausrüstung und Einstellungen bei Google Firebase gespeichert und sind nur für dein Konto lesbar. Der Administrator sieht in der App nur E-Mail-Adressen und Rückmeldungen. Als Betreiber des Firebase-Projekts kann er technisch aber auf die gespeicherten Daten zugreifen.</p>
+    <p class="note"><b>Externe Dienste:</b> Für Ortsnamen, Karten und Wetter werden Koordinaten an OpenStreetMap (Nominatim), Esri und Open-Meteo übertragen, Schriften kommen von Google Fonts. Dabei wird jeweils die IP-Adresse übermittelt.</p>
+    <p class="note"><b>Löschen:</b> „Konto löschen“ (unter Konto) entfernt Konto und Cloud-Daten. Die Daten auf diesem Gerät löschst du hier.</p>
+    <div class="row"><button id="lokalDel" class="gef">Daten auf diesem Gerät löschen</button><button id="wZeigen">Erste Schritte</button></div>
+    <p class="note">Version <span id="version">–</span></p>
   </div>
 </section>
 </main>
@@ -209,15 +238,27 @@
 </nav>
 
 <dialog id="dlg"><form method="dialog">
-  <h2>Fahrt bearbeiten</h2>
-  <label>Pilot<input id="ePilot"></label>
-  <label>Ballon<input id="eBallon"></label>
-  <label>Startort<input id="eStart"></label>
-  <label>Landeort<input id="eLande"></label>
-  <label>Landungen<input id="eLand" type="number" min="1"></label>
-  <label>Gasverbrauch (kg)<input id="eGas" type="number" min="0" step="0.5"></label>
+  <h2 id="dlgT">Fahrt bearbeiten</h2>
+  <label>Datum<input id="eDatum" type="date"></label>
+  <div class="row"><label>Start<input id="eStartZ" type="time"></label><label>Landung<input id="eEndeZ" type="time"></label></div>
+  <label>Pilot<input id="ePilot" autocomplete="off"></label>
+  <label>Ballon<input id="eBallon" autocomplete="off"></label>
+  <label>Startort<input id="eStart" autocomplete="off"></label>
+  <label>Landeort<input id="eLande" autocomplete="off"></label>
+  <div class="row"><label>Landungen<input id="eLand" type="number" min="1" inputmode="numeric"></label><label>Strecke (km)<input id="eKm" type="number" min="0" step="0.1" inputmode="decimal"></label></div>
+  <label>Gasverbrauch (kg)<input id="eGas" type="number" min="0" step="0.5" inputmode="decimal"></label>
   <label>Bemerkungen<textarea id="eBem" rows="3"></textarea></label>
-  <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+  <p id="eFehler" class="warn" hidden></p>
+  <div class="row"><button value="x">Abbrechen</button><button id="eOk" value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="kDlg"><form method="dialog">
+  <h2>Konto löschen</h2>
+  <p>Dein Konto und alle Fahrten und Einstellungen in der Cloud werden endgültig gelöscht. Das lässt sich nicht rückgängig machen. Erstelle vorher am besten ein Backup.</p>
+  <label>Passwort zur Bestätigung<input id="kPass" type="password" autocomplete="current-password"></label>
+  <label class="chk"><input id="kLokal" type="checkbox"><span>Auch die Daten auf diesem Gerät löschen</span></label>
+  <p id="kFehler" class="warn" hidden></p>
+  <div class="row"><button value="x">Abbrechen</button><button id="kOk" value="ok" class="gef">Endgültig löschen</button></div>
 </form></dialog>
 
 <dialog id="gDlg"><form method="dialog">

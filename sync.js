@@ -24,6 +24,7 @@
     E("cOn").hidden = !user;
     if (user) { E("cMail").textContent = user.email; E("cUid").textContent = user.uid; }
     E("cAdmin").hidden = !(user && adminUid && user.uid === adminUid);
+    E("cRueck").hidden = !(user && adminUid && user.uid !== adminUid);
   }
 
   async function laden() {
@@ -41,7 +42,10 @@
     return JSON.parse(JSON.stringify(k)); // entfernt undefined
   };
 
-  async function abgleichen() {
+  // Stand des letzten Abgleichs je Konto: server = jüngste Server-Änderungszeit, lokal = Startzeit des Abgleichs,
+  // ids = Fahrten, die sicher in der Cloud liegen, voll = letzter vollständiger Abgleich
+  const standKey = () => "syncStand_" + user.uid;
+  async function abgleichen(vollErzwingen) {
     if (!user) return;
     if (laeuft) { nochmal = true; return; }
     laeuft = true; status("Synchronisiere …");
@@ -56,17 +60,22 @@
         }
         freigegeben = true;
       }
-      const metaRef = F.doc(db, "users", user.uid), col = F.collection(db, "users", user.uid, "fluege");
-      const [metaSnap, snap] = await Promise.all([F.getDoc(metaRef), F.getDocs(col)]);
+      const metaRef = F.doc(db, "users", user.uid), col = F.collection(db, "users", user.uid, "fluege"), beginn = Date.now();
+      // Sparsam: nur seit dem letzten Abgleich geänderte Fahrten lesen; vollständig beim ersten Mal, auf Knopfdruck und wöchentlich
+      const st = localStorage.getItem("localUid") === user.uid ? load(standKey(), {}) : {};
+      const voll = vollErzwingen === true || !st.server || beginn - (st.voll || 0) > 7 * 864e5;
+      const [metaSnap, snap] = await Promise.all([F.getDoc(metaRef), F.getDocs(voll ? col : F.query(col, F.where("geaendert", ">=", F.Timestamp.fromMillis(st.server))))]);
       const meta = metaSnap.exists() ? metaSnap.data() : {};
-      const cloud = new Map(snap.docs.map(d => [d.id, d.data()]));
+      let server = voll ? 0 : st.server;
+      const cloud = new Map(snap.docs.map(d => { const x = d.data(), t = x.geaendert?.toMillis?.() || 0; if (t > server) server = t; delete x.geaendert; return [d.id, x]; }));
+      const ids = new Set(voll ? cloud.keys() : [...(st.ids || []), ...cloud.keys()]);
       const lokal = load("fluege", []), lmap = new Map(lokal.map(f => [f.id, f]));
-      const tote = new Set([...(meta.geloescht || []), ...load("geloescht", [])]);
+      const cloudTote = new Set(meta.geloescht || []), tote = new Set([...cloudTote, ...load("geloescht", [])]);
       const neu = [], hoch = [];
       new Set([...cloud.keys(), ...lmap.keys()]).forEach(id => {
         if (tote.has(id)) return;
-        const l = lmap.get(id), c = cloud.get(id);
-        if (l && (!c || (l.bearbeitet || 0) >= (c.bearbeitet || 0))) { neu.push(l); if (!c || (l.bearbeitet || 0) > (c.bearbeitet || 0)) hoch.push(l); }
+        const l = lmap.get(id), c = cloud.get(id), lb = l?.bearbeitet || 0;
+        if (l && (!c || lb >= (c.bearbeitet || 0))) { neu.push(l); if (c ? lb > (c.bearbeitet || 0) : !ids.has(id) || lb > (st.lokal || 0)) hoch.push(l); }
         else neu.push(c);
       });
       const hat = o => Object.values(o || {}).some(Boolean); // gibt es überhaupt Einstellungen?
@@ -77,10 +86,11 @@
       localStorage.setItem("geloescht", JSON.stringify([...tote]));
       if (cloudNeuer) localStorage.setItem("metaZeit", String(cz));
       cloudUebernehmen({ fluege: neu, ...(cloudNeuer ? { stamm: meta.stammdaten, mon: meta.monitor, theme: meta.theme } : {}) });
-      for (const f of hoch) await F.setDoc(F.doc(col, f.id), bereinigt(f));
-      for (const id of tote) if (cloud.has(id)) await F.deleteDoc(F.doc(col, id));
+      for (const f of hoch) { await F.setDoc(F.doc(col, f.id), { ...bereinigt(f), geaendert: F.serverTimestamp() }); ids.add(f.id); }
+      for (const id of tote) if (cloud.has(id) || (ids.has(id) && !cloudTote.has(id))) { await F.deleteDoc(F.doc(col, id)); ids.delete(id); }
       await F.setDoc(metaRef, { geloescht: [...tote], updatedAt: cloudNeuer ? cz : lz, stammdaten: load("stammdaten", {}), monitor: load("monitorEinstellungen", {}), theme: load("theme", null) }, { merge: true });
       localStorage.setItem("localUid", user.uid);
+      localStorage.setItem(standKey(), JSON.stringify({ server, lokal: beginn, voll: voll ? beginn : st.voll, ids: [...ids] }));
       status(`Zuletzt synchronisiert: ${new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} · ${neu.length} Fahrten`);
     } catch (e) {
       if (e?.code === "permission-denied" && adminUid && user.uid !== adminUid) { freigegeben = false; status("Dein Konto ist nicht freigeschaltet. Bitte beim Administrator nachfragen. Die App arbeitet lokal weiter.", true); }
@@ -118,6 +128,10 @@
       E("aListe").innerHTML = "<h3>Offene Anfragen</h3>" + (offen.length ? offen.map(d => z(d.id, d.data().email, b("ok", d.id, d.data().email, "Freischalten", "ok") + " " + b("nein", d.id, "", "Ablehnen"))).join("") : '<p class="note">Keine offenen Anfragen.</p>') +
         '<h3 style="margin-top:14px">Freigeschaltet</h3>' + (frei.size ? [...frei].map(([uid, x]) => z(uid, x.email, b("sperr", uid, "", "Sperren", "gef"))).join("") : '<p class="note">Noch niemand freigeschaltet.</p>');
     } catch (e) { E("aListe").textContent = meldung(e); }
+    try {
+      const { db, F } = await laden(), r = (await F.getDocs(F.collection(db, "rueckmeldungen"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.zeit || 0) - (a.zeit || 0));
+      E("aRueck").innerHTML = '<h3 style="margin-top:14px">Rückmeldungen</h3>' + (r.length ? r.map(x => `<div class="zeile"><span><b>${esc(x.email || "")}</b> · ${esc(new Date(x.zeit || 0).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${esc(x.version || "")}<br><span class="rm">${esc(x.text || "")}</span><br><small class="note">${esc(x.geraet || "")}</small></span><span><button data-a="rdel" data-uid="${esc(x.id)}" style="min-height:36px;padding:0 12px">Erledigt</button></span></div>`).join("") : '<p class="note">Keine Rückmeldungen.</p>');
+    } catch (e) { E("aRueck").innerHTML = '<p class="note">Rückmeldungen: ' + esc(e?.code === "permission-denied" ? "Bitte die Firestore-Regeln aus der README aktualisieren." : meldung(e)) + "</p>"; }
   }
   async function adminAktion(e) {
     const bt = e.target.closest("button");
@@ -127,8 +141,36 @@
       if (bt.dataset.a === "ok") { await F.setDoc(F.doc(db, "freigaben", uid), { email: bt.dataset.mail, zeit: Date.now() }); await F.deleteDoc(F.doc(db, "anfragen", uid)); }
       else if (bt.dataset.a === "nein") await F.deleteDoc(F.doc(db, "anfragen", uid));
       else if (bt.dataset.a === "sperr" && confirm("Den Zugang für dieses Konto sperren?")) await F.deleteDoc(F.doc(db, "freigaben", uid));
+      else if (bt.dataset.a === "rdel") await F.deleteDoc(F.doc(db, "rueckmeldungen", uid));
     } catch (err) { status(meldung(err), true); }
     adminLaden();
+  }
+
+  // Konto löschen: Cloud-Daten, Anfrage/Freigabe und das Konto selbst (verlangt das Passwort)
+  async function kontoLoeschen() {
+    const { auth, A, db, F } = await laden(), u = auth.currentUser;
+    await A.reauthenticateWithCredential(u, A.EmailAuthProvider.credential(u.email, E("kPass").value));
+    status("Konto wird gelöscht …");
+    try { // ohne Freischaltung gibt es keine Cloud-Daten
+      for (const d of (await F.getDocs(F.collection(db, "users", u.uid, "fluege"))).docs) await F.deleteDoc(F.doc(db, "users", u.uid, "fluege", d.id));
+      await F.deleteDoc(F.doc(db, "users", u.uid));
+    } catch (e) { if (e?.code !== "permission-denied") throw e; }
+    for (const p of ["anfragen", "freigaben"]) await F.deleteDoc(F.doc(db, p, u.uid)).catch(() => {}); // Freigabe zuletzt, sonst fehlt das Recht für den Rest
+    const lokal = E("kLokal").checked;
+    await A.deleteUser(u);
+    localStorage.removeItem("localUid"); localStorage.removeItem("syncStand_" + u.uid);
+    if (lokal) lokalLoeschen(); else status("Konto gelöscht. Die Daten auf diesem Gerät sind noch vorhanden.");
+  }
+  async function rueckmeldung() {
+    const text = E("rText").value.trim(), rs = E("rStatus");
+    if (!text) { rs.textContent = "Bitte eine Nachricht eingeben."; return; }
+    E("rSend").disabled = true; rs.textContent = "Wird gesendet …";
+    try {
+      const { db, F } = await laden();
+      await F.setDoc(F.doc(db, "rueckmeldungen", nid()), { uid: user.uid, email: user.email, text, zeit: Date.now(), version: window.appVersion || "", geraet: navigator.userAgent.slice(0, 200) });
+      E("rText").value = ""; rs.textContent = "Danke! Die Rückmeldung wurde gesendet.";
+    } catch (e) { rs.textContent = e?.code === "permission-denied" ? "Senden ist noch nicht eingerichtet. Bitte dem Administrator Bescheid geben." : meldung(e); }
+    E("rSend").disabled = false;
   }
 
   async function anmelden(neu) {
@@ -152,10 +194,20 @@
       if (!mail) return status("Bitte zuerst die E-Mail-Adresse eingeben.", true);
       try { const { auth, A } = await laden(); await A.sendPasswordResetEmail(auth, mail); status("E-Mail zum Zurücksetzen wurde gesendet."); } catch (e) { status(meldung(e), true); }
     };
-    E("cSync").onclick = abgleichen;
-    E("aListe").onclick = adminAktion; E("aRefresh").onclick = adminLaden;
+    E("cSync").onclick = () => abgleichen(true);
+    E("rSend").onclick = rueckmeldung;
+    E("cDel").onclick = () => { if (aktiv) return alert("Bitte zuerst die laufende Fahrt beenden."); E("kPass").value = ""; E("kLokal").checked = false; E("kFehler").hidden = true; E("kDlg").returnValue = ""; E("kDlg").showModal(); };
+    E("kOk").onclick = async e => { // Dialog bleibt bei Fehlern offen
+      e.preventDefault();
+      if (!E("kPass").value) { E("kFehler").textContent = "Bitte das Passwort eingeben."; E("kFehler").hidden = false; return; }
+      E("kOk").disabled = true;
+      try { await kontoLoeschen(); E("kDlg").close(); }
+      catch (err) { E("kFehler").textContent = meldung(err); E("kFehler").hidden = false; }
+      E("kOk").disabled = false;
+    };
+    E("aListe").onclick = E("aRueck").onclick = adminAktion; E("aRefresh").onclick = adminLaden;
     E("cOut").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); status("Abgemeldet. Die Daten bleiben auf diesem Gerät."); };
-    window.addEventListener("online", abgleichen);
+    window.addEventListener("online", () => abgleichen());
     try {
       const { auth, A } = await laden();
       A.onAuthStateChanged(auth, async u => {

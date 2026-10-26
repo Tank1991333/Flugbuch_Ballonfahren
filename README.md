@@ -6,7 +6,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
-- **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte
+- **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte; Fahrten ohne GPS lassen sich nachtragen
 - **Karte:** gespeicherte Fahrten und Live-Standort, Stile Hybrid und Standard, Link zur VFR/ICAO-Karte
 - **Wetter:** Temperatur, Wind in 10 m und 80 m, Böen, Sonnenaufgang und -untergang
 - **Trajektoren:** Winddrift-Simulation (ICON-D2 bis 180 m, GFS ab 200 m) für heute und morgen
@@ -19,6 +19,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 - Orte werden im Hintergrund ermittelt und bei fehlendem Netz später nachgeladen
 - Offline-Start über Service Worker (Karten und Wetter brauchen Internet)
 - JSON-Backup und -Import mit Duplikatprüfung
+- Erste Schritte für neue Nutzer, Hinweis bei neuer Version, Datenschutzhinweis mit Löschfunktionen
 
 ## Dateien im Hauptverzeichnis
 
@@ -90,12 +91,20 @@ service cloud.firestore {
     match /freigaben/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || istAdmin());
       allow write: if istAdmin();
+      allow delete: if request.auth != null && request.auth.uid == uid; // beim Löschen des eigenen Kontos
+    }
+    match /rueckmeldungen/{id} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.text is string && request.resource.data.text.size() <= 4000;
+      allow read, delete: if istAdmin();
     }
   }
 }
 ```
 
-Hinweise: Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
+Rückmeldungen (Einstellungen → Rückmeldung) erscheinen beim Administrator unter Einstellungen → Freischaltung.
+
+Hinweise: Der Abgleich liest nur seit dem letzten Mal geänderte Fahrten (vollständig beim ersten Mal, über „Jetzt synchronisieren“ und wöchentlich). Unter Konto lässt sich das eigene Konto samt Cloud-Daten löschen. Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
 
 ## Hinweis
 
