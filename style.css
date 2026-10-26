@@ -92,6 +92,9 @@ select{display:block;width:100%;margin:4px 0 6px;padding:12px;border-radius:10px
 
 #tbox{height:50vh}
 #tmap{height:100%;min-height:0;border-radius:18px;background:var(--soft);box-shadow:0 8px 28px #0009}
+.dauer{display:flex;align-items:center;gap:10px}.dauer input{flex:1;margin:0;padding:0;min-width:0}.dauer button{width:46px;padding:0;font-size:1.4rem;flex:none}
+.skala{position:relative;height:18px;margin:2px 56px 0;font-size:.75rem;color:var(--mut)}.skala span{position:absolute;transform:translateX(-50%);white-space:nowrap}.skala span:first-child{transform:none;left:0}.skala span:last-child{transform:translateX(-100%)}
+#tSchnell button{min-height:40px}
 .hoehen{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .hoehen label{display:flex;align-items:center;gap:8px;margin:0;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:.9rem}
 .hoehen input{width:auto;margin:0}

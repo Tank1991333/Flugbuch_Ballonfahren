@@ -7,6 +7,9 @@ const trajektorenOeffnen = (() => {
   const PL = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500];
   const FARBEN = ["#1570a6", "#0b8b57", "#ea7d24", "#8b5cf6", "#dc2626", "#0891b2", "#ca8a04", "#db2777", "#4f46e5", "#059669", "#d97706", "#475569"];
   const STANDARD = [10, 80, 120, 180];
+  // Flugdauer in Minuten: bis 3 h in 5-min-Schritten, danach bis 8 h in 10-min-Schritten (ein Balken, Index 0–63)
+  const DAUER = [...Array.from({ length: 34 }, (_, i) => 15 + i * 5), ...Array.from({ length: 30 }, (_, i) => 190 + i * 10)];
+  const dauerText = m => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h` + (m % 60 ? ` ${m % 60} min` : "");
   const E = id => document.getElementById(id);
   let map = null, marker = null, linien = [], reqId = 0, bereit = false;
 
@@ -72,7 +75,7 @@ const trajektorenOeffnen = (() => {
   }
 
   async function simulieren() {
-    const lat = +E("tLat").value, lon = +E("tLon").value, h = +E("tDauer").value, id = ++reqId;
+    const lat = +E("tLat").value, lon = +E("tLon").value, h = DAUER[+E("tDauer").value] / 60, id = ++reqId;
     const sel = [...document.querySelectorAll("#tHoehen input:checked")].map(i => +i.value);
     if (!sel.length) return meldung("Bitte mindestens eine Höhe auswählen.", true);
     const [y, m, d] = E("tDatum").value.split("-").map(Number), [hh, mm] = (E("tStart").value || "07:00").split(":").map(Number);
@@ -141,7 +144,11 @@ const trajektorenOeffnen = (() => {
     E("tHoehen").innerHTML = DEF.map(d => `<label><input type="checkbox" value="${d.h}"${STANDARD.includes(d.h) ? " checked" : ""}>${d.h.toLocaleString("de-AT")} m</label>`).join("");
     const t = new Date();
     E("tDatum").value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-    E("tDauer").oninput = () => { E("tDauerW").textContent = (+E("tDauer").value).toFixed(1).replace(".", ",") + " Stunden"; };
+    const dauer = i => { E("tDauer").value = Math.max(0, Math.min(DAUER.length - 1, i)); E("tDauerW").textContent = dauerText(DAUER[+E("tDauer").value]); };
+    E("tDauer").oninput = () => dauer(+E("tDauer").value);
+    E("tMinus").onclick = () => dauer(+E("tDauer").value - 1);
+    E("tPlus").onclick = () => dauer(+E("tDauer").value + 1);
+    E("tSchnell").onclick = e => { const m = +e.target.closest("button")?.dataset.m; if (m) dauer(DAUER.indexOf(m)); };
     ["tDatum", "tStart"].forEach(i => { E(i).onchange = () => leeren("Datum oder Startzeit geändert. Bitte Simulation erneut ausführen."); });
     E("tSucheB").onclick = suchen;
     E("tSuche").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); suchen(); } };
