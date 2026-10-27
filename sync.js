@@ -30,7 +30,9 @@
     } catch { return null; }
   }
   async function einlassen() {
-    const ok = await zugangPruefen(), gemerkt = localStorage.getItem("zugang") === user.uid;
+    const u = user, ok = await zugangPruefen();
+    if (user !== u) return; // inzwischen abgemeldet oder Konto gewechselt
+    const gemerkt = localStorage.getItem("zugang") === user.uid;
     if (ok === false) { localStorage.removeItem("zugang"); tor("warten"); status(""); return; }
     if (!ok && !gemerkt) { tor("warten"); status("Keine Verbindung – die Freischaltung kann gerade nicht geprüft werden.", true); return; }
     localStorage.setItem("zugang", user.uid); status(""); tor(null);
