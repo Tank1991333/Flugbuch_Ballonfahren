@@ -208,10 +208,21 @@ async function ende() {
   zeige("flugbuch");
 }
 
+// Bildschirm während der Aufzeichnung anlassen (Wake Lock); die Anzeige im Cockpit zeigt, ob der Browser das erlaubt
+let wakeBittet = false;
 async function wakeLock() {
-  try { if (aktiv && !wake && "wakeLock" in navigator) { wake = await navigator.wakeLock.request("screen"); wake.onrelease = () => { wake = null; }; } } catch { wake = null; }
+  if (!aktiv || wake || wakeBittet) return;
+  wakeBittet = true;
+  try { if ("wakeLock" in navigator) { wake = await navigator.wakeLock.request("screen"); wake.onrelease = () => { wake = null; wakeAnzeige(); }; } } catch { wake = null; }
+  wakeBittet = false; wakeAnzeige();
 }
-const wakeEnde = () => { wake?.release().catch(() => {}); wake = null; };
+const wakeEnde = () => { wake?.release().catch(() => {}); wake = null; wakeAnzeige(); };
+function wakeAnzeige() {
+  const h = $("wakeH");
+  h.hidden = !aktiv || wakeBittet || document.visibilityState !== "visible";
+  h.style.color = wake ? "var(--ok)" : "var(--warn)";
+  h.textContent = wake ? "☀ Bildschirm bleibt während der Aufzeichnung an." : "⚠ Bildschirm kann ausgehen – bitte die automatische Bildschirmsperre am Gerät selbst abschalten.";
+}
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") wakeLock();
   else if (aktiv) fahrtSichern(); // beim Wechsel in den Hintergrund sofort sichern (Handy kann die App beenden)
@@ -227,7 +238,7 @@ function ui() {
   $("fdot").className = aktiv ? "dot on" : "dot";
   $("fstate").textContent = aktiv ? "AUFZEICHNUNG" : "BEREIT";
   status(aktiv ? "Fahrt läuft" : "Keine Aufzeichnung");
-  liveAnzeige();
+  wakeAnzeige(); liveAnzeige();
 }
 
 const RICHT = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"], p2 = n => String(n).padStart(2, "0");
