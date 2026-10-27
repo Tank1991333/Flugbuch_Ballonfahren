@@ -27,6 +27,39 @@ function utmText(lat, lng) {
   return `UTM ${u.zone} · ${u.e} E · ${u.n} N`;
 }
 
+// GPS-Spuren liegen in IndexedDB (Platz für Tausende Fahrten), alles andere in localStorage (ca. 5 MB).
+// Fehlt IndexedDB, bleibt die Spur wie früher an der Fahrt (f.track).
+let idbP = null;
+const idb = () => idbP ||= new Promise((ok, no) => {
+  const r = indexedDB.open("ballonflugbuch", 1);
+  r.onupgradeneeded = () => { r.result.createObjectStore("tracks"); r.result.createObjectStore("sicherung"); };
+  r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+});
+const idbTx = async (store, mode, fn) => { const db = await idb(); return new Promise((ok, no) => { const tx = db.transaction(store, mode), q = fn(tx.objectStore(store)); tx.oncomplete = () => ok(q?.result); tx.onerror = tx.onabort = () => no(tx.error); }); };
+const trackSpeichern = (id, t) => idbTx("tracks", "readwrite", s => s.put(t, id));
+const trackHolen = id => idbTx("tracks", "readonly", s => s.get(id)).then(t => t || []).catch(() => []);
+const trackLoeschen = id => idbTx("tracks", "readwrite", s => s.delete(id)).catch(() => {});
+const tracksLeeren = () => idbTx("tracks", "readwrite", s => s.clear()).catch(() => {});
+const spur = async f => f.track?.length ? f.track : trackHolen(f.id);
+const hatTrack = f => Math.max(f.punkte || 0, (f.track || []).length) > 1;
+async function spurAuslagern(f) { // Spur in IndexedDB, an der Fahrt bleibt nur die Anzahl der Punkte
+  if (!Array.isArray(f.track)) return;
+  try { await trackSpeichern(f.id, f.track); f.punkte = f.track.length; delete f.track; } catch { /* Fallback: Spur bleibt an der Fahrt */ }
+}
+// Einmaliger Umzug der Spuren aus localStorage (mit Sicherung der alten Daten, Prüfung vor dem Entfernen)
+async function tracksUmziehen() {
+  const mit = fluege.filter(f => Array.isArray(f.track));
+  if (!mit.length) return;
+  try {
+    await idbTx("sicherung", "readwrite", s => s.put(localStorage.getItem("fluege"), "fluege-vor-umzug"));
+    for (const f of mit) await trackSpeichern(f.id, f.track);
+    for (const f of mit) if ((await idbTx("tracks", "readonly", s => s.get(f.id)))?.length !== f.track.length) throw new Error("Prüfung fehlgeschlagen");
+    for (const f of mit) { f.punkte = f.track.length; delete f.track; }
+    localStorage.setItem("fluege", JSON.stringify(fluege)); // nur Speicherort geändert, kein neuer Abgleich nötig
+    render();
+  } catch { /* bleibt im alten Speicher, beim nächsten Start neuer Versuch */ }
+}
+
 // Datenschlüssel bleiben kompatibel zur alten Version
 let fluege = load("fluege", []);
 let stamm = load("stammdaten", {});
@@ -134,7 +167,7 @@ function aufnehmen() {
   ui();
 }
 
-function ende() {
+async function ende() {
   if (!aktiv) return;
   if (watch !== null) navigator.geolocation.clearWatch(watch);
   watch = null;
@@ -146,7 +179,7 @@ function ende() {
   f.endezeit = end.toISOString();
   f.flugzeit = Math.max(1, Math.round((end - new Date(f.startzeit)) / 6e4));
   f.strecke = +d.toFixed(1);
-  f.track = t;
+  f.track = t; // wird unten in IndexedDB ausgelagert
   f.maxHoehe = h.length ? Math.round(Math.max(...h)) : 0;
   f.minHoehe = h.length ? Math.round(Math.min(...h)) : 0;
   f.avgHoehe = h.length ? Math.round(h.reduce((a, b) => a + b, 0) / h.length) : 0;
@@ -164,6 +197,7 @@ function ende() {
   });
   if (gk > 0) { f.gas = gk; save("stammdaten", stamm); }
   f.bearbeitet = Date.now();
+  await spurAuslagern(f);
   fluege.push(f);
   if (!save("fluege", fluege)) { fluege.pop(); aufnehmen(); return; } // Fahrt bleibt erhalten
   localStorage.removeItem("aktiveFahrt");
@@ -257,7 +291,7 @@ function render() {
 
   $("liste").innerHTML = fluege.length
     ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => {
-      const ort = Number.isFinite(f.startLat), track = (f.track || []).length > 1, b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(f.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
+      const ort = Number.isFinite(f.startLat), track = hatTrack(f), b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(f.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
       return `<article class="card"><h3>${esc(datum(f.startzeit))}${f.manuell ? ' <span class="badge">nachgetragen</span>' : ""}</h3>
       <p>${esc(f.startOrt || (ort ? "Ort wird ermittelt …" : "–"))} → ${esc(f.landeOrt || (ort ? "…" : "–"))}</p>
       <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${f.maxHoehe || 0} m` : ""} · ${f.landungen || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
@@ -272,7 +306,7 @@ $("liste").onclick = e => {
   const b = e.target.closest("button"), f = b && fluege.find(x => x.id === b.dataset.id);
   if (!f) return;
   if (b.dataset.a === "del") {
-    if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
+    if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); trackLoeschen(f.id); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
   } else if (b.dataset.a === "edit") fahrtDialog(f);
   else if (b.dataset.a === "gpx") gpxExport(f);
   else if (b.dataset.a === "play") { zeige("karte"); setTimeout(() => abspielen(f), 150); }
@@ -360,12 +394,15 @@ const linie = (t, farbe, g) => {
 // Jede Fahrt bekommt eine eigene Farbe (Reihenfolge wie in der Auswahl), Antippen der Linie zeigt die Fahrt
 const TRACKFARBEN = ["#4cc9f0", "#f72585", "#ffb703", "#80ed99", "#b388ff", "#ff7b54", "#00b4d8", "#e9c46a"];
 const trackFarbe = i => TRACKFARBEN[i % TRACKFARBEN.length];
-function zeichne(l, anpassen = true) {
+let zeichneNr = 0;
+async function zeichne(l, anpassen = true) {
   if (!karte) return;
+  const nr = ++zeichneNr, spuren = await Promise.all(l.map(f => hatTrack(f) ? spur(f) : []));
+  if (nr !== zeichneNr) return; // inzwischen neuere Auswahl
   ebene.clearLayers();
   const b = [];
   l.forEach((f, i) => {
-    const t = (f.track || []).map(p => [p.lat, p.lng]), info = `<b>${esc(datum(f.startzeit))}</b><br>${esc(f.startOrt || "–")} → ${esc(f.landeOrt || "–")}<br>${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km`;
+    const t = spuren[i].map(p => [p.lat, p.lng]), info = `<b>${esc(datum(f.startzeit))}</b><br>${esc(f.startOrt || "–")} → ${esc(f.landeOrt || "–")}<br>${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km`;
     if (t.length > 1) { linie(t, trackFarbe(i), ebene); L.polyline(t, { opacity: 0, weight: 18 }).addTo(ebene).bindPopup(info); b.push(...t); }
     if (Number.isFinite(f.startLat)) { L.marker([f.startLat, f.startLng], { icon: pin("start") }).addTo(ebene).bindPopup("<b>Start</b> · " + info + "<br>" + utmText(f.startLat, f.startLng)); b.push([f.startLat, f.startLng]); }
     if (Number.isFinite(f.landeLat)) L.marker([f.landeLat, f.landeLng], { icon: pin("landung") }).addTo(ebene).bindPopup("<b>Landung</b> · " + info + "<br>" + utmText(f.landeLat, f.landeLng));
@@ -390,7 +427,7 @@ function liveKarte() {
   $("folgeB").textContent = Date.now() >= folgeBis ? "◎ Folgt dir …" : "◎ Zurück zu mir";
 }
 // Auswahl der Fahrten auf der Karte (pro Gerät): null = alle, auch künftige; sonst Liste der IDs
-const mitOrt = f => Number.isFinite(f.startLat) || (f.track || []).length > 1;
+const mitOrt = f => Number.isFinite(f.startLat) || hatTrack(f);
 const kartenFluege = () => { const w = load("kartenAuswahl", null); return [...fluege].filter(mitOrt).filter(f => !w || w.includes(f.id)).sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)); };
 function fwKnopf() { const n = fluege.filter(mitOrt).length, w = load("kartenAuswahl", null); $("fwB").textContent = w ? `Fahrten: ${kartenFluege().length} von ${n}` : `Fahrten: alle (${n})`; }
 function fwFarben() { let i = 0; document.querySelectorAll("#fwListe input").forEach(c => { c.parentNode.querySelector(".fk").style.background = c.checked ? trackFarbe(i++) : "transparent"; }); }
@@ -415,7 +452,7 @@ $("fwDlg").addEventListener("close", () => {
 });
 $("playB").onclick = () => {
   if (replayT) return replayStop();
-  const letzte = replayF || kartenFluege().find(f => (f.track || []).length > 1);
+  const letzte = replayF || kartenFluege().find(hatTrack);
   if (letzte) abspielen(letzte); else alert("Es gibt noch keine Fahrt zum Abspielen.");
 };
 $("folgeB").onclick = () => { folgeBis = 0; liveKarte(); };
@@ -487,9 +524,10 @@ Object.entries({ mZ: "zeitraumMonate", mS: "erforderlicheStunden", mL: "erforder
   $(id).value = mon[k];
   $(id).onchange = () => { const v = parseFloat($(id).value); if (v >= 0) mon[k] = v; $(id).value = mon[k]; save("monitorEinstellungen", mon); render(); };
 });
-$("expB").onclick = () => {
+$("expB").onclick = async () => { // Backup enthält die Spuren aus IndexedDB
+  const voll = await Promise.all(fluege.map(async f => hatTrack(f) ? { ...f, track: await spur(f) } : f));
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 2, fluege, stammdaten: stamm, monitor: mon }, null, 1)], { type: "application/json" }));
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 3, fluege: voll, stammdaten: stamm, monitor: mon }, null, 1)], { type: "application/json" }));
   a.download = `ballonflugbuch-${tagText(new Date())}.json`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 };
@@ -501,6 +539,7 @@ $("imp").onchange = async e => {
     if (name.endsWith(".gpx") || name.endsWith(".igc")) {
       const f = fahrtAusTrack(name.endsWith(".igc") ? parseIgc(text) : parseGpx(text), file.name);
       if (fluege.some(x => x.ballon === f.ballon && Math.abs(new Date(x.startzeit) - new Date(f.startzeit)) < 12e4)) throw new Error("Diese Fahrt ist bereits im Flugbuch.");
+      await spurAuslagern(f);
       fluege.push(f); save("fluege", fluege); render(); orteNachladen();
       e.target.value = "";
       return alert(`Fahrt aus ${file.name} importiert (${f.strecke} km, ${f.flugzeit} min).`);
@@ -509,7 +548,7 @@ $("imp").onchange = async e => {
     if (!Array.isArray(l)) throw 0;
     const key = x => [x.startzeit, x.ballon, x.pilot].join("|").toLowerCase(), have = new Set(fluege.map(key)), ids = new Set(fluege.map(x => x.id));
     let n = 0;
-    for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
+    for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); await spurAuslagern(x); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
     save("fluege", fluege); render();
     alert(`${n} neue Fahrt(en) importiert, ${l.length - n} Duplikat(e) übersprungen.`);
   } catch (err) { alert(err instanceof SyntaxError ? "Die Datei ist kein gültiges Backup." : err.message); }
@@ -530,17 +569,18 @@ async function bodenhoehe() {
 }
 
 // ---------- GPX-Export, GPX/IGC-Import, Wiedergabe ----------
-function gpxText(f) {
+function gpxText(f, track) {
   const x = s => String(s ?? "").replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
   const pt = p => `<trkpt lat="${p.lat}" lon="${p.lng}">${Number.isFinite(p.hoehe) ? `<ele>${p.hoehe.toFixed(1)}</ele>` : ""}<time>${p.zeit}</time></trkpt>`;
   return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Ballonflugbuch" xmlns="http://www.topografix.com/GPX/1/1">\n` +
     (f.marken || []).map(m => `<wpt lat="${m.lat}" lon="${m.lng}"><time>${m.zeit}</time><name>Markierung</name></wpt>\n`).join("") +
-    `<trk><name>${x(datum(f.startzeit))} ${x(f.startOrt)}</name><trkseg>\n${(f.track || []).map(pt).join("\n")}\n</trkseg></trk>\n</gpx>\n`;
+    `<trk><name>${x(datum(f.startzeit))} ${x(f.startOrt)}</name><trkseg>\n${track.map(pt).join("\n")}\n</trkseg></trk>\n</gpx>\n`;
 }
-function gpxExport(f) {
-  if (!(f.track || []).length) return alert("Diese Fahrt hat keinen Track.");
+async function gpxExport(f) {
+  const t = await spur(f);
+  if (!t.length) return alert("Diese Fahrt hat keinen Track.");
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([gpxText(f)], { type: "application/gpx+xml" }));
+  a.href = URL.createObjectURL(new Blob([gpxText(f, t)], { type: "application/gpx+xml" }));
   a.download = `fahrt-${tagText(new Date(f.startzeit))}.gpx`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
@@ -592,8 +632,8 @@ function replayStop() {
   replayM?.remove(); replayM = null;
   const b = document.getElementById("playB"); if (b) b.textContent = "▶ Wiedergabe";
 }
-function abspielen(f) {
-  const t = f.track || [];
+async function abspielen(f) {
+  const t = await spur(f);
   if (!karte || t.length < 2) return alert("Für die Wiedergabe werden Karte und Track benötigt.");
   replayStop(); replayF = f; zeichne([f]);
   const t0 = new Date(t[0].zeit).getTime(), dauer = new Date(t.at(-1).zeit).getTime() - t0, tempo = 30; // 30-fache Geschwindigkeit
@@ -714,9 +754,10 @@ function speicherAnzeige() {
   let n = 0;
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || "").length; } } catch { return; }
   const p = Math.round(n / 5e6 * 100);
-  $("speicher").textContent = `Gerätespeicher: ${num(n / 1e6, 1)} von ca. 5 MB belegt (${p} %).`;
+  $("speicher").textContent = `Fahrten und Einstellungen: ${num(n / 1e6, 1)} von ca. 5 MB (${p} %).`;
+  navigator.storage?.estimate?.().then(e => { $("speicher").textContent += ` GPS-Spuren und App: ${num(e.usage / 1e6, 1)} MB, frei ca. ${num((e.quota - e.usage) / 1e9, 1)} GB.`; }).catch(() => {});
   $("speicherWarn").hidden = p < 70;
-  $("speicherWarn").textContent = `⚠ Der Gerätespeicher ist zu ${p} % belegt (vor allem durch GPS-Tracks). Bitte unter Einstellungen ein Backup erstellen.`;
+  $("speicherWarn").textContent = `⚠ Der Speicher für Fahrten und Einstellungen ist zu ${p} % belegt. Bitte unter Einstellungen ein Backup erstellen.`;
 }
 // Startseite: Pilot mit Lizenz und alle Fristen (Pilot, Ballone, Flaschen, Fahrzeuge), die nächste zuerst
 function termineRender() {
@@ -1046,7 +1087,8 @@ $("wZeigen").onclick = () => { zeige("dashboard"); willkommen(true); };
 willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length); // nur bei neuen Nutzern
 
 // Alle Daten auf diesem Gerät löschen (Cloud-Daten bleiben erhalten)
-function lokalLoeschen() {
+async function lokalLoeschen() {
+  await tracksLeeren();
   Object.keys(localStorage).filter(k => k !== "theme").forEach(k => localStorage.removeItem(k));
   location.replace(location.pathname); // neu starten, auf der Übersicht mit den ersten Schritten
 }
@@ -1055,6 +1097,8 @@ $("lokalDel").onclick = () => {
   if (confirm("Alle Fahrten, Ausrüstung und Einstellungen auf diesem Gerät löschen?\nMit Konto bleiben die Daten in der Cloud erhalten und kommen nach dem Anmelden zurück. Ohne Konto sind sie endgültig weg.")) lokalLoeschen();
 };
 orteNachladen();
+tracksUmziehen();
+navigator.storage?.persist?.().catch(() => {}); // Browser bitten, die Daten nicht automatisch zu löschen
 if (aktiv) {
   if (confirm("Eine unterbrochene Fahrt wurde gefunden. Fortsetzen?\n(Abbrechen = Fahrt jetzt beenden und speichern)")) { zeige("fahrt"); aufnehmen(); }
   else ende();

@@ -18,7 +18,8 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 - Laufende Fahrt wird laufend gesichert und kann nach Absturz oder Neuladen fortgesetzt werden
 - Orte werden im Hintergrund ermittelt und bei fehlendem Netz später nachgeladen
 - Offline-Start über Service Worker (Karten und Wetter brauchen Internet)
-- JSON-Backup und -Import mit Duplikatprüfung
+- GPS-Spuren liegen in IndexedDB (Platz für Tausende Fahrten), Fahrten und Einstellungen in localStorage; ältere Daten werden beim ersten Start automatisch umgezogen (mit Sicherung)
+- JSON-Backup (inkl. Spuren) und -Import mit Duplikatprüfung
 - Erste Schritte für neue Nutzer, Hinweis bei neuer Version, Datenschutzhinweis mit Löschfunktionen
 
 ## Dateien im Hauptverzeichnis

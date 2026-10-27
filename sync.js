@@ -76,8 +76,11 @@
         if (tote.has(id)) return;
         const l = lmap.get(id), c = cloud.get(id), lb = l?.bearbeitet || 0;
         if (l && (!c || lb >= (c.bearbeitet || 0))) { neu.push(l); if (c ? lb > (c.bearbeitet || 0) : !ids.has(id) || lb > (st.lokal || 0)) hoch.push(l); }
+        else if (l && Array.isArray(c.track) && (l.punkte || 0) > c.track.length) { const { track, ...rest } = c; neu.push({ ...rest, punkte: l.punkte }); } // lokale Spur ist genauer als die ausgedünnte Cloud-Kopie
         else neu.push(c);
       });
+      for (const f of neu) await spurAuslagern(f); // Spuren aus der Cloud in IndexedDB, nicht in localStorage
+      for (const id of tote) if (lmap.has(id)) trackLoeschen(id);
       const hat = o => Object.values(o || {}).some(Boolean); // gibt es überhaupt Einstellungen?
       let lz = +localStorage.getItem("metaZeit") || 0;
       const cz = meta.updatedAt || 0;
@@ -86,7 +89,12 @@
       localStorage.setItem("geloescht", JSON.stringify([...tote]));
       if (cloudNeuer) localStorage.setItem("metaZeit", String(cz));
       cloudUebernehmen({ fluege: neu, ...(cloudNeuer ? { stamm: meta.stammdaten, mon: meta.monitor, theme: meta.theme } : {}) });
-      for (const f of hoch) { await F.setDoc(F.doc(col, f.id), { ...bereinigt(f), geaendert: F.serverTimestamp() }); ids.add(f.id); }
+      for (const f of hoch) {
+        // Spur aus IndexedDB mitschicken; fehlt sie lokal, bleibt die Spur in der Cloud erhalten (nur die übrigen Felder ergänzen)
+        const t = await spur(f), d = { ...bereinigt({ ...f, track: t }), geaendert: F.serverTimestamp() }, ohne = !t.length && f.punkte > 1;
+        if (ohne) delete d.track;
+        await F.setDoc(F.doc(col, f.id), d, ohne ? { merge: true } : {}); ids.add(f.id);
+      }
       for (const id of tote) if (cloud.has(id) || (ids.has(id) && !cloudTote.has(id))) { await F.deleteDoc(F.doc(col, id)); ids.delete(id); }
       await F.setDoc(metaRef, { geloescht: [...tote], updatedAt: cloudNeuer ? cz : lz, stammdaten: load("stammdaten", {}), monitor: load("monitorEinstellungen", {}), theme: load("theme", null) }, { merge: true });
       localStorage.setItem("localUid", user.uid);
@@ -113,6 +121,7 @@
     if (!lu || lu === user.uid) return true;
     if (!confirm("Auf diesem Gerät liegen Daten eines anderen Kontos. Sie werden hier entfernt und durch die Daten dieses Kontos ersetzt. Fortfahren?")) return false;
     ["fluege", "stammdaten", "monitorEinstellungen", "geloescht", "metaZeit", "localUid"].forEach(k => localStorage.removeItem(k));
+    tracksLeeren();
     cloudUebernehmen({ fluege: [], stamm: {}, mon: { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10 } });
     return true;
   }
