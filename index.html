@@ -17,7 +17,24 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="gesperrt">
+<div id="tor" class="tor"><div class="card torbox">
+  <h1>🎈 Ballonflugbuch</h1>
+  <p id="torLaden" class="note">Anmeldung wird geprüft …</p>
+  <div id="torLogin" hidden>
+    <p>Bitte melde dich an. Neue Konten schaltet der Administrator frei.</p>
+    <label>E-Mail<input id="torEmail" type="email" autocomplete="email" inputmode="email"></label>
+    <label>Passwort<input id="torPass" type="password" autocomplete="current-password"></label>
+    <div class="row"><button id="torAn" class="ok">Anmelden</button><button id="torReg">Registrieren</button></div>
+    <button id="torReset" style="width:100%">Passwort vergessen</button>
+  </div>
+  <div id="torWarten" hidden>
+    <p>Angemeldet als <b id="torMail"></b>.</p>
+    <p>Dein Konto wartet auf die Freischaltung durch den Administrator. Danach kannst du das Flugbuch nutzen.</p>
+    <div class="row"><button id="torNeu" class="ok">Erneut prüfen</button><button id="torAus">Abmelden</button></div>
+  </div>
+  <p id="torStatus" class="note"></p>
+</div></div>
 <header><button id="menuB" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menue">☰</button><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span><button id="themeB" aria-label="Design wechseln">☾</button></header>
 <main>
 <div id="update" class="update" hidden><span>Eine neue Version ist verfügbar.</span><button id="updateB" class="ok">Jetzt laden</button></div>
@@ -25,7 +42,7 @@
   <div id="willkommen" class="card" hidden><h2>Willkommen im Ballonflugbuch</h2>
     <ol class="schritte">
       <li><b>Pilot und Ballon eintragen.</b> Ohne diese Angaben lässt sich keine Fahrt aufzeichnen.<br><button data-z="einstellungen">Zu den Einstellungen</button></li>
-      <li><b>Konto anlegen</b> (empfohlen): Fahrten sind dann gesichert und auf allen Geräten gleich. Neue Konten schaltet der Administrator frei, bis dahin arbeitet die App nur auf diesem Gerät.<br><button data-z="konto">Zum Konto</button></li>
+      <li><b>Dein Konto:</b> Fahrten und Einstellungen werden automatisch in der Cloud gesichert und sind auf allen deinen Geräten gleich.<br><button data-z="konto">Zum Konto</button></li>
       <li id="wInstall"><b>App auf den Startbildschirm legen.</b> <span id="wInstallT"></span><br><button id="wInstallB" hidden>App installieren</button></li>
       <li><b>Während der Fahrt</b> die App im Vordergrund und den Bildschirm an lassen, sonst unterbricht das Handy das GPS. Am besten vorher einmal zu Fuß oder im Auto ausprobieren.</li>
     </ol>
