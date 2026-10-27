@@ -31,6 +31,7 @@
     </ol>
     <button id="wOk" class="ok" style="width:100%">Verstanden</button>
   </div>
+  <p id="speicherWarn" class="card warn" hidden></p>
   <div id="termine" class="card" hidden></div>
   <div id="kpis" class="kpis"></div>
   <div id="monitor" class="card"></div>
@@ -171,8 +172,8 @@
     <div class="row"><label>Nächste Checkfahrt<input id="prCheck" type="date"></label><label>Nächstes Medical<input id="prMedical" type="date"></label></div>
     <h3 style="margin-top:12px">Weitere Einträge</h3>
     <div id="prEigene"></div>
-    <button id="prNeu" style="width:100%">+ Eintrag (z. B. Funkzeugnis, Lizenz gültig bis)</button>
-    <p class="note">Alles mit Datum erscheint als Frist auf der Startseite. Änderungen werden automatisch gespeichert.</p>
+    <button id="prNeu" style="width:100%">+ Weiterer Eintrag</button>
+    <p class="note">Zum Beispiel Funkzeugnis (mit Nummer) oder „Lizenz gültig bis“ (mit Datum). Alles mit Datum erscheint als Frist auf der Startseite. Änderungen werden automatisch gespeichert.</p>
   </div>
   <div class="card"><h2>Pilot &amp; Ballon</h2>
     <label>Pilot<select id="pilotSel"></select><input id="pilot" placeholder="Neuer Pilot oder oben auswählen" autocomplete="name"></label>
@@ -219,6 +220,7 @@
   </div>
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>
+    <p id="speicher" class="note"></p>
     <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,.gpx,.igc,application/json" hidden></label></div>
   </div>
   <div class="card"><h2>Datenschutz &amp; Info</h2>

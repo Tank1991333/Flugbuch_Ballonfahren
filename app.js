@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const load = (k, f) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? f; } catch { return f; } };
 const SYNCKEYS = ["fluege", "geloescht", "stammdaten", "monitorEinstellungen", "theme"];
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); if (SYNCKEYS.includes(k)) window.cloudGeaendert?.(k); return true; } catch { alert("Speichern fehlgeschlagen (Speicher voll?). Bitte Backup erstellen."); return false; } };
+const save = (k, v, leise) => { try { localStorage.setItem(k, JSON.stringify(v)); if (SYNCKEYS.includes(k)) window.cloudGeaendert?.(k); return true; } catch { if (!leise) alert("Speichern fehlgeschlagen (Speicher voll?). Bitte Backup erstellen."); return false; } };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const nb = s => String(s).replace(/(\d) (?=\S)/g, "$1\u00a0"); // Zahl und Einheit nicht trennen (z. B. „44 °C“)
 const num = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString("de-AT", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–";
@@ -86,6 +86,9 @@ async function orteNachladen() {
 const status = t => { $("status").textContent = t; };
 const fehler = e => ({ 1: "Standortzugriff verweigert. Bitte im Browser erlauben.", 2: "Position nicht verfügbar.", 3: "Zeitüberschreitung bei der Standortabfrage." }[e.code] || "Standortfehler.");
 
+const rund = (v, d) => Number.isFinite(v) ? +v.toFixed(d) : null;
+// Laufende Fahrt sichern; ist der Gerätespeicher voll, läuft die Aufzeichnung im Arbeitsspeicher weiter (kein Hinweisfenster während der Fahrt)
+const fahrtSichern = () => { if (!save("aktiveFahrt", aktiv, true)) status("⚠ Gerätespeicher voll – Fahrt läuft weiter, wird aber nicht zwischengespeichert. App nicht schließen!"); };
 const posVon = c => ({ lat: c.latitude, lng: c.longitude, hoehe: c.altitude, speed: c.speed == null ? null : Math.max(0, c.speed), kurs: c.heading, genauigkeit: c.accuracy });
 function standbyStart() { // Standortanzeige auf der Fahrt-Seite, auch ohne Aufzeichnung
   if (aktiv || standbyId !== null || !navigator.geolocation) return;
@@ -96,11 +99,11 @@ function punkt(p) {
   if (!aktiv) return;
   const c = p.coords;
   pos = posVon(c);
-  if (c.accuracy <= 100) {
-    const q = { ...pos, zeit: new Date(p.timestamp).toISOString() }, l = aktiv.t.at(-1);
+  if (c.accuracy <= 100) { // gerundet gespeichert (0,1 m genau), spart rund ein Drittel Speicher
+    const q = { lat: rund(pos.lat, 6), lng: rund(pos.lng, 6), hoehe: rund(pos.hoehe, 1), speed: rund(pos.speed, 1), kurs: rund(pos.kurs, 0), genauigkeit: rund(pos.genauigkeit, 0), zeit: new Date(p.timestamp).toISOString() }, l = aktiv.t.at(-1);
     if (!l || km(l, q) >= 0.003) aktiv.t.push(q);
   }
-  if (Date.now() - lastSave > 4000) { lastSave = Date.now(); save("aktiveFahrt", aktiv); }
+  if (Date.now() - lastSave > 4000) { lastSave = Date.now(); fahrtSichern(); }
   liveAnzeige();
 }
 
@@ -177,7 +180,7 @@ async function wakeLock() {
 const wakeEnde = () => { wake?.release().catch(() => {}); wake = null; };
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") wakeLock();
-  else if (aktiv) save("aktiveFahrt", aktiv); // beim Wechsel in den Hintergrund sofort sichern (Handy kann die App beenden)
+  else if (aktiv) fahrtSichern(); // beim Wechsel in den Hintergrund sofort sichern (Handy kann die App beenden)
 });
 
 // ---------- Anzeige ----------
@@ -237,7 +240,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf();
+  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf(); speicherAnzeige();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -247,7 +250,7 @@ function render() {
   const mi = im.reduce((a, f) => a + (f.flugzeit || 0), 0) / 60, li = im.reduce((a, f) => a + (f.landungen || 0), 0);
   const bar = (t, i, s) => { const p = s > 0 ? Math.min(100, i / s * 100) : 100; return `<div class="bar"><span>${t}: ${num(i, 1).replace(",0", "")} / ${s}</span><i><u style="width:${p}%" class="${p >= 100 ? "ok" : ""}"></u></i></div>`; };
   $("monitor").innerHTML = `<h2>Aktivitätsmonitor · ${mon.zeitraumMonate} Monate</h2>` + bar("Flugstunden", mi, mon.erforderlicheStunden) + bar("Landungen", li, mon.erforderlicheLandungen) +
-    `<p class="note">Nächste Wartung: ${stamm.maintenance ? esc(new Date(stamm.maintenance).toLocaleDateString("de-AT")) : "nicht festgelegt"}</p>`;
+    (w => `<p class="note">Nächste Wartung: ${w ? esc(new Date(w + "T00:00:00").toLocaleDateString("de-AT")) : "nicht festgelegt"}</p>`)(stamm.maintenance || (stamm.ausruestung || []).find(g => g.ballon === stamm.ballon)?.wartung);
 
   const top = k => fluege.reduce((m, f) => Math.max(m, f[k] || 0), 0);
   $("rekorde").innerHTML = "<h2>Rekorde</h2>" + [["Max. Höhe", top("maxHoehe") + " m"], ["Längste Fahrt", dur(top("flugzeit"))], ["Weiteste Strecke", num(top("strecke"), 1) + " km"], ["Max. Tempo", num(top("maxSpeed"), 1) + " km/h"]].map(([a, b]) => `<p><span>${a}</span><b>${b}</b></p>`).join("");
@@ -487,7 +490,7 @@ Object.entries({ mZ: "zeitraumMonate", mS: "erforderlicheStunden", mL: "erforder
 $("expB").onclick = () => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 2, fluege, stammdaten: stamm, monitor: mon }, null, 1)], { type: "application/json" }));
-  a.download = `ballonflugbuch-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `ballonflugbuch-${tagText(new Date())}.json`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 };
 $("imp").onchange = async e => {
@@ -504,9 +507,9 @@ $("imp").onchange = async e => {
     }
     const d = JSON.parse(text), l = Array.isArray(d) ? d : d.fluege;
     if (!Array.isArray(l)) throw 0;
-    const key = x => [x.startzeit, x.ballon, x.pilot].join("|").toLowerCase(), have = new Set(fluege.map(key));
+    const key = x => [x.startzeit, x.ballon, x.pilot].join("|").toLowerCase(), have = new Set(fluege.map(key)), ids = new Set(fluege.map(x => x.id));
     let n = 0;
-    for (const x of l) if (x?.startzeit && !have.has(key(x))) { x.id ??= nid(); fluege.push(x); have.add(key(x)); n++; }
+    for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
     save("fluege", fluege); render();
     alert(`${n} neue Fahrt(en) importiert, ${l.length - n} Duplikat(e) übersprungen.`);
   } catch (err) { alert(err instanceof SyntaxError ? "Die Datei ist kein gültiges Backup." : err.message); }
@@ -538,7 +541,7 @@ function gpxExport(f) {
   if (!(f.track || []).length) return alert("Diese Fahrt hat keinen Track.");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([gpxText(f)], { type: "application/gpx+xml" }));
-  a.download = `fahrt-${f.startzeit.slice(0, 10)}.gpx`; a.click();
+  a.download = `fahrt-${tagText(new Date(f.startzeit))}.gpx`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 function parseGpx(text) {
@@ -705,6 +708,15 @@ function ausruestungRender() {
       <div class="row">${aktiv ? "" : b(g.id, "aktiv", "Aktiv setzen", "ok")}${b(g.id, "edit", "Bearbeiten")}${b(g.id, "del", "Löschen", "gef")}</div></article>`;
   }).join("") : '<p class="leer">Noch kein Ballon eingetragen.</p>';
   rBallonFuellen();
+}
+// Gerätespeicher (Browser, ca. 5 Mio. Zeichen je Website): Anzeige in den Einstellungen, Warnung auf der Startseite ab 70 %
+function speicherAnzeige() {
+  let n = 0;
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || "").length; } } catch { return; }
+  const p = Math.round(n / 5e6 * 100);
+  $("speicher").textContent = `Gerätespeicher: ${num(n / 1e6, 1)} von ca. 5 MB belegt (${p} %).`;
+  $("speicherWarn").hidden = p < 70;
+  $("speicherWarn").textContent = `⚠ Der Gerätespeicher ist zu ${p} % belegt (vor allem durch GPS-Tracks). Bitte unter Einstellungen ein Backup erstellen.`;
 }
 // Startseite: Pilot mit Lizenz und alle Fristen (Pilot, Ballone, Flaschen, Fahrzeuge), die nächste zuerst
 function termineRender() {
@@ -977,7 +989,7 @@ $("endDlg").addEventListener("close", () => { if ($("endDlg").returnValue === "o
 $("mB").onclick = () => {
   if (!aktiv || !pos) return status("Markierungen sind nur während der Aufzeichnung möglich.");
   (aktiv.f.marken ??= []).push({ lat: pos.lat, lng: pos.lng, hoehe: pos.hoehe, zeit: new Date().toISOString() });
-  save("aktiveFahrt", aktiv); liveKarte(); status(`Markierung ${aktiv.f.marken.length} gesetzt`);
+  fahrtSichern(); liveKarte(); status(`Markierung ${aktiv.f.marken.length} gesetzt`);
 };
 $("zB").onclick = () => { folgeBis = 0; if (pos && karte) karte.setView([pos.lat, pos.lng], Math.max(karte.getZoom(), 15)); liveKarte(); };
 $("tB").onclick = () => {
