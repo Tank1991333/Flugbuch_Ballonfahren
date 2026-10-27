@@ -95,7 +95,7 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid; // beim Löschen des eigenen Kontos
     }
     match /rueckmeldungen/{id} {
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+      allow create: if (istAdmin() || freigegeben()) && request.resource.data.uid == request.auth.uid
                     && request.resource.data.text is string && request.resource.data.text.size() <= 4000;
       allow read, delete: if istAdmin();
     }
@@ -104,6 +104,8 @@ service cloud.firestore {
 ```
 
 Rückmeldungen (Einstellungen → Rückmeldung) erscheinen beim Administrator unter Einstellungen → Freischaltung.
+
+Im Freigabe-Modus ist die App selbst gesperrt: Wer den Link öffnet, sieht nur den Anmeldebildschirm. Nach der Anmeldung erscheint bis zur Freischaltung „Dein Konto wartet auf die Freischaltung“. Die Freischaltung wird je Gerät gemerkt, damit das Flugbuch auch ohne Netz startet. Die Sperre ist eine Eingangstür; geschützt sind die Daten durch die Firestore-Regeln.
 
 Hinweise: Der Abgleich liest nur seit dem letzten Mal geänderte Fahrten (vollständig beim ersten Mal, über „Jetzt synchronisieren“ und wöchentlich). Unter Konto lässt sich das eigene Konto samt Cloud-Daten löschen. Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
 

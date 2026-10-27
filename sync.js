@@ -9,7 +9,34 @@
   const E = id => document.getElementById(id);
   let fb = null, user = null, timer = null, laeuft = false, nochmal = false, freigegeben = false, angefragt = false;
 
-  const status = (t, fehler) => { E("cStatus").textContent = t; E("cStatus").style.color = fehler ? "var(--gef)" : ""; };
+  const status = (t, fehler) => ["cStatus", "torStatus"].forEach(id => { E(id).textContent = t; E(id).style.color = fehler ? "var(--gef)" : ""; });
+
+  // Anmelde-Sperre: Die App ist erst nach Anmeldung und Freischaltung sichtbar. Die Freischaltung wird je Gerät gemerkt
+  // (localStorage „zugang“), damit das Flugbuch auch ohne Netz startet; gesperrt wird nur bei eindeutigem Ergebnis.
+  function tor(zustand) { // "laden" | "login" | "warten" | null = App offen
+    document.body.classList.toggle("gesperrt", !!zustand);
+    E("tor").hidden = !zustand;
+    E("torLaden").hidden = zustand !== "laden"; E("torLogin").hidden = zustand !== "login"; E("torWarten").hidden = zustand !== "warten";
+    E("torMail").textContent = user?.email || "";
+    if (!zustand) window.dispatchEvent(new Event("resize")); // Karte und Höhenprofil nach dem Einblenden neu vermessen
+  }
+  async function zugangPruefen() { // true = freigeschaltet, false = wartet, null = keine Verbindung
+    if (!adminUid || user.uid === adminUid) return true; // ohne Freigabe-Modus genügt die Anmeldung
+    try {
+      const { db, F } = await laden();
+      if ((await F.getDoc(F.doc(db, "freigaben", user.uid))).exists()) { freigegeben = true; return true; }
+      if (!angefragt) { await F.setDoc(F.doc(db, "anfragen", user.uid), { email: user.email, zeit: Date.now() }, { merge: true }); angefragt = true; }
+      return false;
+    } catch { return null; }
+  }
+  async function einlassen() {
+    const ok = await zugangPruefen(), gemerkt = localStorage.getItem("zugang") === user.uid;
+    if (ok === false) { localStorage.removeItem("zugang"); tor("warten"); status(""); return; }
+    if (!ok && !gemerkt) { tor("warten"); status("Keine Verbindung – die Freischaltung kann gerade nicht geprüft werden.", true); return; }
+    localStorage.setItem("zugang", user.uid); status(""); tor(null);
+    if (adminUid && user.uid === adminUid) adminLaden();
+    abgleichen();
+  }
   const meldung = e => ({
     "auth/invalid-credential": "E-Mail oder Passwort ist falsch.", "auth/wrong-password": "E-Mail oder Passwort ist falsch.",
     "auth/user-not-found": "E-Mail oder Passwort ist falsch.", "auth/invalid-email": "Die E-Mail-Adresse ist ungültig.",
@@ -101,7 +128,7 @@
       localStorage.setItem(standKey(), JSON.stringify({ server, lokal: beginn, voll: voll ? beginn : st.voll, ids: [...ids] }));
       status(`Zuletzt synchronisiert: ${new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} · ${neu.length} Fahrten`);
     } catch (e) {
-      if (e?.code === "permission-denied" && adminUid && user.uid !== adminUid) { freigegeben = false; status("Dein Konto ist nicht freigeschaltet. Bitte beim Administrator nachfragen. Die App arbeitet lokal weiter.", true); }
+      if (e?.code === "permission-denied" && adminUid && user.uid !== adminUid) { freigegeben = false; localStorage.removeItem("zugang"); tor("warten"); status("Dein Konto ist nicht (mehr) freigeschaltet. Bitte beim Administrator nachfragen.", true); }
       else status(meldung(e), true);
     }
     laeuft = false;
@@ -182,24 +209,29 @@
     E("rSend").disabled = false;
   }
 
-  async function anmelden(neu) {
-    const mail = E("cEmail").value.trim(), pw = E("cPass").value;
+  async function anmelden(neu, p = "c") { // p = "c" (Einstellungen) oder "tor" (Anmeldebildschirm)
+    const mail = E(p === "c" ? "cEmail" : "torEmail").value.trim(), pw = E(p === "c" ? "cPass" : "torPass").value;
     if (!mail || !pw) return status("Bitte E-Mail und Passwort eingeben.", true);
     try {
       const { auth, A } = await laden();
       status(neu ? "Konto wird erstellt …" : "Anmeldung …");
       await (neu ? A.createUserWithEmailAndPassword(auth, mail, pw) : A.signInWithEmailAndPassword(auth, mail, pw));
-      E("cPass").value = "";
+      E("cPass").value = E("torPass").value = "";
     } catch (e) { status(meldung(e), true); }
   }
 
   async function start() {
     ansicht();
-    if (!konfiguriert) return;
+    if (!konfiguriert) return tor(null); // ohne Firebase gibt es keine Sperre
+    tor(localStorage.getItem("zugang") ? null : "laden");
     E("cLogin").onclick = () => anmelden(false);
     E("cReg").onclick = () => anmelden(true);
-    E("cReset").onclick = async () => {
-      const mail = E("cEmail").value.trim();
+    E("torAn").onclick = () => anmelden(false, "tor");
+    E("torReg").onclick = () => anmelden(true, "tor");
+    E("torNeu").onclick = () => { status("Wird geprüft …"); einlassen(); };
+    E("torAus").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); };
+    E("torReset").onclick = E("cReset").onclick = async e => {
+      const mail = E(e.target.id === "torReset" ? "torEmail" : "cEmail").value.trim();
       if (!mail) return status("Bitte zuerst die E-Mail-Adresse eingeben.", true);
       try { const { auth, A } = await laden(); await A.sendPasswordResetEmail(auth, mail); status("E-Mail zum Zurücksetzen wurde gesendet."); } catch (e) { status(meldung(e), true); }
     };
@@ -221,12 +253,14 @@
       const { auth, A } = await laden();
       A.onAuthStateChanged(auth, async u => {
         user = u; freigegeben = false; angefragt = false; ansicht();
-        if (!u) return;
-        if (adminUid && u.uid === adminUid) adminLaden();
+        if (!u) { localStorage.removeItem("zugang"); tor("login"); return; }
         if (!kontoPruefen()) { await A.signOut(auth); return; }
-        abgleichen();
+        einlassen();
       });
-    } catch { status("Cloud derzeit nicht erreichbar. Die App arbeitet lokal weiter."); }
+    } catch { // Firebase nicht ladbar (offline beim allerersten Start): mit gemerkter Freischaltung trotzdem öffnen
+      if (localStorage.getItem("zugang")) tor(null);
+      else { tor("login"); status("Für die erste Anmeldung ist eine Internetverbindung nötig.", true); }
+    }
   }
   start();
 })();
