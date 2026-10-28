@@ -28,3 +28,7 @@ jobs:
           for f in index.html style.css app.js trajektoren.js sync.js firebase-config.js sw.js manifest.webmanifest favicon.svg apple-touch-icon.png icon-192.png icon-512.png icon-maskable-512.png; do test -f "$f" || { echo "Fehlt: $f"; exit 1; }; done
           grep -q '<!DOCTYPE html>' index.html
           grep -q 'src="app.js"' index.html
+      - name: JSON und Inhaltsschutz (CSP) prüfen
+        run: |
+          node -e 'for (const f of ["vercel.json", "manifest.webmanifest"]) JSON.parse(require("fs").readFileSync(f, "utf8"))'
+          node -e 'const s = require("fs").readFileSync("index.html", "utf8"), c = s.match(/<script>([\s\S]*?)<\/script>/)[1], h = require("crypto").createHash("sha256").update(c).digest("base64"); if (!s.includes("sha256-" + h)) { console.error("CSP-Hash des Inline-Skripts passt nicht, neu: sha256-" + h); process.exit(1); }'

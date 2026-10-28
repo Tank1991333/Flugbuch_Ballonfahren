@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<!-- Schutz vor eingeschleustem Code: nur eigene Dateien und die genutzten Dienste sind erlaubt. Inline-Skript (Design) per Hash; bei Änderung des Skripts Hash neu berechnen. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-b6dYQWEWbK3EvbZLheMU1rVHbiC0bFZNFyHbpbAbM0Q=' https://unpkg.com https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://unpkg.com https://tile.openstreetmap.org https://server.arcgisonline.com https://nwy-tiles-api.prod.newaydata.com; connect-src 'self' https://*.googleapis.com https://www.gstatic.com https://api.open-meteo.com https://nominatim.openstreetmap.org https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://ballonflugbuch.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF8EF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,12 +30,17 @@
     <div class="row"><button id="torAn" class="ok">Anmelden</button><button id="torReg">Registrieren</button></div>
     <button id="torReset" style="width:100%">Passwort vergessen</button>
   </div>
+  <div id="torBest" hidden>
+    <p>Bitte bestätige deine E-Mail-Adresse <b id="torMail2"></b>: Wir haben dir einen Link geschickt. Öffne ihn und tippe danach hier auf „Ich habe bestätigt“.</p>
+    <button id="torBestOk" class="ok" style="width:100%">Ich habe bestätigt</button>
+    <div class="row"><button id="torBestNeu">E-Mail erneut senden</button><button id="torBestAus">Abmelden</button></div>
+  </div>
   <div id="torWarten" hidden>
     <p>Angemeldet als <b id="torMail"></b>.</p>
     <p>Dein Konto wartet auf die Freischaltung durch den Administrator. Danach kannst du das Flugbuch nutzen.</p>
     <div class="row"><button id="torNeu" class="ok">Erneut prüfen</button><button id="torAus">Abmelden</button></div>
   </div>
-  <p id="torStatus" class="note"></p>
+  <p id="torStatus" class="note" role="status" aria-live="polite"></p>
 </div></div>
 <header><button id="menuB" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menue">☰</button><h1>🎈 Ballonflugbuch</h1><span id="uhr"></span><button id="themeB" aria-label="Design wechseln">☾</button></header>
 <main>
@@ -57,7 +64,7 @@
 
 <section id="fahrt" class="seite" hidden>
   <div class="fstrip">
-    <span id="fdot" class="dot"></span><span><b id="fstate">BEREIT</b><small id="status">Keine Aufzeichnung</small></span>
+    <span id="fdot" class="dot"></span><span><b id="fstate">BEREIT</b><small id="status" role="status">Keine Aufzeichnung</small></span>
     <span class="fr"><span id="gpsB" class="gpsb">GPS SUCHT …</span><b id="fuhr">--:--:--</b></span>
   </div>
   <p id="wakeH" class="note" hidden></p>
@@ -102,7 +109,7 @@
     <a class="btn" href="https://maps.austrocontrol.at/mapstore/" target="_blank" rel="noopener noreferrer">VFR/ICAO ↗</a>
   </div>
   <div class="mapbox" id="kbox"><div id="map"></div></div>
-  <p id="posInfo" class="note"></p>
+  <p id="posInfo" class="note" aria-live="off"></p>
   <p class="note">Der externe Kartenlink ersetzt keine offizielle Flugvorbereitung.</p>
 </section>
 
@@ -158,7 +165,7 @@
     <div class="row"><button id="tBallonH">Ballonhöhen</button><button id="tAlle">Alle</button><button id="tKeine">Keine</button></div>
     <div id="tHoehen" class="hoehen"></div>
     <button id="tRun" class="gross blaub" style="width:100%;margin-top:12px">Simulation ausführen</button>
-    <p id="tStatus" class="note">Bereit.</p>
+    <p id="tStatus" class="note" role="status">Bereit.</p>
   </div>
   <div class="mapbox" id="tbox"><div id="tmap"></div></div>
   <div class="card"><h2>Ergebnisse</h2><div id="tErg"><p class="note">Noch nichts berechnet.</p></div></div>
@@ -223,7 +230,7 @@
       <div class="row"><button id="cSync" class="ok">Jetzt synchronisieren</button><button id="cOut">Abmelden</button></div>
       <button id="cDel" class="gef" style="width:100%">Konto löschen</button>
     </div>
-    <p id="cStatus" class="note"></p>
+    <p id="cStatus" class="note" role="status"></p>
   </div>
   <div class="card" id="cAdmin" hidden><h2>Freischaltung (Administrator)</h2>
     <div id="aListe"></div>
@@ -234,7 +241,7 @@
     <p class="note">Fehler gefunden oder eine Idee? Die Nachricht geht direkt an den Administrator, zusammen mit deiner E-Mail-Adresse, der App-Version und dem Gerätetyp.</p>
     <label>Nachricht<textarea id="rText" rows="4" maxlength="4000"></textarea></label>
     <button id="rSend" class="ok" style="width:100%">Senden</button>
-    <p id="rStatus" class="note"></p>
+    <p id="rStatus" class="note" role="status"></p>
   </div>
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>

@@ -13,11 +13,11 @@
 
   // Anmelde-Sperre: Die App ist erst nach Anmeldung und Freischaltung sichtbar. Die Freischaltung wird je Gerät gemerkt
   // (localStorage „zugang“), damit das Flugbuch auch ohne Netz startet; gesperrt wird nur bei eindeutigem Ergebnis.
-  function tor(zustand) { // "laden" | "login" | "warten" | null = App offen
+  function tor(zustand) { // "laden" | "login" | "bestaetigen" | "warten" | null = App offen
     document.body.classList.toggle("gesperrt", !!zustand);
     E("tor").hidden = !zustand;
-    E("torLaden").hidden = zustand !== "laden"; E("torLogin").hidden = zustand !== "login"; E("torWarten").hidden = zustand !== "warten";
-    E("torMail").textContent = user?.email || "";
+    E("torLaden").hidden = zustand !== "laden"; E("torLogin").hidden = zustand !== "login"; E("torWarten").hidden = zustand !== "warten"; E("torBest").hidden = zustand !== "bestaetigen";
+    E("torMail").textContent = E("torMail2").textContent = user?.email || "";
     if (!zustand) window.dispatchEvent(new Event("resize")); // Karte und Höhenprofil nach dem Einblenden neu vermessen
   }
   async function zugangPruefen() { // true = freigeschaltet, false = wartet, null = keine Verbindung
@@ -29,10 +29,26 @@
       return false;
     } catch { return null; }
   }
+  // Freischaltung nur mit bestätigter E-Mail-Adresse: sonst könnte sich jemand unter der Adresse eines Freundes registrieren
+  let bestaetigungGesendet = false;
+  async function emailBestaetigt() { // true, false oder null (keine Verbindung)
+    if (!adminUid || user.uid === adminUid || user.emailVerified) return true;
+    try {
+      const { A } = await laden();
+      await A.reload(user);
+      if (!user.emailVerified) { if (!bestaetigungGesendet) { bestaetigungGesendet = true; await A.sendEmailVerification(user).catch(() => {}); } return false; }
+      await user.getIdToken(true); // neues Token, damit die Firestore-Regeln die Bestätigung sehen
+      return true;
+    } catch { return null; }
+  }
   async function einlassen() {
-    const u = user, ok = await zugangPruefen();
-    if (user !== u) return; // inzwischen abgemeldet oder Konto gewechselt
+    const u = user, best = await emailBestaetigt();
+    if (user !== u) return;
     const gemerkt = localStorage.getItem("zugang") === user.uid;
+    if (best === false) { localStorage.removeItem("zugang"); tor("bestaetigen"); status(""); return; }
+    if (best === null && !gemerkt) { tor("bestaetigen"); status("Keine Verbindung – bitte später erneut versuchen.", true); return; }
+    const ok = await zugangPruefen();
+    if (user !== u) return; // inzwischen abgemeldet oder Konto gewechselt
     if (ok === false) { localStorage.removeItem("zugang"); tor("warten"); status(""); return; }
     if (!ok && !gemerkt) { tor("warten"); status("Keine Verbindung – die Freischaltung kann gerade nicht geprüft werden.", true); return; }
     localStorage.setItem("zugang", user.uid); status(""); tor(null);
@@ -43,7 +59,7 @@
     "auth/invalid-credential": "E-Mail oder Passwort ist falsch.", "auth/wrong-password": "E-Mail oder Passwort ist falsch.",
     "auth/user-not-found": "E-Mail oder Passwort ist falsch.", "auth/invalid-email": "Die E-Mail-Adresse ist ungültig.",
     "auth/email-already-in-use": "Diese E-Mail ist schon registriert. Bitte anmelden.", "auth/weak-password": "Das Passwort ist zu kurz (mindestens 6 Zeichen).",
-    "auth/network-request-failed": "Keine Verbindung. Bitte später erneut versuchen.", "auth/too-many-requests": "Zu viele Versuche. Bitte kurz warten.",
+    "auth/network-request-failed": "Keine Verbindung. Bitte später erneut versuchen.", "auth/too-many-requests": "Zu viele Versuche. Bitte ein paar Minuten warten.",
     "permission-denied": "Zugriff verweigert. Bitte die Firestore-Regeln prüfen."
   }[e?.code] || e?.message || "Unbekannter Fehler.");
 
@@ -61,6 +77,7 @@
     const [app, auth, fs] = await Promise.all(["firebase-app.js", "firebase-auth.js", "firebase-firestore.js"].map(f => import(CDN + f)));
     const a = app.initializeApp(cfg);
     fb = { auth: auth.getAuth(a), A: auth, db: fs.getFirestore(a), F: fs };
+    fb.auth.languageCode = "de"; // E-Mails zum Bestätigen und Zurücksetzen auf Deutsch
     return fb;
   }
 
@@ -108,7 +125,7 @@
         else if (l && Array.isArray(c.track) && (l.punkte || 0) > c.track.length) { const { track, ...rest } = c; neu.push({ ...rest, punkte: l.punkte }); } // lokale Spur ist genauer als die ausgedünnte Cloud-Kopie
         else neu.push(c);
       });
-      for (const f of neu) await spurAuslagern(f); // Spuren aus der Cloud in IndexedDB, nicht in localStorage
+      for (const f of neu) { fahrtBereinigen(f); await spurAuslagern(f); } // Spuren aus der Cloud in IndexedDB, nicht in localStorage
       for (const id of tote) if (lmap.has(id)) trackLoeschen(id);
       const hat = o => Object.values(o || {}).some(Boolean); // gibt es überhaupt Einstellungen?
       let lz = +localStorage.getItem("metaZeit") || 0;
@@ -230,7 +247,9 @@
     E("cReg").onclick = () => anmelden(true);
     E("torAn").onclick = () => anmelden(false, "tor");
     E("torReg").onclick = () => anmelden(true, "tor");
-    E("torNeu").onclick = () => { status("Wird geprüft …"); einlassen(); };
+    E("torNeu").onclick = E("torBestOk").onclick = () => { status("Wird geprüft …"); einlassen(); };
+    E("torBestNeu").onclick = async () => { try { const { A } = await laden(); await A.sendEmailVerification(user); status("Die E-Mail wurde erneut gesendet. Bitte auch im Spam-Ordner nachsehen."); } catch (e) { status(meldung(e), true); } };
+    E("torBestAus").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); };
     E("torAus").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); };
     E("torReset").onclick = E("cReset").onclick = async e => {
       const mail = E(e.target.id === "torReset" ? "torEmail" : "cEmail").value.trim();
