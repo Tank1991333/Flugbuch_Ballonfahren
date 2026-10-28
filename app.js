@@ -66,7 +66,15 @@ let stamm = load("stammdaten", {});
 let mon = { zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10, ...load("monitorEinstellungen", {}) };
 let aktiv = load("aktiveFahrt", null); // {f: Fahrt, t: Trackpunkte} – überlebt Neuladen/Absturz
 let stile = [], stilNr = 0, zentriert = false, standbyId = null, folgeBis = 0, watch = null, wake = null, karte = null, ebene = null, liveL = null, pos = null, lastSave = 0, bearbeite = null;
-fluege.forEach(f => { f.id ??= nid(); });
+// Fahrten aus Import oder Cloud vereinheitlichen: Zahlen als Zahlen, Texte als Texte (verhindert eingeschleustes HTML)
+const ZAHLFELDER = ["flugzeit", "strecke", "landungen", "maxHoehe", "minHoehe", "avgHoehe", "maxSpeed", "avgSpeed", "gas", "punkte", "startLat", "startLng", "landeLat", "landeLng", "bearbeitet"];
+const TEXTFELDER = ["id", "pilot", "ballon", "ballontyp", "startOrt", "landeOrt", "bemerkung", "startzeit", "endezeit", "datum"];
+function fahrtBereinigen(f) {
+  ZAHLFELDER.forEach(k => { if (f[k] != null && typeof f[k] !== "number") { const v = parseFloat(f[k]); f[k] = Number.isFinite(v) ? v : undefined; } });
+  TEXTFELDER.forEach(k => { if (f[k] != null && typeof f[k] !== "string") f[k] = String(f[k]); });
+  return f;
+}
+fluege.forEach(f => { f.id ??= nid(); fahrtBereinigen(f); });
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "ausruestung", "gas", "einstellungen"];
 function zeige(id) {
@@ -242,13 +250,23 @@ function ui() {
 }
 
 const RICHT = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"], p2 = n => String(n).padStart(2, "0");
+// Strecke und Höchstwerte der laufenden Fahrt schrittweise fortschreiben (statt jede Sekunde die ganze Spur zu durchlaufen)
+let liveStat = { t: null, n: 0, d: 0, vmax: 0, hmax: 0 };
+function liveStatistik(t) {
+  if (liveStat.t !== t || t.length < liveStat.n) liveStat = { t, n: 0, d: 0, vmax: 0, hmax: 0 };
+  for (let i = liveStat.n; i < t.length; i++) {
+    const p = t[i];
+    if (i) liveStat.d += km(t[i - 1], p);
+    if (Number.isFinite(p.speed)) liveStat.vmax = Math.max(liveStat.vmax, p.speed);
+    if (Number.isFinite(p.hoehe)) liveStat.hmax = Math.max(liveStat.hmax, p.hoehe);
+  }
+  liveStat.n = t.length;
+  return liveStat;
+}
 function liveAnzeige() {
-  const t = aktiv?.t || [], set = (id, v) => { $(id).textContent = v; };
-  let d = 0;
-  for (let i = 1; i < t.length; i++) d += km(t[i - 1], t[i]);
+  const t = aktiv?.t || [], set = (id, v) => { $(id).textContent = v; }, st = liveStatistik(t), d = st.d;
   const sek = aktiv ? Math.max(0, Math.floor((Date.now() - new Date(aktiv.f.startzeit)) / 1000)) : 0;
-  const sp = t.map(p => p.speed).filter(Number.isFinite), hs = t.map(p => p.hoehe).filter(Number.isFinite);
-  const vmax = sp.length ? Math.max(...sp) * 3.6 : 0, vavg = sek > 0 ? d / (sek / 3600) : 0, hmax = hs.length ? Math.max(...hs) : 0;
+  const vmax = st.vmax * 3.6, vavg = sek > 0 ? d / (sek / 3600) : 0, hmax = st.hmax;
   let vs = 0;
   const l = t.at(-1);
   for (let i = t.length - 2; l && i >= 0; i--) { // Steig-/Sinkrate über ca. 8 Sekunden
@@ -286,18 +304,18 @@ function hoehe() {
 
 function render() {
   auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf(); speicherAnzeige();
-  const sum = fluege.reduce((a, f) => ({ m: a.m + (f.flugzeit || 0), k: a.k + (f.strecke || 0), l: a.l + (f.landungen || 0) }), { m: 0, k: 0, l: 0 });
+  const sum = fluege.reduce((a, f) => ({ m: a.m + (+f.flugzeit || 0), k: a.k + (+f.strecke || 0), l: a.l + (+f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
 
   const grenze = new Date(); grenze.setMonth(grenze.getMonth() - mon.zeitraumMonate);
   const im = fluege.filter(f => new Date(f.startzeit) >= grenze);
-  const mi = im.reduce((a, f) => a + (f.flugzeit || 0), 0) / 60, li = im.reduce((a, f) => a + (f.landungen || 0), 0);
+  const mi = im.reduce((a, f) => a + (+f.flugzeit || 0), 0) / 60, li = im.reduce((a, f) => a + (+f.landungen || 0), 0);
   const bar = (t, i, s) => { const p = s > 0 ? Math.min(100, i / s * 100) : 100; return `<div class="bar"><span>${t}: ${num(i, 1).replace(",0", "")} / ${s}</span><i><u style="width:${p}%" class="${p >= 100 ? "ok" : ""}"></u></i></div>`; };
   $("monitor").innerHTML = `<h2>Aktivitätsmonitor · ${mon.zeitraumMonate} Monate</h2>` + bar("Flugstunden", mi, mon.erforderlicheStunden) + bar("Landungen", li, mon.erforderlicheLandungen) +
     (w => `<p class="note">Nächste Wartung: ${w ? esc(new Date(w + "T00:00:00").toLocaleDateString("de-AT")) : "nicht festgelegt"}</p>`)(stamm.maintenance || (stamm.ausruestung || []).find(g => g.ballon === stamm.ballon)?.wartung);
 
-  const top = k => fluege.reduce((m, f) => Math.max(m, f[k] || 0), 0);
+  const top = k => fluege.reduce((m, f) => Math.max(m, +f[k] || 0), 0);
   $("rekorde").innerHTML = "<h2>Rekorde</h2>" + [["Max. Höhe", top("maxHoehe") + " m"], ["Längste Fahrt", dur(top("flugzeit"))], ["Weiteste Strecke", num(top("strecke"), 1) + " km"], ["Max. Tempo", num(top("maxSpeed"), 1) + " km/h"]].map(([a, b]) => `<p><span>${a}</span><b>${b}</b></p>`).join("");
 
   $("liste").innerHTML = fluege.length
@@ -305,7 +323,7 @@ function render() {
       const ort = Number.isFinite(f.startLat), track = hatTrack(f), b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(f.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
       return `<article class="card"><h3>${esc(datum(f.startzeit))}${f.manuell ? ' <span class="badge">nachgetragen</span>' : ""}</h3>
       <p>${esc(f.startOrt || (ort ? "Ort wird ermittelt …" : "–"))} → ${esc(f.landeOrt || (ort ? "…" : "–"))}</p>
-      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${f.maxHoehe || 0} m` : ""} · ${f.landungen || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
+      <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${Math.round(+f.maxHoehe || 0)} m` : ""} · ${Math.round(+f.landungen) || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
       ${ort ? `<p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>` : ""}${planHtml(f.plan)}
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
       <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
@@ -421,10 +439,17 @@ async function zeichne(l, anpassen = true) {
   });
   if (b.length && anpassen) karte.fitBounds(b, { padding: [30, 30], maxZoom: 14 });
 }
+let liveSpur = null, liveSpurN = 0; // Linie der laufenden Fahrt: wird fortgeschrieben, nicht jede Sekunde neu erzeugt
 function liveKarte() {
   if (!karte || $("karte").hidden && $("fahrt").hidden) return;
   liveL.clearLayers();
-  if (aktiv?.t.length > 1) linie(aktiv.t.map(p => [p.lat, p.lng]), "#ffb703", liveL);
+  const t = aktiv?.t || [];
+  if (t.length > 1) {
+    liveSpur ||= [L.polyline([], { color: "#000", weight: 8, opacity: .35, lineCap: "round", lineJoin: "round" }), L.polyline([], { color: "#ffb703", weight: 4, lineCap: "round", lineJoin: "round" })].map(l => l.addTo(karte));
+    if (t.length > liveSpurN && liveSpurN > 0) for (let i = liveSpurN; i < t.length; i++) liveSpur.forEach(l => l.addLatLng([t[i].lat, t[i].lng]));
+    else if (t.length !== liveSpurN) { const ll = t.map(p => [p.lat, p.lng]); liveSpur.forEach(l => l.setLatLngs(ll)); }
+    liveSpurN = t.length;
+  } else if (liveSpur) { liveSpur.forEach(l => l.remove()); liveSpur = null; liveSpurN = 0; }
   (aktiv?.f.marken || []).forEach(m => L.marker([m.lat, m.lng], { icon: pin("marke"), interactive: false }).addTo(liveL));
   if (pos) {
     L.circle([pos.lat, pos.lng], { radius: pos.genauigkeit || 0, color: "#4cc9f0", weight: 1, fillOpacity: .1, interactive: false }).addTo(liveL);
@@ -559,7 +584,7 @@ $("imp").onchange = async e => {
     if (!Array.isArray(l)) throw 0;
     const key = x => [x.startzeit, x.ballon, x.pilot].join("|").toLowerCase(), have = new Set(fluege.map(key)), ids = new Set(fluege.map(x => x.id));
     let n = 0;
-    for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); await spurAuslagern(x); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
+    for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); fahrtBereinigen(x); await spurAuslagern(x); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
     save("fluege", fluege); render();
     alert(`${n} neue Fahrt(en) importiert, ${l.length - n} Duplikat(e) übersprungen.`);
   } catch (err) { alert(err instanceof SyntaxError ? "Die Datei ist kein gültiges Backup." : err.message); }
@@ -935,7 +960,7 @@ function planAktualisieren() {
   const row = x => `<div class="zeile"><span>${x.ok ? "✓" : "✕"} ${x.text}</span><b style="color:var(--${x.ok ? "ok" : "gef"})">${esc(x.detail)}</b></div>`;
   $("pCheck").innerHTML = planPruefen().map(row).join("") + PLANMANUELL.map(([k, t]) => `<label class="chk"><input type="checkbox" data-k="${k}"${planCheck[k] ? " checked" : ""}><span>${t}</span></label>`).join("");
   const t = planTraj;
-  $("pTraj").innerHTML = t ? `<p class="m">Berechnet für ${esc(new Date(t.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${dur(t.dauer * 60)} · ${esc(utmText(t.lat, t.lon))}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${t.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${num(r.tempo, 1)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>`
+  $("pTraj").innerHTML = t ? `<p class="m">Berechnet für ${esc(new Date(t.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${dur(t.dauer * 60)} · ${esc(utmText(t.lat, t.lon))}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${t.rows.map(r => `<tr><td>${num(+r.h)} m</td><td>${num(+r.richtung)}°</td><td>${num(+r.tempo, 1)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>`
     : '<p class="note">Noch nicht berechnet. Das Ergebnis wird zur Fahrt gespeichert.</p>';
 }
 function planSnapshot() {
@@ -965,7 +990,7 @@ function planHtml(p) {
     (p.zuladung || []).map(x => z("· " + esc(x.n || "Position"), `${k1(zf(x.a) * zf(x.k))} kg`)).join("") +
     (a ? z("Zuladung gesamt", `${num(a.last)} kg`) + z("Bruttoauftrieb / frei", `${num(a.brutto)} / ${num(a.frei)} kg`) + z("Nötige Hüllentemperatur", a.tN == null ? "–" : `${num(a.tN)} °C`) : "") +
     (bd ? z("Bedingungen", `${k1(bd.T)} °C · ${num(bd.h)} m · QNH ${k1(bd.qnh)} hPa · Hülle ${num(bd.Ti)} °C`) : "") +
-    (p.traj ? `<p class="m">Trajektoren für ${esc(new Date(p.traj.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))}, ${dur(p.traj.dauer * 60)}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${p.traj.rows.map(r => `<tr><td>${r.h} m</td><td>${r.richtung}°</td><td>${k1(r.tempo)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>` : "") +
+    (p.traj ? `<p class="m">Trajektoren für ${esc(new Date(p.traj.start).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))}, ${dur(p.traj.dauer * 60)}</p><div class="tabelle"><table><thead><tr><th>Höhe</th><th>Richtung</th><th>Tempo</th><th>Entfernung</th></tr></thead><tbody>${p.traj.rows.map(r => `<tr><td>${num(+r.h)} m</td><td>${num(+r.richtung)}°</td><td>${k1(r.tempo)} km/h</td><td>${num(r.dist, 2)} km</td></tr>`).join("")}</tbody></table></div>` : "") +
     (p.check && Object.values(p.check).some(Boolean) ? z("Checkliste", `${Object.values(p.check).filter(Boolean).length} von ${PLANMANUELL.length} abgehakt`) : "") + `</details>`;
 }
 $("gSel").addEventListener("change", e => {

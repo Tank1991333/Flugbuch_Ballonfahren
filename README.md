@@ -81,12 +81,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function istAdmin() { return request.auth != null && request.auth.uid == "ADMIN_UID"; }
-    function freigegeben() { return request.auth != null && exists(/databases/$(database)/documents/freigaben/$(request.auth.uid)); }
+    function bestaetigt() { return request.auth != null && request.auth.token.email_verified == true; }
+    function freigegeben() { return bestaetigt() && exists(/databases/$(database)/documents/freigaben/$(request.auth.uid)); }
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid && (istAdmin() || freigegeben());
     }
     match /anfragen/{uid} {
-      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if bestaetigt() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(["email", "zeit"]) && request.resource.data.email == request.auth.token.email;
       allow read, delete: if request.auth != null && (request.auth.uid == uid || istAdmin());
     }
     match /freigaben/{uid} {
@@ -96,6 +98,7 @@ service cloud.firestore {
     }
     match /rueckmeldungen/{id} {
       allow create: if (istAdmin() || freigegeben()) && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(["uid", "email", "text", "zeit", "version", "geraet"])
                     && request.resource.data.text is string && request.resource.data.text.size() <= 4000;
       allow read, delete: if istAdmin();
     }
@@ -105,9 +108,21 @@ service cloud.firestore {
 
 Rückmeldungen (Einstellungen → Rückmeldung) erscheinen beim Administrator unter Einstellungen → Freischaltung.
 
+Freischaltungs-Anfragen sind nur mit bestätigter E-Mail-Adresse möglich (die App schickt nach der Registrierung einen Bestätigungslink), damit sich niemand unter der Adresse eines anderen ausgeben kann.
+
 Im Freigabe-Modus ist die App selbst gesperrt: Wer den Link öffnet, sieht nur den Anmeldebildschirm. Nach der Anmeldung erscheint bis zur Freischaltung „Dein Konto wartet auf die Freischaltung“. Die Freischaltung wird je Gerät gemerkt, damit das Flugbuch auch ohne Netz startet. Die Sperre ist eine Eingangstür; geschützt sind die Daten durch die Firestore-Regeln.
 
 Hinweise: Der Abgleich liest nur seit dem letzten Mal geänderte Fahrten (vollständig beim ersten Mal, über „Jetzt synchronisieren“ und wöchentlich). Unter Konto lässt sich das eigene Konto samt Cloud-Daten löschen. Sehr lange Tracks (über 4.000 Punkte) werden in der Cloud ausgedünnt. Auf einem Gerät mit Daten eines anderen Kontos fragt die App vor dem Anmelden nach.
+
+## Sicherheit (alles kostenlos)
+
+- Die App setzt eine Content-Security-Policy (im `<head>` von `index.html`, wirkt auf Vercel und GitHub Pages). Wird das kleine Design-Skript im `<head>` geändert, muss der `sha256`-Wert in der Policy angepasst werden – der Prüf-Workflow meldet das.
+- `vercel.json` setzt zusätzliche Kopfzeilen (kein Einbetten in fremde Seiten, `nosniff`, Referrer- und Berechtigungs-Richtlinie).
+- Daten aus Import und Cloud werden vereinheitlicht und vor der Anzeige maskiert.
+- Empfohlene Einstellungen in Firebase bzw. Google Cloud (einmalig):
+  1. **Google Cloud Console → APIs & Dienste → Anmeldedaten → Browser-Schlüssel**: unter „Website-Einschränkungen“ nur `flugbuch-ballonfahren.vercel.app/*`, `tank1991333.github.io/*` und `ballonflugbuch.firebaseapp.com/*` erlauben.
+  2. **Firebase → Authentication → Einstellungen**: „Schutz vor E-Mail-Aufzählung“ aktiv lassen; unter „Passwortrichtlinie“ mindestens 8 Zeichen verlangen.
+  3. Firestore-Regeln aus diesem README veröffentlichen.
 
 ## Hinweis
 
