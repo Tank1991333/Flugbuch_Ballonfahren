@@ -30,13 +30,15 @@
     } catch { return null; }
   }
   // Freischaltung nur mit bestätigter E-Mail-Adresse: sonst könnte sich jemand unter der Adresse eines Freundes registrieren
-  let bestaetigungGesendet = false;
+  // Automatisch höchstens eine Bestätigungs-E-Mail pro Tag und Konto (je Gerät gemerkt); „erneut senden“ geht immer
+  const mailKey = () => "bestaetigungMail_" + user.uid;
+  const mailFaellig = () => Date.now() - (+localStorage.getItem(mailKey()) || 0) > 864e5;
   async function emailBestaetigt() { // true, false oder null (keine Verbindung)
     if (!adminUid || user.uid === adminUid || user.emailVerified) return true;
     try {
       const { A } = await laden();
       await A.reload(user);
-      if (!user.emailVerified) { if (!bestaetigungGesendet) { bestaetigungGesendet = true; await A.sendEmailVerification(user).catch(() => {}); } return false; }
+      if (!user.emailVerified) { if (mailFaellig()) { localStorage.setItem(mailKey(), String(Date.now())); await A.sendEmailVerification(user).catch(() => {}); } return false; }
       await user.getIdToken(true); // neues Token, damit die Firestore-Regeln die Bestätigung sehen
       return true;
     } catch { return null; }
@@ -248,7 +250,7 @@
     E("torAn").onclick = () => anmelden(false, "tor");
     E("torReg").onclick = () => anmelden(true, "tor");
     E("torNeu").onclick = E("torBestOk").onclick = () => { status("Wird geprüft …"); einlassen(); };
-    E("torBestNeu").onclick = async () => { try { const { A } = await laden(); await A.sendEmailVerification(user); status("Die E-Mail wurde erneut gesendet. Bitte auch im Spam-Ordner nachsehen."); } catch (e) { status(meldung(e), true); } };
+    E("torBestNeu").onclick = async () => { try { const { A } = await laden(); await A.sendEmailVerification(user); localStorage.setItem(mailKey(), String(Date.now())); status("Die E-Mail wurde erneut gesendet. Bitte auch im Spam-Ordner nachsehen."); } catch (e) { status(meldung(e), true); } };
     E("torBestAus").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); };
     E("torAus").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); };
     E("torReset").onclick = E("cReset").onclick = async e => {
