@@ -157,8 +157,8 @@
   }
 
   // Verfolger-Link: Position der laufenden Fahrt für das Rückholteam (Dokument live/{token}, mit dem Link 12 h lesbar).
-  // Gesendet wird höchstens alle 10 s; die Spur wird mit ca. 30 m Abstand und höchstens 2000 Punkten mitgeschickt.
-  const LIVEDAUER = 12 * 36e5, ZEICHEN = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  // Gesendet wird höchstens einmal pro Minute (LIVETAKT); die Spur wird mit ca. 30 m Abstand und höchstens 2000 Punkten mitgeschickt.
+  const LIVEDAUER = 12 * 36e5, LIVETAKT = 60000, ZEICHEN = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let live = null, liveSpur = [], liveZuletzt = 0, liveSendet = false, liveFehler = false;
   const liveLaden = () => { live ??= load("verfolger", null); if (live && (live.uid !== user?.uid || Date.now() > live.ablauf)) { live = null; localStorage.removeItem("verfolger"); } return live; };
   const liveLink = () => new URL("verfolgen.html", location.href).href.split("#")[0] + "#" + live.token;
@@ -194,7 +194,7 @@
     liveSenden(a, p);
     return liveLink();
   };
-  window.verfolgerPunkt = (a, p) => { if (user && liveLaden() && Date.now() - liveZuletzt >= 10000) liveSenden(a, p); };
+  window.verfolgerPunkt = (a, p) => { if (user && liveLaden() && Date.now() - liveZuletzt >= LIVETAKT) liveSenden(a, p); };
   window.verfolgerEnde = async (a, landung) => {
     if (!user || !liveLaden()) return;
     for (let i = 0; liveSendet && i < 50; i++) await new Promise(r => setTimeout(r, 100)); // laufende Übertragung abwarten
