@@ -148,6 +148,10 @@ details.plan summary{cursor:pointer;color:var(--acc);font-weight:600;margin:8px 
 body.gesperrt>:not(#tor){display:none!important}
 .tor{position:fixed;inset:0;z-index:50;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;background:var(--bg);padding:calc(40px + env(safe-area-inset-top)) 16px 24px}
 .torbox{width:100%;max-width:420px}.torbox h1{font-size:1.5rem;margin:0 0 12px}
+/* Verfolger-Link (Cockpit) und Verfolger-Seite */
+.vf p{margin:8px 0 0;word-break:break-word}
+a.btn.ok{background:var(--acc);border-color:var(--acc);color:var(--onacc);margin:4px 0 8px}
+body.verfolger #vbox{height:52vh}
 .update{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:10px 14px;margin-bottom:12px}
 #willkommen{border:2px solid var(--acc2)}.schritte{padding-left:22px;margin:0 0 12px}.schritte li{margin:0 0 12px}.schritte button{margin-top:6px;min-height:40px}
 .rm{white-space:pre-wrap;color:var(--tx)}

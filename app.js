@@ -143,6 +143,7 @@ function punkt(p) {
   if (c.accuracy <= 100) { // gerundet gespeichert (0,1 m genau), spart rund ein Drittel Speicher
     const q = { lat: rund(pos.lat, 6), lng: rund(pos.lng, 6), hoehe: rund(pos.hoehe, 1), speed: rund(pos.speed, 1), kurs: rund(pos.kurs, 0), genauigkeit: rund(pos.genauigkeit, 0), zeit: new Date(p.timestamp).toISOString() }, l = aktiv.t.at(-1);
     if (!l || km(l, q) >= 0.003) aktiv.t.push(q);
+    window.verfolgerPunkt?.(aktiv, q);
   }
   if (Date.now() - lastSave > 4000) { lastSave = Date.now(); fahrtSichern(); }
   liveAnzeige();
@@ -181,6 +182,7 @@ async function ende() {
   watch = null;
   const { f, t } = aktiv, end = new Date(), l = t.at(-1) || pos;
   if (l) { f.landeLat = l.lat; f.landeLng = l.lng; }
+  window.verfolgerEnde?.(aktiv, l); // Rückholteam: „Gelandet“ anzeigen, Link endet
   let d = 0;
   for (let i = 1; i < t.length; i++) d += km(t[i - 1], t[i]);
   const h = t.map(p => p.hoehe).filter(Number.isFinite), s = t.map(p => p.speed).filter(Number.isFinite);
@@ -246,8 +248,22 @@ function ui() {
   $("fdot").className = aktiv ? "dot on" : "dot";
   $("fstate").textContent = aktiv ? "AUFZEICHNUNG" : "BEREIT";
   status(aktiv ? "Fahrt läuft" : "Keine Aufzeichnung");
-  wakeAnzeige(); liveAnzeige();
+  wakeAnzeige(); verfolgerAnzeige(); liveAnzeige();
 }
+// Verfolger-Link fürs Rückholteam (nur mit Konto, während der Aufzeichnung)
+function verfolgerAnzeige() {
+  $("vfK").hidden = !aktiv || !window.verfolgerMoeglich?.();
+  $("vfB").textContent = window.verfolgerAktiv?.() ? "🔗 Verfolger-Link erneut teilen" : "🔗 Verfolger-Link teilen";
+  $("vfT").textContent = window.verfolgerStatus?.() || "Das Rückholteam sieht deine Position, Höhe und Spur live im Browser – ohne Konto. Der Link endet mit der Landung, spätestens nach 12 Stunden.";
+}
+$("vfB").onclick = async () => {
+  if (!aktiv) return;
+  const url = window.verfolgerStart(aktiv, aktiv.t.at(-1) || pos); verfolgerAnzeige();
+  try {
+    if (navigator.share) await navigator.share({ title: "Ballon verfolgen", text: `Live-Position von ${aktiv.f.ballon}`, url });
+    else { await navigator.clipboard.writeText(url); status("Verfolger-Link kopiert"); }
+  } catch (e) { if (e.name !== "AbortError") prompt("Verfolger-Link zum Kopieren:", url); }
+};
 
 const RICHT = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"], p2 = n => String(n).padStart(2, "0");
 // Strecke und Höchstwerte der laufenden Fahrt schrittweise fortschreiben (statt jede Sekunde die ganze Spur zu durchlaufen)
@@ -282,6 +298,7 @@ function liveAnzeige() {
   set("sMaxH", Math.round(hmax) + " m"); set("sMaxV", num(vmax) + " km/h");
   const info = pos ? `${utmText(pos.lat, pos.lng)} · GPS ±${Math.round(pos.genauigkeit)} m` : "Standort wird ermittelt …";
   set("chip", info); set("posInfo", info);
+  if (aktiv) verfolgerAnzeige();
   set("gpsB", pos ? "GPS AKTIV" : "GPS SUCHT …"); $("gpsB").classList.toggle("on", !!pos);
   if (!$("fahrt").hidden) { hoehe(); bodenhoehe(); }
   liveKarte();
