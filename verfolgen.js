@@ -60,8 +60,8 @@
   function alter() { // Statuszeile: live, verzögert oder gelandet
     if (!fahrt) return;
     if (fahrt.status === "gelandet") return meldung(`Gelandet um ${new Date(fahrt.landung?.zeit || fahrt.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}. Der Link ist damit beendet.`, "ok");
-    const s = Math.max(0, Math.round((Date.now() - fahrt.zeit) / 1000));
-    if (s < 60) meldung(`● Live · letzte Position vor ${s} s`, "ok");
+    const s = Math.max(0, Math.round((Date.now() - fahrt.zeit) / 1000)); // die App sendet etwa einmal pro Minute
+    if (s < 150) meldung(`● Live · letzte Position vor ${s < 60 ? s + " s" : Math.floor(s / 60) + " min " + (s % 60) + " s"} (Aktualisierung etwa jede Minute)`, "ok");
     else meldung(`⚠ Seit ${Math.floor(s / 60)} min keine neue Position (Funkloch oder App im Hintergrund)`, "warn");
   }
   setInterval(alter, 1000);

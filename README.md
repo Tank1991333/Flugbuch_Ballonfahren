@@ -5,7 +5,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 ## Seiten (Menü links oben ☰)
 
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
-- **Verfolger-Link:** während der Aufzeichnung (mit Konto) einen Link fürs Rückholteam teilen; `verfolgen.html` zeigt Position, Spur, Höhe, Entfernung und Navigation – ohne Anmeldung, endet mit der Landung bzw. nach 12 Stunden
+- **Verfolger-Link:** während der Aufzeichnung (mit Konto) einen Link fürs Rückholteam teilen; `verfolgen.html` zeigt Position (Aktualisierung etwa jede Minute), Spur, Höhe, Entfernung und Navigation – ohne Anmeldung, endet mit der Landung bzw. nach 12 Stunden
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
 - **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte; Fahrten ohne GPS lassen sich nachtragen
 - **Karte:** ausgewählte Fahrten (je Fahrt eigene Farbe, Auswahl über „Fahrten wählen“) und Live-Standort, Stile Hybrid und Standard, zuschaltbare Luftfahrt-Ebene (open flightmaps, nicht amtlich), Link zur VFR/ICAO-Karte
