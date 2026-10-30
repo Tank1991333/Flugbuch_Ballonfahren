@@ -303,7 +303,7 @@ function hoehe() {
 }
 
 function render() {
-  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf(); speicherAnzeige();
+  auswahlFuellen(); ausruestungRender(); termineRender(); gasRender(); vRender(); fwKnopf(); speicherAnzeige(); backupHinweis();
   const sum = fluege.reduce((a, f) => ({ m: a.m + (+f.flugzeit || 0), k: a.k + (+f.strecke || 0), l: a.l + (+f.landungen || 0) }), { m: 0, k: 0, l: 0 });
   const kp = (a, b) => `<div class="kpi"><small>${a}</small><b>${b}</b></div>`;
   $("kpis").innerHTML = kp("Fahrten", fluege.length) + kp("Landungen", sum.l) + kp("Flugzeit", dur(sum.m)) + kp("Kilometer", num(sum.k, 1));
@@ -566,7 +566,18 @@ $("expB").onclick = async () => { // Backup enthält die Spuren aus IndexedDB
   a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 3, fluege: voll, stammdaten: stamm, monitor: mon }, null, 1)], { type: "application/json" }));
   a.download = `ballonflugbuch-${tagText(new Date())}.json`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  localStorage.setItem("letztesBackup", String(Date.now())); backupHinweis();
 };
+// Backup-Erinnerung je Gerät: nach 30 Tagen ohne Backup (oder noch nie) Hinweis auf der Startseite, „Später“ verschiebt um 7 Tage
+function backupHinweis() {
+  const zuletzt = +localStorage.getItem("letztesBackup") || 0, tage = Math.floor((Date.now() - zuletzt) / 864e5);
+  $("backupInfo").textContent = zuletzt ? `Letztes Backup auf diesem Gerät: ${new Date(zuletzt).toLocaleDateString("de-AT")}` : "Auf diesem Gerät wurde noch kein Backup erstellt.";
+  const zeigen = fluege.length > 0 && (!zuletzt || tage >= 30) && Date.now() > (+localStorage.getItem("backupSpaeter") || 0);
+  $("backupH").hidden = !zeigen;
+  $("backupT").textContent = zuletzt ? `Dein letztes Backup ist ${tage} Tage alt.` : "Du hast noch kein Backup erstellt.";
+}
+$("backupJetzt").onclick = () => $("expB").click();
+$("backupSpaeterB").onclick = () => { localStorage.setItem("backupSpaeter", String(Date.now() + 7 * 864e5)); backupHinweis(); };
 $("imp").onchange = async e => {
   const file = e.target.files[0];
   if (!file) return;

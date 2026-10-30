@@ -53,9 +53,15 @@
       <li id="wInstall"><b>App auf den Startbildschirm legen.</b> <span id="wInstallT"></span><br><button id="wInstallB" hidden>App installieren</button></li>
       <li><b>Während der Fahrt</b> die App im Vordergrund und den Bildschirm an lassen, sonst unterbricht das Handy das GPS. Am besten vorher einmal zu Fuß oder im Auto ausprobieren.</li>
     </ol>
+    <p class="note"><b>Hinweis:</b> Das Ballonflugbuch ist eine private, kostenlose App ohne Gewähr. Es ersetzt weder das amtliche Flugbuch noch Flughandbuch, Flugwetterberatung oder Flugvorbereitung. Wetter, Trajektorien und Auftrieb sind Orientierungswerte; die Verantwortung liegt beim Piloten.</p>
     <button id="wOk" class="ok" style="width:100%">Verstanden</button>
   </div>
   <p id="speicherWarn" class="card warn" hidden></p>
+  <div id="backupH" class="card" hidden><h2>💾 Backup</h2>
+    <p id="backupT"></p>
+    <p class="note">Ein Backup sichert alle Fahrten samt GPS-Spuren als Datei – unabhängig von Handy und Cloud.</p>
+    <div class="row"><button id="backupJetzt" class="ok">Jetzt sichern</button><button id="backupSpaeterB">Später</button></div>
+  </div>
   <div id="termine" class="card" hidden></div>
   <div id="kpis" class="kpis"></div>
   <div id="monitor" class="card"></div>
@@ -246,12 +252,14 @@
   <div class="card"><h2>Datensicherung</h2>
     <p class="note">Backup: JSON-Datei. Import: JSON-Backup, GPX- oder IGC-Datei (einzelne Fahrt). Bitte regelmäßig ein Backup erstellen.</p>
     <p id="speicher" class="note"></p>
+    <p id="backupInfo" class="note"></p>
     <div class="row"><button id="expB">⇩ Backup</button><label class="btn">⇧ Import<input id="imp" type="file" accept=".json,.gpx,.igc,application/json" hidden></label></div>
   </div>
   <div class="card"><h2>Datenschutz &amp; Info</h2>
     <p class="note"><b>Ohne Konto</b> bleiben alle Daten im Browser auf diesem Gerät.</p>
     <p class="note"><b>Mit Konto</b> werden Fahrten samt GPS-Tracks, Ausrüstung und Einstellungen bei Google Firebase gespeichert und sind nur für dein Konto lesbar. Der Administrator sieht in der App nur E-Mail-Adressen und Rückmeldungen. Als Betreiber des Firebase-Projekts kann er technisch aber auf die gespeicherten Daten zugreifen.</p>
     <p class="note"><b>Externe Dienste:</b> Für Ortsnamen, Karten und Wetter werden Koordinaten an OpenStreetMap (Nominatim), Esri, open flightmaps und Open-Meteo übertragen, Schriften kommen von Google Fonts. Dabei wird jeweils die IP-Adresse übermittelt.</p>
+    <p class="note"><b>Nutzung:</b> Private, kostenlose App ohne Gewähr. Ersetzt nicht das amtliche Flugbuch, Flughandbuch, Flugwetterberatung oder Flugvorbereitung; Wetter, Trajektorien und Auftrieb sind Orientierungswerte.</p>
     <p class="note"><b>Löschen:</b> „Konto löschen“ (unter Konto) entfernt Konto und Cloud-Daten. Die Daten auf diesem Gerät löschst du hier.</p>
     <div class="row"><button id="lokalDel" class="gef">Daten auf diesem Gerät löschen</button><button id="wZeigen">Erste Schritte</button></div>
     <p class="note">Version <span id="version">–</span></p>
