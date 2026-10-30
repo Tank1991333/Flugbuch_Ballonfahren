@@ -156,6 +156,52 @@
     if (nochmal) { nochmal = false; abgleichen(); }
   }
 
+  // Verfolger-Link: Position der laufenden Fahrt für das Rückholteam (Dokument live/{token}, mit dem Link 12 h lesbar).
+  // Gesendet wird höchstens alle 10 s; die Spur wird mit ca. 30 m Abstand und höchstens 2000 Punkten mitgeschickt.
+  const LIVEDAUER = 12 * 36e5, ZEICHEN = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let live = null, liveSpur = [], liveZuletzt = 0, liveSendet = false, liveFehler = false;
+  const liveLaden = () => { live ??= load("verfolger", null); if (live && (live.uid !== user?.uid || Date.now() > live.ablauf)) { live = null; localStorage.removeItem("verfolger"); } return live; };
+  const liveLink = () => new URL("verfolgen.html", location.href).href.split("#")[0] + "#" + live.token;
+  function liveSpurErgaenzen(p) {
+    const n = liveSpur.length;
+    if (n && km({ lat: liveSpur[n - 2], lng: liveSpur[n - 1] }, p) < 0.03) return;
+    liveSpur.push(rund(p.lat, 5), rund(p.lng, 5));
+    if (liveSpur.length > 4000) liveSpur = liveSpur.filter((_, i) => Math.floor(i / 2) % 2 === 0 || i >= liveSpur.length - 2);
+  }
+  async function liveSenden(a, p, landung) {
+    if (!liveLaden() || liveSendet) return;
+    liveSendet = true; liveZuletzt = Date.now();
+    try {
+      if (!liveSpur.length) a.t.forEach(liveSpurErgaenzen); // nach Neuladen die Spur aus der Aufzeichnung übernehmen
+      if (p) liveSpurErgaenzen(p);
+      const { db, F } = await laden(), q = landung || p || a.t.at(-1) || {};
+      await F.setDoc(F.doc(db, "live", live.token), { uid: user.uid, pilot: a.f.pilot || "", ballon: a.f.ballon || "", start: live.start, ablauf: live.ablauf, zeit: Date.now(),
+        lat: rund(q.lat, 6), lng: rund(q.lng, 6), hoehe: rund(p?.hoehe, 0), speed: rund(p?.speed, 1), kurs: rund(p?.kurs, 0), genauigkeit: rund(p?.genauigkeit, 0),
+        spur: liveSpur, status: landung ? "gelandet" : "fahrt", landung: landung ? { zeit: Date.now(), lat: rund(landung.lat, 6), lng: rund(landung.lng, 6) } : null });
+      liveFehler = false;
+    } catch { liveFehler = true; } // offline: beim nächsten Punkt erneut
+    liveSendet = false;
+  }
+  window.verfolgerMoeglich = () => konfiguriert && !!user;
+  window.verfolgerAktiv = () => !!liveLaden();
+  window.verfolgerStatus = () => !liveLaden() ? "" : liveFehler ? "⚠ Position konnte zuletzt nicht gesendet werden (keine Verbindung?)" : liveZuletzt ? `Rückholteam sieht deine Position live · zuletzt gesendet vor ${Math.round((Date.now() - liveZuletzt) / 1000)} s` : "Wird gestartet …";
+  window.verfolgerStart = (a, p) => { // liefert den Link sofort (das Teilen-Menü braucht den Fingertipp), gesendet wird im Hintergrund
+    if (!liveLaden()) {
+      const z = crypto.getRandomValues(new Uint8Array(24));
+      live = { token: [...z].map(b => ZEICHEN[b % ZEICHEN.length]).join(""), uid: user.uid, start: Date.now(), ablauf: Date.now() + LIVEDAUER };
+      localStorage.setItem("verfolger", JSON.stringify(live)); liveSpur = [];
+    }
+    liveSenden(a, p);
+    return liveLink();
+  };
+  window.verfolgerPunkt = (a, p) => { if (user && liveLaden() && Date.now() - liveZuletzt >= 10000) liveSenden(a, p); };
+  window.verfolgerEnde = async (a, landung) => {
+    if (!user || !liveLaden()) return;
+    for (let i = 0; liveSendet && i < 50; i++) await new Promise(r => setTimeout(r, 100)); // laufende Übertragung abwarten
+    await liveSenden(a, null, landung);
+    live = null; liveSpur = []; liveZuletzt = 0; localStorage.removeItem("verfolger");
+  };
+
   // wird von app.js nach jedem lokalen Speichern aufgerufen
   window.cloudGeaendert = k => {
     if (!["fluege", "geloescht"].includes(k)) localStorage.setItem("metaZeit", String(Date.now()));

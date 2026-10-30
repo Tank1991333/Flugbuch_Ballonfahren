@@ -5,6 +5,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 ## Seiten (Menü links oben ☰)
 
 - **Übersicht:** Fahrten, Landungen, Flugzeit, Kilometer, Aktivitätsmonitor, Rekorde
+- **Verfolger-Link:** während der Aufzeichnung (mit Konto) einen Link fürs Rückholteam teilen; `verfolgen.html` zeigt Position, Spur, Höhe, Entfernung und Navigation – ohne Anmeldung, endet mit der Landung bzw. nach 12 Stunden
 - **Fahrt:** Cockpit mit Geschwindigkeit, Höhe, Kurs, Genauigkeit, Karte, Höhenprofil, Steig-/Sinkrate; Aufzeichnung mit Landung und Markierungen
 - **Flugbuch:** alle Fahrten mit Bearbeiten, Löschen und Anzeige auf der Karte; Fahrten ohne GPS lassen sich nachtragen
 - **Karte:** ausgewählte Fahrten (je Fahrt eigene Farbe, Auswahl über „Fahrten wählen“) und Live-Standort, Stile Hybrid und Standard, zuschaltbare Luftfahrt-Ebene (open flightmaps, nicht amtlich), Link zur VFR/ICAO-Karte
@@ -95,6 +96,14 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == uid || istAdmin());
       allow write: if istAdmin();
       allow delete: if request.auth != null && request.auth.uid == uid; // beim Löschen des eigenen Kontos
+    }
+    match /live/{token} { // Verfolger-Link: lesbar mit dem Link, solange gültig; schreiben nur der eigene, freigeschaltete Pilot
+      allow get: if resource.data.ablauf > request.time.toMillis();
+      allow create: if (istAdmin() || freigegeben()) && token.size() >= 20 && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.ablauf <= request.time.toMillis() + 46800000;
+      allow update: if (istAdmin() || freigegeben()) && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == request.auth.uid && request.resource.data.ablauf == resource.data.ablauf;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
     match /rueckmeldungen/{id} {
       allow create: if (istAdmin() || freigegeben()) && request.resource.data.uid == request.auth.uid
