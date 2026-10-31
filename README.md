@@ -25,9 +25,13 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 
 ## Dateien im Hauptverzeichnis
 
-`index.html`, `style.css`, `app.js`, `trajektoren.js`, `sync.js`, `firebase-config.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
+`index.html`, `style.css`, `geo.js` (UTM und Entfernungen, gemeinsam mit der Verfolger-Ansicht), `app.js`, `trajektoren.js`, `sync.js`, `verfolgen.html`, `verfolgen.js`, `datenschutz.html`, `firebase-config.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
 
-Der Prüf-Workflow gehört nach `.github/workflows/validate.yml`.
+Dazu `fonts/` (Barlow, lokal statt Google Fonts, Lizenz OFL) und `vendor/leaflet/` (Leaflet 1.9.4, lokal statt unpkg). Damit gehen beim Öffnen der App keine IP-Adressen an Google Fonts oder ein CDN.
+
+Die Prüf-Workflows liegen in `.github/workflows/` (`validate.yml`: Syntax, Dateien, CSP; `tests.yml`: Browser-Tests). `tests/`, `package.json` und `.github/` werden nicht mit ausgeliefert (`.vercelignore`).
+
+**Impressum/Datenschutz:** In `datenschutz.html` Name und Kontakt des Betreibers eintragen (Platzhalter `[Name]`, `[E-Mail-Adresse]`).
 
 ## Dienste (alle kostenlos, ohne API-Key)
 
@@ -50,6 +54,16 @@ python3 -m http.server 8000
 ```
 
 Danach `http://localhost:8000` öffnen.
+
+### Automatische Tests
+
+```bash
+npm install && npx playwright install chromium
+npm test              # alle Testreihen
+node tests/run.js tor # nur eine Reihe
+```
+
+Die Tests starten einen eigenen Webserver (Port 8765), simulieren GPS, Wetter, Karten und Firebase (`tests/fakefb/`, mit den Firestore-Regeln aus diesem README) und prüfen Handy- und Desktop-Ansicht. Sie laufen bei jedem Pull Request automatisch.
 
 ## Konto und Synchronisierung (optional, kostenlos)
 
@@ -99,11 +113,19 @@ service cloud.firestore {
     }
     match /live/{token} { // Verfolger-Link: lesbar mit dem Link, solange gültig; schreiben nur der eigene, freigeschaltete Pilot
       allow get: if resource.data.ablauf > request.time.toMillis();
+      allow list: if request.auth != null && resource.data.uid == request.auth.uid; // eigene Links aufräumen
       allow create: if (istAdmin() || freigegeben()) && token.size() >= 20 && request.resource.data.uid == request.auth.uid
                     && request.resource.data.ablauf <= request.time.toMillis() + 46800000;
       allow update: if (istAdmin() || freigegeben()) && resource.data.uid == request.auth.uid
                     && request.resource.data.uid == request.auth.uid && request.resource.data.ablauf == resource.data.ablauf;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /fehler/{id} { // Fehlerprotokoll der App (ohne Fahrtdaten)
+      allow create: if (istAdmin() || freigegeben()) && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(["uid", "email", "msg", "quelle", "zeit", "version", "geraet"])
+                    && request.resource.data.msg is string && request.resource.data.msg.size() <= 500
+                    && request.resource.data.quelle is string && request.resource.data.quelle.size() <= 1000;
+      allow read, delete: if istAdmin();
     }
     match /rueckmeldungen/{id} {
       allow create: if (istAdmin() || freigegeben()) && request.resource.data.uid == request.auth.uid
@@ -115,7 +137,7 @@ service cloud.firestore {
 }
 ```
 
-Rückmeldungen (Einstellungen → Rückmeldung) erscheinen beim Administrator unter Einstellungen → Freischaltung.
+Rückmeldungen (Einstellungen → Rückmeldung) und das automatische Fehlerprotokoll erscheinen beim Administrator unter Einstellungen → Freischaltung.
 
 Freischaltungs-Anfragen sind nur mit bestätigter E-Mail-Adresse möglich (die App schickt nach der Registrierung einen Bestätigungslink), damit sich niemand unter der Adresse eines anderen ausgeben kann.
 
@@ -128,6 +150,8 @@ Hinweise: Der Abgleich liest nur seit dem letzten Mal geänderte Fahrten (vollst
 - Die App setzt eine Content-Security-Policy (im `<head>` von `index.html`, wirkt auf Vercel und GitHub Pages). Wird das kleine Design-Skript im `<head>` geändert, muss der `sha256`-Wert in der Policy angepasst werden – der Prüf-Workflow meldet das.
 - `vercel.json` setzt zusätzliche Kopfzeilen (kein Einbetten in fremde Seiten, `nosniff`, Referrer- und Berechtigungs-Richtlinie).
 - Daten aus Import und Cloud werden vereinheitlicht und vor der Anzeige maskiert.
+- Schriften und Leaflet liegen im Projekt; die CSP erlaubt Skripte nur von der eigenen Seite und `www.gstatic.com/firebasejs/`. Die Anmeldung nutzt `initializeAuth` ohne Popup-Unterstützung, dadurch kein unsichtbares iframe zu `firebaseapp.com`.
+- Unerwartete Fehler werden (nur mit freigeschaltetem Konto, ohne Fahrtdaten, höchstens 20 je Tag und Gerät) in der Sammlung `fehler` abgelegt und erscheinen beim Administrator unter Freischaltung.
 - Empfohlene Einstellungen in Firebase bzw. Google Cloud (einmalig):
   1. **Google Cloud Console → APIs & Dienste → Anmeldedaten → Browser-Schlüssel**: unter „Website-Einschränkungen“ nur `flugbuch-ballonfahren.vercel.app/*`, `tank1991333.github.io/*` und `ballonflugbuch.firebaseapp.com/*` erlauben.
   2. **Firebase → Authentication → Einstellungen**: „Schutz vor E-Mail-Aufzählung“ aktiv lassen; unter „Passwortrichtlinie“ mindestens 8 Zeichen verlangen.

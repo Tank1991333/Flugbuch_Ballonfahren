@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <!-- Schutz vor eingeschleustem Code: nur eigene Dateien und die genutzten Dienste sind erlaubt. Inline-Skript (Design) per Hash; bei Änderung des Skripts Hash neu berechnen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-b6dYQWEWbK3EvbZLheMU1rVHbiC0bFZNFyHbpbAbM0Q=' https://unpkg.com https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://unpkg.com https://tile.openstreetmap.org https://server.arcgisonline.com https://nwy-tiles-api.prod.newaydata.com; connect-src 'self' https://*.googleapis.com https://www.gstatic.com https://api.open-meteo.com https://nominatim.openstreetmap.org https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://ballonflugbuch.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-b6dYQWEWbK3EvbZLheMU1rVHbiC0bFZNFyHbpbAbM0Q=' https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com https://nwy-tiles-api.prod.newaydata.com; connect-src 'self' https://*.googleapis.com https://api.open-meteo.com https://nominatim.openstreetmap.org; frame-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="description" content="Digitales Flugbuch für Ballonfahrer: Fahrten mit GPS aufzeichnen, Ausrüstung, Gas und Fristen verwalten.">
+<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF8EF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -14,14 +16,13 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Ballonflugbuch</title>
 <script>try{var t=JSON.parse(localStorage.getItem("theme"));document.documentElement.dataset.theme=t||(matchMedia("(prefers-color-scheme: dark)").matches?"dunkel":"hell")}catch(e){document.documentElement.dataset.theme="hell"}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="gesperrt">
 <div id="tor" class="tor"><div class="card torbox">
   <h1>🎈 Ballonflugbuch</h1>
+  <p class="note">Digitales Flugbuch für Ballonfahrer: Fahrten mit GPS aufzeichnen, Ausrüstung, Gas und Fristen verwalten.</p>
   <p id="torLaden" class="note">Anmeldung wird geprüft …</p>
   <div id="torLogin" hidden>
     <p>Bitte melde dich an. Neue Konten schaltet der Administrator frei.</p>
@@ -29,6 +30,7 @@
     <label>Passwort<input id="torPass" type="password" autocomplete="current-password"></label>
     <div class="row"><button id="torAn" class="ok">Anmelden</button><button id="torReg">Registrieren</button></div>
     <button id="torReset" style="width:100%">Passwort vergessen</button>
+    <p class="note">Mit dem Registrieren stimmst du der <a href="datenschutz.html">Datenschutzerklärung</a> zu.</p>
   </div>
   <div id="torBest" hidden>
     <p>Bitte bestätige deine E-Mail-Adresse <b id="torMail2"></b>: Wir haben dir einen Link geschickt. Öffne ihn und tippe danach hier auf „Ich habe bestätigt“.</p>
@@ -76,6 +78,7 @@
   <p id="wakeH" class="note" hidden></p>
   <div id="vfK" class="card vf" hidden>
     <button id="vfB" class="ok" style="width:100%">🔗 Verfolger-Link teilen</button>
+    <button id="vfStop" style="width:100%;margin-top:8px" hidden>Teilen beenden</button>
     <p id="vfT" class="note" role="status"></p>
   </div>
   <p id="hinweis" class="warn" hidden>Bitte zuerst Pilot und Ballon-Kennzeichen unter Einstellungen eintragen.</p>
@@ -107,6 +110,8 @@
 
 <section id="flugbuch" class="seite" hidden>
   <div class="row"><button id="fNach" class="ok">+ Fahrt nachtragen</button></div>
+  <div class="row filter"><input id="fSuche" type="search" placeholder="Suchen: Ort, Ballon, Pilot, Bemerkung" aria-label="Fahrten durchsuchen" autocomplete="off"><select id="fJahr" aria-label="Jahr"></select></div>
+  <p id="fSumme" class="note" role="status"></p>
   <div id="liste"></div>
 </section>
 
@@ -245,6 +250,7 @@
   <div class="card" id="cAdmin" hidden><h2>Freischaltung (Administrator)</h2>
     <div id="aListe"></div>
     <div id="aRueck"></div>
+    <div id="aFehler"></div>
     <button id="aRefresh" style="width:100%;margin-top:8px">Aktualisieren</button>
   </div>
   <div class="card" id="cRueck" hidden><h2>Rückmeldung</h2>
@@ -262,11 +268,11 @@
   <div class="card"><h2>Datenschutz &amp; Info</h2>
     <p class="note"><b>Ohne Konto</b> bleiben alle Daten im Browser auf diesem Gerät.</p>
     <p class="note"><b>Mit Konto</b> werden Fahrten samt GPS-Tracks, Ausrüstung und Einstellungen bei Google Firebase gespeichert und sind nur für dein Konto lesbar. Der Administrator sieht in der App nur E-Mail-Adressen und Rückmeldungen. Als Betreiber des Firebase-Projekts kann er technisch aber auf die gespeicherten Daten zugreifen.</p>
-    <p class="note"><b>Externe Dienste:</b> Für Ortsnamen, Karten und Wetter werden Koordinaten an OpenStreetMap (Nominatim), Esri, open flightmaps und Open-Meteo übertragen, Schriften kommen von Google Fonts. Dabei wird jeweils die IP-Adresse übermittelt.</p>
+    <p class="note"><b>Externe Dienste:</b> Für Ortsnamen, Karten und Wetter werden Koordinaten an OpenStreetMap (Nominatim), Esri, open flightmaps und Open-Meteo übertragen. Dabei wird jeweils die IP-Adresse übermittelt. Schriften und Kartenbibliothek liegen direkt bei der App.</p>
     <p class="note"><b>Nutzung:</b> Private, kostenlose App ohne Gewähr. Ersetzt nicht das amtliche Flugbuch, Flughandbuch, Flugwetterberatung oder Flugvorbereitung; Wetter, Trajektorien und Auftrieb sind Orientierungswerte.</p>
     <p class="note"><b>Löschen:</b> „Konto löschen“ (unter Konto) entfernt Konto und Cloud-Daten. Die Daten auf diesem Gerät löschst du hier.</p>
     <div class="row"><button id="lokalDel" class="gef">Daten auf diesem Gerät löschen</button><button id="wZeigen">Erste Schritte</button></div>
-    <p class="note">Version <span id="version">–</span></p>
+    <p class="note"><a href="datenschutz.html">Datenschutzerklärung &amp; Impressum</a> · Version <span id="version">–</span></p>
   </div>
 </section>
 </main>
@@ -363,7 +369,8 @@
   <div class="row"><button value="x">Weiterfahren</button><button value="ok" class="ok">Speichern</button></div>
 </form></dialog>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="geo.js"></script>
 <script src="trajektoren.js"></script>
 <script src="firebase-config.js"></script>
 <script src="app.js"></script>
