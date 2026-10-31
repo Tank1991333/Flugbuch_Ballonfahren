@@ -29,7 +29,7 @@ server.listen(PORT, async () => {
   let fehler = 0;
   for (const name of liste) {
     const { out, code } = await lauf(name), zeilen = out.split("\n");
-    const ok = zeilen.filter(z => z.startsWith("OK")).length, schlecht = zeilen.filter(z => /FEHLER|UNERWARTET|Error:/.test(z));
+    const ok = zeilen.filter(z => z.startsWith("OK")).length, schlecht = zeilen.filter(z => !z.startsWith("OK") && /FEHLER|UNERWARTET|Error:/.test(z));
     const gut = ok > 0 && !schlecht.length && code === 0;
     if (!gut) fehler++;
     console.log(`${gut ? "✔" : "✘"} ${name}: ${ok} OK${schlecht.length ? ", " + schlecht.length + " Fehler" : ""}${code ? ", Exit " + code : ""}`);
