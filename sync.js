@@ -55,8 +55,24 @@
     if (!ok && !gemerkt) { tor("warten"); status("Keine Verbindung – die Freischaltung kann gerade nicht geprüft werden.", true); return; }
     localStorage.setItem("zugang", user.uid); status(""); tor(null);
     if (adminUid && user.uid === adminUid) adminLaden();
-    abgleichen();
+    abgleichen(); landungNachsenden(); liveAufraeumen(); window.fehlerSenden();
   }
+  // gemerkte Fehler an den Administrator schicken: nur mit Zugang, höchstens 20 je Tag und Gerät
+  let fehlerGesendet = 0;
+  window.fehlerSenden = async () => {
+    const q = window.__fehler || [];
+    if (!user || localStorage.getItem("zugang") !== user.uid || !navigator.onLine) return;
+    while (fehlerGesendet < q.length) {
+      const x = q[fehlerGesendet++], heute = new Date().toISOString().slice(0, 10), t = load("fehlerTag", {});
+      const n = t.d === heute ? t.n : 0;
+      if (n >= 20) return;
+      localStorage.setItem("fehlerTag", JSON.stringify({ d: heute, n: n + 1 }));
+      try {
+        const { db, F } = await laden();
+        await F.setDoc(F.doc(db, "fehler", nid()), { uid: user.uid, email: user.email || "", msg: x.msg, quelle: x.quelle, zeit: x.zeit, version: window.appVersion || "", geraet: navigator.userAgent.slice(0, 200) });
+      } catch (e) {}
+    }
+  };
   const meldung = e => ({
     "auth/invalid-credential": "E-Mail oder Passwort ist falsch.", "auth/wrong-password": "E-Mail oder Passwort ist falsch.",
     "auth/user-not-found": "E-Mail oder Passwort ist falsch.", "auth/invalid-email": "Die E-Mail-Adresse ist ungültig.",
@@ -78,7 +94,9 @@
     if (fb) return fb;
     const [app, auth, fs] = await Promise.all(["firebase-app.js", "firebase-auth.js", "firebase-firestore.js"].map(f => import(CDN + f)));
     const a = app.initializeApp(cfg);
-    fb = { auth: auth.getAuth(a), A: auth, db: fs.getFirestore(a), F: fs };
+    // initializeAuth ohne Popup-Resolver: kein unsichtbares iframe zu firebaseapp.com und kein apis.google.com nötig
+    const au = auth.initializeAuth(a, { persistence: [auth.indexedDBLocalPersistence, auth.browserLocalPersistence] });
+    fb = { auth: au, A: auth, db: fs.getFirestore(a), F: fs };
     fb.auth.languageCode = "de"; // E-Mails zum Bestätigen und Zurücksetzen auf Deutsch
     return fb;
   }
@@ -136,7 +154,10 @@
       const cloudNeuer = cz > lz || (!lz && hat(meta.stammdaten)); // frisches Gerät übernimmt die Einstellungen aus der Cloud
       localStorage.setItem("geloescht", JSON.stringify([...tote]));
       if (cloudNeuer) localStorage.setItem("metaZeit", String(cz));
-      cloudUebernehmen({ fluege: neu, ...(cloudNeuer ? { stamm: meta.stammdaten, mon: meta.monitor, theme: meta.theme } : {}) });
+      // Einstellungen je Feld bzw. je Eintrag zusammenführen (Stand des letzten Abgleichs als Basis); ohne Basis wie bisher: neuere Seite gewinnt
+      const basisKey = "stammBasis_" + user.uid, basis = localStorage.getItem("localUid") === user.uid ? load(basisKey, null) : null, lokalSt = load("stammdaten", {});
+      const stNeu = !meta.stammdaten ? lokalSt : basis ? zusammenfuehren(basis, lokalSt, meta.stammdaten, !cloudNeuer) : cloudNeuer ? meta.stammdaten : lokalSt;
+      cloudUebernehmen({ fluege: neu, ...(!gleich(stNeu, lokalSt) ? { stamm: stNeu } : {}), ...(cloudNeuer ? { mon: meta.monitor, theme: meta.theme } : {}) });
       for (const f of hoch) {
         // Spur aus IndexedDB mitschicken; fehlt sie lokal, bleibt die Spur in der Cloud erhalten (nur die übrigen Felder ergänzen)
         const t = await spur(f), d = { ...bereinigt({ ...f, track: t }), geaendert: F.serverTimestamp() }, ohne = !t.length && f.punkte > 1;
@@ -144,7 +165,8 @@
         await F.setDoc(F.doc(col, f.id), d, ohne ? { merge: true } : {}); ids.add(f.id);
       }
       for (const id of tote) if (cloud.has(id) || (ids.has(id) && !cloudTote.has(id))) { await F.deleteDoc(F.doc(col, id)); ids.delete(id); }
-      await F.setDoc(metaRef, { geloescht: [...tote], updatedAt: cloudNeuer ? cz : lz, stammdaten: load("stammdaten", {}), monitor: load("monitorEinstellungen", {}), theme: load("theme", null) }, { merge: true });
+      await F.setDoc(metaRef, { geloescht: [...tote], updatedAt: Math.max(cz, lz), stammdaten: stNeu, monitor: load("monitorEinstellungen", {}), theme: load("theme", null) }, { merge: true });
+      localStorage.setItem(basisKey, JSON.stringify(stNeu));
       localStorage.setItem("localUid", user.uid);
       localStorage.setItem(standKey(), JSON.stringify({ server, lokal: beginn, voll: voll ? beginn : st.voll, ids: [...ids] }));
       status(`Zuletzt synchronisiert: ${new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} · ${neu.length} Fahrten`);
@@ -168,19 +190,36 @@
     liveSpur.push(rund(p.lat, 5), rund(p.lng, 5));
     if (liveSpur.length > 4000) liveSpur = liveSpur.filter((_, i) => Math.floor(i / 2) % 2 === 0 || i >= liveSpur.length - 2);
   }
-  async function liveSenden(a, p, landung) {
-    if (!liveLaden() || liveSendet) return;
+  async function liveSenden(a, p, landung) { // true = gesendet
+    if (!liveLaden() || liveSendet) return false;
     liveSendet = true; liveZuletzt = Date.now();
-    try {
-      if (!liveSpur.length) a.t.forEach(liveSpurErgaenzen); // nach Neuladen die Spur aus der Aufzeichnung übernehmen
-      if (p) liveSpurErgaenzen(p);
-      const { db, F } = await laden(), q = landung || p || a.t.at(-1) || {};
-      await F.setDoc(F.doc(db, "live", live.token), { uid: user.uid, pilot: a.f.pilot || "", ballon: a.f.ballon || "", start: live.start, ablauf: live.ablauf, zeit: Date.now(),
-        lat: rund(q.lat, 6), lng: rund(q.lng, 6), hoehe: rund(p?.hoehe, 0), speed: rund(p?.speed, 1), kurs: rund(p?.kurs, 0), genauigkeit: rund(p?.genauigkeit, 0),
-        spur: liveSpur, status: landung ? "gelandet" : "fahrt", landung: landung ? { zeit: Date.now(), lat: rund(landung.lat, 6), lng: rund(landung.lng, 6) } : null });
-      liveFehler = false;
-    } catch { liveFehler = true; } // offline: beim nächsten Punkt erneut
+    if (!liveSpur.length) a.t.forEach(liveSpurErgaenzen); // nach Neuladen die Spur aus der Aufzeichnung übernehmen
+    if (p) liveSpurErgaenzen(p);
+    const q = landung || p || a.t.at(-1) || {}, jetzt = Date.now();
+    const d = { uid: user.uid, pilot: a.f.pilot || "", ballon: a.f.ballon || "", start: live.start, ablauf: live.ablauf, zeit: jetzt, posZeit: q.zeit ? Date.parse(q.zeit) : jetzt,
+      lat: rund(q.lat, 6), lng: rund(q.lng, 6), hoehe: rund(p?.hoehe, 0), speed: rund(p?.speed, 1), kurs: rund(p?.kurs, 0), genauigkeit: rund(p?.genauigkeit, 0),
+      spur: liveSpur, status: landung ? "gelandet" : "fahrt", landung: landung ? { zeit: jetzt, lat: rund(landung.lat, 6), lng: rund(landung.lng, 6) } : null };
+    if (landung) localStorage.setItem("verfolgerLandung", JSON.stringify({ token: live.token, d })); // wird bis zum Erfolg nachgesendet
+    let ok = false;
+    try { const { db, F } = await laden(); await F.setDoc(F.doc(db, "live", live.token), d); ok = true; liveFehler = false; if (landung) localStorage.removeItem("verfolgerLandung"); }
+    catch { liveFehler = true; } // offline: beim nächsten Punkt erneut
     liveSendet = false;
+    return ok;
+  }
+  // Landung, die offline nicht gesendet werden konnte, später nachreichen (beim Start und wenn das Netz zurück ist)
+  async function landungNachsenden() {
+    const o = load("verfolgerLandung", null);
+    if (!o || !user || o.d.uid !== user.uid) return;
+    if (Date.now() > o.d.ablauf) return localStorage.removeItem("verfolgerLandung");
+    try { const { db, F } = await laden(); await F.setDoc(F.doc(db, "live", o.token), o.d); localStorage.removeItem("verfolgerLandung"); } catch { /* nächster Versuch */ }
+  }
+  // Eigene Verfolger-Dokumente aufräumen: abgelaufene und 2 h nach der Landung löschen (Standortdaten nicht länger als nötig speichern)
+  async function liveAufraeumen(alle) {
+    try {
+      const { db, F } = await laden(), aktuell = liveLaden()?.token;
+      const s = await F.getDocs(F.query(F.collection(db, "live"), F.where("uid", "==", user.uid)));
+      for (const d of s.docs) { const x = d.data(); if (alle || (d.id !== aktuell && (x.ablauf < Date.now() || (x.status === "gelandet" && (x.landung?.zeit || 0) < Date.now() - 2 * 36e5)))) await F.deleteDoc(F.doc(db, "live", d.id)); }
+    } catch { /* ohne neue Regeln oder offline: später erneut */ }
   }
   window.verfolgerMoeglich = () => konfiguriert && !!user;
   window.verfolgerAktiv = () => !!liveLaden();
@@ -200,6 +239,13 @@
     for (let i = 0; liveSendet && i < 50; i++) await new Promise(r => setTimeout(r, 100)); // laufende Übertragung abwarten
     await liveSenden(a, null, landung);
     live = null; liveSpur = []; liveZuletzt = 0; localStorage.removeItem("verfolger");
+  };
+  window.verfolgerBeenden = async () => { // Teilen vor der Landung beenden: Dokument löschen, der Link zeigt danach nichts mehr
+    if (!liveLaden()) return true;
+    try { const { db, F } = await laden(); await F.deleteDoc(F.doc(db, "live", live.token)); }
+    catch { return false; }
+    live = null; liveSpur = []; liveZuletzt = 0; localStorage.removeItem("verfolger");
+    return true;
   };
 
   // wird von app.js nach jedem lokalen Speichern aufgerufen
@@ -235,6 +281,10 @@
       const { db, F } = await laden(), r = (await F.getDocs(F.collection(db, "rueckmeldungen"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.zeit || 0) - (a.zeit || 0));
       E("aRueck").innerHTML = '<h3 style="margin-top:14px">Rückmeldungen</h3>' + (r.length ? r.map(x => `<div class="zeile"><span><b>${esc(x.email || "")}</b> · ${esc(new Date(x.zeit || 0).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${esc(x.version || "")}<br><span class="rm">${esc(x.text || "")}</span><br><small class="note">${esc(x.geraet || "")}</small></span><span><button data-a="rdel" data-uid="${esc(x.id)}" style="min-height:36px;padding:0 12px">Erledigt</button></span></div>`).join("") : '<p class="note">Keine Rückmeldungen.</p>');
     } catch (e) { E("aRueck").innerHTML = '<p class="note">Rückmeldungen: ' + esc(e?.code === "permission-denied" ? "Bitte die Firestore-Regeln aus der README aktualisieren." : meldung(e)) + "</p>"; }
+    try {
+      const { db, F } = await laden(), r = (await F.getDocs(F.collection(db, "fehler"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.zeit || 0) - (a.zeit || 0));
+      E("aFehler").innerHTML = '<h3 style="margin-top:14px">Fehlerprotokoll' + (r.length ? ` (${r.length})` : "") + "</h3>" + (r.length ? r.slice(0, 30).map(x => `<div class="zeile"><span><b>${esc(x.email || x.uid || "")}</b> · ${esc(new Date(x.zeit || 0).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" }))} · ${esc(x.version || "")}<br><span class="rm">${esc(x.msg || "")}</span><details><summary class="note">Details</summary><pre class="fehlerstack">${esc(x.quelle || "")}</pre><small class="note">${esc(x.geraet || "")}</small></details></span><span><button data-a="fdel" data-uid="${esc(x.id)}" style="min-height:36px;padding:0 12px">Erledigt</button></span></div>`).join("") + (r.length > 1 ? `<button data-a="falle" style="width:100%;margin-top:8px">Alle ${r.length} als erledigt löschen</button>` : "") : '<p class="note">Keine Fehler gemeldet.</p>');
+    } catch (e) { E("aFehler").innerHTML = '<p class="note">Fehlerprotokoll: ' + esc(e?.code === "permission-denied" ? "Bitte die Firestore-Regeln aus der README aktualisieren." : meldung(e)) + "</p>"; }
   }
   async function adminAktion(e) {
     const bt = e.target.closest("button");
@@ -245,6 +295,8 @@
       else if (bt.dataset.a === "nein") await F.deleteDoc(F.doc(db, "anfragen", uid));
       else if (bt.dataset.a === "sperr" && confirm("Den Zugang für dieses Konto sperren?")) await F.deleteDoc(F.doc(db, "freigaben", uid));
       else if (bt.dataset.a === "rdel") await F.deleteDoc(F.doc(db, "rueckmeldungen", uid));
+      else if (bt.dataset.a === "fdel") await F.deleteDoc(F.doc(db, "fehler", uid));
+      else if (bt.dataset.a === "falle") for (const d of (await F.getDocs(F.collection(db, "fehler"))).docs) await F.deleteDoc(F.doc(db, "fehler", d.id));
     } catch (err) { status(meldung(err), true); }
     adminLaden();
   }
@@ -258,6 +310,8 @@
       for (const d of (await F.getDocs(F.collection(db, "users", u.uid, "fluege"))).docs) await F.deleteDoc(F.doc(db, "users", u.uid, "fluege", d.id));
       await F.deleteDoc(F.doc(db, "users", u.uid));
     } catch (e) { if (e?.code !== "permission-denied") throw e; }
+    await liveAufraeumen(true); // eigene Verfolger-Dokumente (Standortdaten) ebenfalls löschen
+    localStorage.removeItem("verfolger"); localStorage.removeItem("verfolgerLandung");
     for (const p of ["anfragen", "freigaben"]) await F.deleteDoc(F.doc(db, p, u.uid)).catch(() => {}); // Freigabe zuletzt, sonst fehlt das Recht für den Rest
     const lokal = E("kLokal").checked;
     await A.deleteUser(u);
@@ -315,9 +369,21 @@
       catch (err) { E("kFehler").textContent = meldung(err); E("kFehler").hidden = false; }
       E("kOk").disabled = false;
     };
-    E("aListe").onclick = E("aRueck").onclick = adminAktion; E("aRefresh").onclick = adminLaden;
-    E("cOut").onclick = async () => { const { auth, A } = await laden(); await A.signOut(auth); status("Abgemeldet. Die Daten bleiben auf diesem Gerät."); };
-    window.addEventListener("online", () => abgleichen());
+    E("aListe").onclick = E("aRueck").onclick = E("aFehler").onclick = adminAktion; E("aRefresh").onclick = adminLaden;
+    E("cOut").onclick = async () => {
+      if (aktiv) return alert("Bitte zuerst die laufende Fahrt beenden.");
+      const weg = confirm("Abmelden.\n\nSollen die Daten auch von diesem Gerät entfernt werden? Empfohlen auf fremden oder geteilten Geräten. Sie bleiben in der Cloud und kommen beim nächsten Anmelden zurück.\n\nOK = abmelden und Gerät leeren, Abbrechen = nur abmelden");
+      const { auth, A } = await laden();
+      if (weg && !navigator.onLine) return alert("Du bist offline. Damit nichts verloren geht, kann das Gerät erst mit Internetverbindung geleert werden.");
+      if (weg) { // zuletzt Geändertes noch hochladen
+        for (let i = 0; laeuft && i < 80; i++) await new Promise(r => setTimeout(r, 250));
+        try { await abgleichen(true); } catch (e) {}
+      }
+      await A.signOut(auth);
+      if (weg) return lokalLoeschen();
+      status("Abgemeldet. Die Daten bleiben auf diesem Gerät.");
+    };
+    window.addEventListener("online", () => { abgleichen(); landungNachsenden(); });
     try {
       const { auth, A } = await laden();
       A.onAuthStateChanged(auth, async u => {

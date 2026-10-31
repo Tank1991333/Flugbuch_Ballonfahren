@@ -1,0 +1,11 @@
+{
+  "name": "ballonflugbuch",
+  "private": true,
+  "description": "Digitales Flugbuch für Ballonfahrer (statische PWA, ohne Build-Schritt). package.json nur für die automatischen Tests.",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

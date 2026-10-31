@@ -1,0 +1,6 @@
+# Nur für die automatischen Tests, nicht Teil der App
+tests/
+package.json
+package-lock.json
+node_modules/
+.github/

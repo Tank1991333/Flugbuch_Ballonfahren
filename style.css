@@ -1,3 +1,9 @@
+/* Schriften lokal (keine Verbindung zu Google Fonts), Lizenz: fonts/OFL-Barlow.txt */
+@font-face{font-family:'Barlow';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/barlow-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/barlow-semi-condensed-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/barlow-semi-condensed-latin-700-normal.woff2) format('woff2')}
 :root,[data-theme="hell"]{--bg:#FFF8EF;--card:#FFFFFF;--line:#E8D9C6;--soft:#F6E7D3;--glass:#FFF8EFEB;--tx:#2B2118;--mut:#6B5B4B;--acc:#C2410C;--acc2:#0F5C63;--onacc:#FFFFFF;--ok:#1E7B46;--gef:#B42318;--warn:#B45309;color-scheme:light}
 [data-theme="dunkel"]{--bg:#1A1411;--card:#261E19;--line:#3A2F27;--soft:#3A2F27;--glass:#261E19EB;--tx:#F6EBDD;--mut:#C2AE9A;--acc:#FFB04D;--acc2:#5CC4C0;--onacc:#1A1411;--ok:#6FD39B;--gef:#FF8A7A;--warn:#FFB04D;color-scheme:dark}
 *{box-sizing:border-box}
@@ -72,7 +78,7 @@ dialog::backdrop{background:#000a}
 .mapbox{position:relative;isolation:isolate;height:46vh;min-height:300px;margin-bottom:10px} /* eigene Ebene: Leaflet-z-Index bleibt unter Menü und Kopfzeile */
 #kbox{height:62vh}
 .mapbox #map{height:100%;min-height:0}
-.ovl{position:absolute;left:10px;bottom:34px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.ovl{position:absolute;left:10px;top:86px;z-index:1000;display:flex;flex-direction:column;gap:8px}
 .ovl button{width:42px;min-height:42px;padding:0;font-size:1.2rem;background-color:var(--glass)}
 .chip{position:absolute;left:62px;bottom:34px;z-index:1000;background:var(--glass);border-radius:8px;padding:6px 10px;font-size:.78rem}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:10px;overflow:hidden}
@@ -156,3 +162,9 @@ body.verfolger #vbox{height:52vh}
 #willkommen{border:2px solid var(--acc2)}.schritte{padding-left:22px;margin:0 0 12px}.schritte li{margin:0 0 12px}.schritte button{margin-top:6px;min-height:40px}
 .rm{white-space:pre-wrap;color:var(--tx)}
 .fwliste{max-height:52vh;overflow-y:auto;margin:4px 0}.fwliste .chk small{display:block;color:var(--mut)}
+.fehlerstack{white-space:pre-wrap;word-break:break-all;font-size:12px;max-height:200px;overflow:auto;margin:4px 0}
+.klapp{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none}
+.klapp::after{content:"▾";font-size:1rem;color:var(--mut);transition:transform .2s}
+.card.zu>.klapp{margin-bottom:0}.card.zu>.klapp::after{transform:rotate(-90deg)}
+.card.zu>:not(.klapp){display:none!important}
+.filter input,.filter select{flex:1;min-width:0}.filter select{flex:0 0 auto;width:auto}

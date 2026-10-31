@@ -1,4 +1,14 @@
 "use strict";
+// Fehlerprotokoll: unerwartete Fehler merken; sync.js schickt sie bei Anmeldung an den Administrator (ohne Fahrtdaten)
+window.__fehler = [];
+const fehlerMerken = (msg, quelle) => {
+  const m = String(msg || "Unbekannt").slice(0, 500);
+  if (m === "Script error." || !navigator.onLine || window.__fehler.length >= 10 || window.__fehler.some(x => x.msg === m)) return;
+  window.__fehler.push({ msg: m, quelle: String(quelle || "").slice(0, 1000), zeit: Date.now() });
+  window.fehlerSenden?.();
+};
+addEventListener("error", e => fehlerMerken(e.message, `${(e.filename || "").split("/").pop()}:${e.lineno}:${e.colno}\n${e.error?.stack || ""}`));
+addEventListener("unhandledrejection", e => fehlerMerken(e.reason?.message || e.reason, e.reason?.stack));
 const $ = id => document.getElementById(id);
 const load = (k, f) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? f; } catch { return f; } };
 const SYNCKEYS = ["fluege", "geloescht", "stammdaten", "monitorEinstellungen", "theme"];
@@ -9,23 +19,7 @@ const num = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString("de-AT", { minim
 const dur = m => `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, "0")}m`;
 const datum = iso => new Date(iso).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" });
 const nid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random();
-const km = (a, b) => { const r = Math.PI / 180, dl = (b.lat - a.lat) * r, dn = (b.lng - a.lng) * r, x = Math.sin(dl / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dn / 2) ** 2; return 12742 * Math.asin(Math.sqrt(x)); };
-
-// UTM-Koordinaten (WGS84) für alle Koordinatenanzeigen der App
-function utm(lat, lng) {
-  const zone = Math.floor((lng + 180) / 6) + 1, r = Math.PI / 180, a = 6378137, e2 = 0.00669438, k0 = 0.9996;
-  const phi = lat * r, ep2 = e2 / (1 - e2), N = a / Math.sqrt(1 - e2 * Math.sin(phi) ** 2), T = Math.tan(phi) ** 2, C = ep2 * Math.cos(phi) ** 2;
-  const A = Math.cos(phi) * (lng - ((zone - 1) * 6 - 177)) * r;
-  const M = a * ((1 - e2 / 4 - 3 * e2 ** 2 / 64 - 5 * e2 ** 3 / 256) * phi - (3 * e2 / 8 + 3 * e2 ** 2 / 32 + 45 * e2 ** 3 / 1024) * Math.sin(2 * phi) + (15 * e2 ** 2 / 256 + 45 * e2 ** 3 / 1024) * Math.sin(4 * phi) - 35 * e2 ** 3 / 3072 * Math.sin(6 * phi));
-  const E = k0 * N * (A + (1 - T + C) * A ** 3 / 6 + (5 - 18 * T + T ** 2 + 72 * C - 58 * ep2) * A ** 5 / 120) + 500000;
-  const Nn = k0 * (M + N * Math.tan(phi) * (A ** 2 / 2 + (5 - T + 9 * C + 4 * C ** 2) * A ** 4 / 24 + (61 - 58 * T + T ** 2 + 600 * C - 330 * ep2) * A ** 6 / 720)) + (lat < 0 ? 1e7 : 0);
-  return { zone: zone + (lat < 0 ? "S" : "N"), e: Math.round(E), n: Math.round(Nn) };
-}
-function utmText(lat, lng) {
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "–";
-  const u = utm(lat, lng);
-  return `UTM ${u.zone} · ${u.e} E · ${u.n} N`;
-}
+// km(), utm(), utmText() stehen in geo.js (gemeinsam mit der Verfolger-Ansicht)
 
 // GPS-Spuren liegen in IndexedDB (Platz für Tausende Fahrten), alles andere in localStorage (ca. 5 MB).
 // Fehlt IndexedDB, bleibt die Spur wie früher an der Fahrt (f.track).
@@ -75,6 +69,29 @@ function fahrtBereinigen(f) {
   return f;
 }
 fluege.forEach(f => { f.id ??= nid(); fahrtBereinigen(f); });
+
+// Drei-Wege-Zusammenführung für Einstellungen (Abgleich, Backup-Import): b = gemeinsamer Stand, l = lokal, c = andere Seite.
+// Geändert hat nur eine Seite → diese gewinnt; Listen mit id werden je Eintrag zusammengeführt (Hinzufügen und Löschen bleiben erhalten);
+// echte Widersprüche entscheidet lokalGewinnt.
+const gleich = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+const istObjekt = x => !!x && typeof x === "object" && !Array.isArray(x);
+const mitIds = x => Array.isArray(x) && x.every(e => istObjekt(e) && e.id != null);
+function zusammenfuehren(b, l, c, lokalGewinnt) {
+  if (gleich(l, c)) return l;
+  if (gleich(l, b)) return c;
+  if (gleich(c, b)) return l;
+  if (istObjekt(l) && istObjekt(c)) {
+    const o = {};
+    new Set([...Object.keys(l), ...Object.keys(c)]).forEach(k => { const v = zusammenfuehren(istObjekt(b) ? b[k] : undefined, l[k], c[k], lokalGewinnt); if (v !== undefined) o[k] = v; });
+    return o;
+  }
+  if ((l === undefined || mitIds(l)) && (c === undefined || mitIds(c))) {
+    const m = x => new Map((mitIds(x) ? x : []).map(e => [e.id, e])), bm = m(b), lm = m(l), cm = m(c), aus = [];
+    new Set([...lm.keys(), ...cm.keys()]).forEach(id => { const v = zusammenfuehren(bm.get(id), lm.get(id), cm.get(id), lokalGewinnt); if (v !== undefined) aus.push(v); });
+    return aus;
+  }
+  return lokalGewinnt ? l : c;
+}
 
 const SEITEN = ["dashboard", "fahrt", "flugbuch", "karte", "wetter", "rechner", "trajektoren", "ausruestung", "gas", "einstellungen"];
 function zeige(id) {
@@ -254,8 +271,14 @@ function ui() {
 function verfolgerAnzeige() {
   $("vfK").hidden = !aktiv || !window.verfolgerMoeglich?.();
   $("vfB").textContent = window.verfolgerAktiv?.() ? "🔗 Verfolger-Link erneut teilen" : "🔗 Verfolger-Link teilen";
+  $("vfStop").hidden = !window.verfolgerAktiv?.();
   $("vfT").textContent = window.verfolgerStatus?.() || "Das Rückholteam sieht deine Position, Höhe und Spur live im Browser – ohne Konto. Der Link endet mit der Landung, spätestens nach 12 Stunden.";
 }
+$("vfStop").onclick = async () => {
+  if (!confirm("Teilen beenden? Das Rückholteam sieht deine Position dann nicht mehr.")) return;
+  if (!(await window.verfolgerBeenden?.())) return alert("Beenden ist gerade nicht möglich (keine Verbindung?). Bitte später erneut versuchen.");
+  verfolgerAnzeige(); status("Teilen beendet");
+};
 $("vfB").onclick = async () => {
   if (!aktiv) return;
   const url = window.verfolgerStart(aktiv, aktiv.t.at(-1) || pos); verfolgerAnzeige();
@@ -335,8 +358,23 @@ function render() {
   const top = k => fluege.reduce((m, f) => Math.max(m, +f[k] || 0), 0);
   $("rekorde").innerHTML = "<h2>Rekorde</h2>" + [["Max. Höhe", top("maxHoehe") + " m"], ["Längste Fahrt", dur(top("flugzeit"))], ["Weiteste Strecke", num(top("strecke"), 1) + " km"], ["Max. Tempo", num(top("maxSpeed"), 1) + " km/h"]].map(([a, b]) => `<p><span>${a}</span><b>${b}</b></p>`).join("");
 
-  $("liste").innerHTML = fluege.length
-    ? [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).map(f => {
+  listeRender();
+}
+
+// Flugbuch-Liste mit Suche und Jahresfilter; Summen gelten für die gefilterten Fahrten
+let listeMax = 50;
+function listeRender() {
+  const jahre = [...new Set(fluege.map(f => new Date(f.startzeit).getFullYear()).filter(Number.isFinite))].sort((a, b) => b - a), j = $("fJahr").value;
+  $("fJahr").innerHTML = '<option value="">Alle Jahre</option>' + jahre.map(y => `<option${String(y) === j ? " selected" : ""}>${y}</option>`).join("");
+  const q = $("fSuche").value.trim().toLowerCase(), jahr = $("fJahr").value;
+  const treffer = [...fluege].sort((a, b) => new Date(b.startzeit) - new Date(a.startzeit)).filter(f =>
+    (!jahr || String(new Date(f.startzeit).getFullYear()) === jahr) &&
+    (!q || [datum(f.startzeit), f.startOrt, f.landeOrt, f.pilot, f.ballon, f.ballontyp, f.bemerkung].some(x => String(x || "").toLowerCase().includes(q))));
+  const s = treffer.reduce((a, f) => ({ m: a.m + (+f.flugzeit || 0), k: a.k + (+f.strecke || 0), l: a.l + (Math.round(+f.landungen) || 1) }), { m: 0, k: 0, l: 0 });
+  $("fSuche").parentElement.hidden = !fluege.length;
+  $("fSumme").textContent = fluege.length ? `${treffer.length} ${treffer.length === 1 ? "Fahrt" : "Fahrten"}${q || jahr ? " gefunden" : ""} · ${dur(s.m)} · ${s.l} Landung(en) · ${num(s.k, 1)} km` : "";
+  $("liste").innerHTML = treffer.length
+    ? treffer.slice(0, listeMax).map(f => {
       const ort = Number.isFinite(f.startLat), track = hatTrack(f), b = (a, t, c = "") => `<button data-a="${a}" data-id="${esc(f.id)}"${c ? ` class="${c}"` : ""}>${t}</button>`;
       return `<article class="card"><h3>${esc(datum(f.startzeit))}${f.manuell ? ' <span class="badge">nachgetragen</span>' : ""}</h3>
       <p>${esc(f.startOrt || (ort ? "Ort wird ermittelt …" : "–"))} → ${esc(f.landeOrt || (ort ? "…" : "–"))}</p>
@@ -345,10 +383,24 @@ function render() {
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
       <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
     }).join("")
-    : '<p class="leer">Noch keine Fahrten gespeichert.</p>';
+    : `<p class="leer">${fluege.length ? "Keine Fahrt passt zur Suche." : "Noch keine Fahrten gespeichert."}</p>`;
+  if (treffer.length > listeMax) $("liste").insertAdjacentHTML("beforeend", `<button id="fMehr" style="width:100%">Weitere ${Math.min(50, treffer.length - listeMax)} von ${treffer.length - listeMax} anzeigen</button>`);
 }
 
+// Einstellungen: Karten über die Überschrift auf- und zuklappen (Zustand je Gerät)
+const einstZu = new Set(load("einstZu", []));
+const kartenKlappe = (c, zu) => { c.classList.toggle("zu", zu); c.querySelector(":scope > h2").setAttribute("aria-expanded", String(!zu)); };
+document.querySelectorAll("#einstellungen > .card > h2").forEach(h => {
+  const c = h.parentElement, k = h.textContent.trim();
+  h.classList.add("klapp"); h.tabIndex = 0; h.setAttribute("role", "button");
+  kartenKlappe(c, einstZu.has(k));
+  const um = () => { const zu = !c.classList.contains("zu"); kartenKlappe(c, zu); zu ? einstZu.add(k) : einstZu.delete(k); try { localStorage.setItem("einstZu", JSON.stringify([...einstZu])); } catch {} };
+  h.onclick = um; h.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); um(); } };
+});
+
+$("fSuche").oninput = $("fJahr").onchange = () => { listeMax = 50; listeRender(); };
 $("liste").onclick = e => {
+  if (e.target.id === "fMehr") { listeMax += 50; return listeRender(); }
   const b = e.target.closest("button"), f = b && fluege.find(x => x.id === b.dataset.id);
   if (!f) return;
   if (b.dataset.a === "del") {
@@ -613,8 +665,17 @@ $("imp").onchange = async e => {
     const key = x => [x.startzeit, x.ballon, x.pilot].join("|").toLowerCase(), have = new Set(fluege.map(key)), ids = new Set(fluege.map(x => x.id));
     let n = 0;
     for (const x of l) if (x?.startzeit && !have.has(key(x)) && !ids.has(x.id)) { x.id ??= nid(); fahrtBereinigen(x); await spurAuslagern(x); fluege.push(x); have.add(key(x)); ids.add(x.id); n++; }
-    save("fluege", fluege); render();
-    alert(`${n} neue Fahrt(en) importiert, ${l.length - n} Duplikat(e) übersprungen.`);
+    save("fluege", fluege);
+    let zusatz = "";
+    if (istObjekt(d.stammdaten) && confirm("Das Backup enthält auch Ausrüstung, Gasflaschen, Fahrzeuge, Pilotenprofil und Einstellungen.\nÜbernehmen? Fehlendes wird ergänzt, bei Abweichungen bleibt der Stand auf diesem Gerät.")) {
+      stamm = zusammenfuehren({}, stamm, d.stammdaten, true); save("stammdaten", stamm);
+      if (istObjekt(d.monitor)) { mon = zusammenfuehren({ zeitraumMonate: 24, erforderlicheStunden: 6, erforderlicheLandungen: 10 }, mon, d.monitor, true); save("monitorEinstellungen", mon); }
+      ["pilot", "ballon", "ballontyp", "maintenance", "volumen", "leergewicht", "maxtemp"].forEach(k => { $(k).value = stamm[k] || ""; });
+      $("mZ").value = mon.zeitraumMonate; $("mS").value = mon.erforderlicheStunden; $("mL").value = mon.erforderlicheLandungen;
+      profilRender(); zusatz = "\nAusrüstung und Einstellungen wurden übernommen.";
+    }
+    render(); ui();
+    alert(`${n} neue Fahrt(en) importiert, ${l.length - n} Duplikat(e) übersprungen.${zusatz}`);
   } catch (err) { alert(err instanceof SyntaxError ? "Die Datei ist kein gültiges Backup." : err.message); }
   e.target.value = "";
 };
@@ -1106,7 +1167,7 @@ $("sB").onclick = () => { if (!karte) return; const i = Math.max(0, stile.findIn
 window.addEventListener("online", orteNachladen);
 window.addEventListener("hashchange", () => zeige(location.hash.slice(1)));
 window.addEventListener("resize", () => { karte?.invalidateSize(); hoehe(); });
-setInterval(() => { $("uhr").textContent = new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }); $("fuhr").textContent = new Date().toLocaleTimeString("de-AT"); if (aktiv && !$("fahrt").hidden) liveAnzeige(); }, 1000);
+setInterval(() => { $("uhr").textContent = new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }); $("fuhr").textContent = new Date().toLocaleTimeString("de-AT"); if (aktiv && !$("fahrt").hidden) liveAnzeige(); if (aktiv && aktiv.t.length) window.verfolgerPunkt?.(aktiv, aktiv.t.at(-1)); }, 1000);
 
 // Design: hell/dunkel umschaltbar, Auswahl wird gemerkt (Start: Systemeinstellung)
 function theme(t, merken) {
@@ -1144,7 +1205,7 @@ window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); instal
 $("wInstallB").onclick = async () => { if (!installEvent) return; installEvent.prompt(); await installEvent.userChoice.catch(() => {}); installEvent = null; willkommen(!$("willkommen").hidden); };
 $("willkommen").addEventListener("click", e => {
   const z = e.target.closest("[data-z]")?.dataset.z;
-  if (z) { zeige("einstellungen"); if (z === "konto") $("kontoK").scrollIntoView(); }
+  if (z) { zeige("einstellungen"); if (z === "konto") { kartenKlappe($("kontoK"), false); $("kontoK").scrollIntoView(); } }
 });
 $("wOk").onclick = () => { localStorage.setItem("willkommen", "1"); willkommen(false); };
 $("wZeigen").onclick = () => { zeige("dashboard"); willkommen(true); };
