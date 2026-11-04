@@ -381,7 +381,7 @@ function listeRender() {
       <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${Math.round(+f.maxHoehe || 0)} m` : ""} · ${Math.round(+f.landungen) || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
       ${ort ? `<p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>` : ""}${planHtml(f.plan)}
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
-      <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
+      <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${f.plan ? b("pdf", "📄 Planung") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
     }).join("")
     : `<p class="leer">${fluege.length ? "Keine Fahrt passt zur Suche." : "Noch keine Fahrten gespeichert."}</p>`;
   if (treffer.length > listeMax) $("liste").insertAdjacentHTML("beforeend", `<button id="fMehr" style="width:100%">Weitere ${Math.min(50, treffer.length - listeMax)} von ${treffer.length - listeMax} anzeigen</button>`);
@@ -407,6 +407,7 @@ $("liste").onclick = e => {
     if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); trackLoeschen(f.id); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
   } else if (b.dataset.a === "edit") fahrtDialog(f);
   else if (b.dataset.a === "gpx") gpxExport(f);
+  else if (b.dataset.a === "pdf") planPdf(f);
   else if (b.dataset.a === "play") { zeige("karte"); setTimeout(() => abspielen(f), 150); }
   else { zeige("karte"); setTimeout(() => zeichne([f]), 120); }
 };
@@ -421,6 +422,7 @@ function fahrtDialog(f) {
   $("ePilot").value = f ? f.pilot || "" : stamm.pilot || ""; $("eBallon").value = f ? f.ballon || "" : stamm.ballon || "";
   $("eStart").value = f?.startOrt || ""; $("eLande").value = f?.landeOrt || ""; $("eLand").value = f?.landungen || 1;
   $("eKm").value = f?.strecke || ""; $("eBem").value = f?.bemerkung || ""; $("eGas").value = f?.gas || "";
+  $("ePlanK").hidden = !!f?.plan || !(planErg || planTraj); $("ePlan").checked = false;
   $("eFehler").hidden = true; $("dlg").returnValue = ""; $("dlg").showModal();
 }
 function fahrtZeiten() { // {start, ende} oder Fehlertext
@@ -442,6 +444,7 @@ $("dlg").addEventListener("close", () => {
       Object.assign(f, { datum: z.start.toISOString(), startzeit: z.start.toISOString(), endezeit: z.ende.toISOString(), flugzeit: Math.round((z.ende - z.start) / 6e4) });
     Object.assign(f, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), strecke: +zf($("eKm").value).toFixed(1), bemerkung: $("eBem").value.trim(), gas: zf($("eGas").value) > 0 ? zf($("eGas").value) : undefined });
     f.avgSpeed = f.flugzeit ? +(f.strecke / (f.flugzeit / 60)).toFixed(1) : 0;
+    if (!$("ePlanK").hidden && $("ePlan").checked) f.plan = planSnapshot();
     if (!bearbeite) { f.ballontyp = (stamm.ausruestung || []).find(x => x.ballon === f.ballon)?.ballontyp || ""; fluege.push(f); }
     save("fluege", fluege); render();
   }
@@ -779,7 +782,7 @@ async function abspielen(f) {
 const zf = v => parseFloat(String(v ?? "").replace(",", ".")) || 0;
 const kg1 = v => num(zf(v), 1).replace(",0", "");
 const fFelder = { fName: "name", fKap: "kap", fTara: "tara", fFuell: "fuell", fPruef: "pruefung", fNotiz: "notiz" };
-let fBearb = null, nFlasche = null;
+let fBearb = null, nFlasche = null, nBearb = null, gLogAlle = false;
 const flaschenName = id => (stamm.flaschen || []).find(x => x.id === id)?.name || "Flasche";
 function gasFlFuellen() { // Verbrauch je Flasche der geplanten Fahrt, sonst einfache Eingabe
   const pf = aktiv?.f.plan?.flaschen || [], inp = (id, ph) => `<input class="gk" data-id="${esc(id)}" type="number" min="0" step="0.5" inputmode="decimal"${ph ? ` placeholder="${esc(ph)}"` : ""}>`;
@@ -803,7 +806,8 @@ function gasRender() {
       ${terminZeile(x.pruefung, "Prüfung")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
       <div class="row">${b("fill", "Nachfüllen", "ok")}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
   }).join("") : '<p class="leer">Noch keine Gasflasche eingetragen.</p>';
-  $("gLog").innerHTML = L.length ? L.slice(0, 8).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><b>${nb(`${kg1(e.kg)} kg${zf(e.preis) > 0 ? ` · ${num(zf(e.preis), 2)} €` : ""}`)}</b></div>`).join("") +
+  $("gLog").innerHTML = L.length ? (gLogAlle ? L : L.slice(0, 8)).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><span class="nwert"><b>${nb(`${kg1(e.kg)} kg`)}${zf(e.preis) > 0 ? `<br>${nb(`${num(zf(e.preis), 2)} €`)}` : ""}</b><button class="nbearb" data-id="${esc(e.id)}" aria-label="Nachfüllung bearbeiten">✎</button></span></div>`).join("") +
+    (L.length > 8 ? `<button id="gLogMehr" style="width:100%;margin:6px 0">${gLogAlle ? "Weniger anzeigen" : `Alle ${L.length} Nachfüllungen anzeigen`}</button>` : "") +
     (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${nb(`${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}`)}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
   gSelRender();
 }
@@ -812,12 +816,27 @@ function fDialog(x) {
   Object.entries(fFelder).forEach(([id, k]) => { $(id).value = x?.[k] ?? ""; });
   $("fDlg").returnValue = ""; $("fDlg").showModal();
 }
-function nDialog(x) {
-  nFlasche = x;
-  $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
-  const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
+function nDialog(x, e) { // e = vorhandene Nachfüllung zum Bearbeiten
+  nFlasche = x; nBearb = e || null;
+  $("nTitel").textContent = e ? "Nachfüllung bearbeiten" : "Nachfüllen";
+  $("nFlK").hidden = $("nAnpK").hidden = $("nDel").hidden = !e; $("nAnp").checked = true;
+  if (e) {
+    const F = stamm.flaschen || [];
+    $("nFl").innerHTML = (F.some(y => y.id === e.flasche) ? "" : `<option value="${esc(e.flasche)}">${esc(flaschenName(e.flasche))} (gelöscht)</option>`) + F.map(y => `<option value="${esc(y.id)}"${y.id === e.flasche ? " selected" : ""}>${esc(y.name)}</option>`).join("");
+    $("nDatum").value = e.datum || ""; $("nKg").value = String(zf(e.kg)); $("nPreis").value = e.preis || ""; $("nNotiz").value = e.notiz || "";
+  } else {
+    $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
+    const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
+  }
   $("nDlg").returnValue = ""; $("nDlg").showModal();
 }
+// Füllstand einer Flasche um d kg ändern (zwischen 0 und Fassungsvermögen)
+const fuellAendern = (id, d) => { const y = (stamm.flaschen || []).find(z => z.id === id); if (y && d) y.fuell = String(Math.round(Math.max(0, Math.min(zf(y.kap) || Infinity, zf(y.fuell) + d)) * 10) / 10); };
+$("gLog").onclick = e => {
+  if (e.target.id === "gLogMehr") { gLogAlle = !gLogAlle; return gasRender(); }
+  const id = e.target.closest(".nbearb")?.dataset.id, n = id && (stamm.gasLog || []).find(x => x.id === id);
+  if (n) nDialog((stamm.flaschen || []).find(y => y.id === n.flasche) || null, n);
+};
 $("fNeu").onclick = () => fDialog();
 $("fListe").onclick = e => {
   const bt = e.target.closest("button"), x = bt && (stamm.flaschen || []).find(y => y.id === bt.dataset.id);
@@ -836,7 +855,22 @@ $("fDlg").addEventListener("close", () => {
   fBearb = null; save("stammdaten", stamm); render();
 });
 $("nDlg").addEventListener("close", () => {
-  if ($("nDlg").returnValue !== "ok" || !nFlasche) return;
+  const rv = $("nDlg").returnValue, e = nBearb; nBearb = null;
+  if (e) { // vorhandene Nachfüllung ändern oder löschen; Füllstand wahlweise um die Differenz anpassen
+    const anp = $("nAnp").checked;
+    if (rv === "del") {
+      if (!confirm(`Nachfüllung vom ${new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT")} (${kg1(e.kg)} kg) löschen?`)) return;
+      if (anp) fuellAendern(e.flasche, -zf(e.kg));
+      stamm.gasLog = stamm.gasLog.filter(x => x !== e);
+    } else if (rv === "ok") {
+      const kg = zf($("nKg").value), fl = $("nFl").value || e.flasche;
+      if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
+      if (anp) { if (fl === e.flasche) fuellAendern(fl, kg - zf(e.kg)); else { fuellAendern(e.flasche, -zf(e.kg)); fuellAendern(fl, kg); } }
+      Object.assign(e, { datum: $("nDatum").value || e.datum, flasche: fl, kg, preis: $("nPreis").value.trim(), notiz: $("nNotiz").value.trim(), bearbeitet: Date.now() });
+    } else return;
+    save("stammdaten", stamm); render(); return;
+  }
+  if (rv !== "ok" || !nFlasche) return;
   const kg = zf($("nKg").value), x = nFlasche;
   if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
   x.fuell = String(Math.round(Math.min(zf(x.kap) || Infinity, zf(x.fuell) + kg) * 10) / 10);
@@ -1058,7 +1092,7 @@ function planSnapshot() {
     flaschen: selFlaschen().map(x => ({ id: x.id, name: x.name, gas: zf(x.fuell), tara: zf(x.tara) })),
     zuladung: zul.filter(x => zf(x.a) * zf(x.k) > 0).map(x => ({ n: x.n, a: zf(x.a), k: zf(x.k) })),
     bedingungen: a?.bed || null, auftrieb: a ? { last: a.last, brutto: a.brutto, nutz: a.nutz, frei: a.frei, tN: a.tN, maxT: a.maxT, p: a.p } : null,
-    check: { ...planCheck }, traj: planTraj };
+    check: { ...planCheck }, pruefung: planPruefen().map(x => ({ text: x.text, ok: x.ok, detail: x.detail })), traj: planTraj };
 }
 function planStarten() {
   const offen = planPruefen().filter(x => !x.ok);
@@ -1090,6 +1124,78 @@ $("gSel").addEventListener("change", e => {
 });
 $("pCheck").addEventListener("change", e => { const k = e.target.dataset.k; if (k) { planCheck[k] = e.target.checked; planSpeichern(); } });
 $("gVerw").onclick = () => zeige("gas"); $("pTrajB").onclick = () => zeige("trajektoren"); $("pStart").onclick = planStarten;
+$("pPdf").onclick = () => planPdf({ plan: planSnapshot() });
+
+// Fahrtplanung als PDF (wird aus den gespeicherten Planungsdaten der Fahrt erzeugt, offline)
+function planPdf(f) {
+  const p = f.plan, b = p.ballon || {}, a = p.auftrieb, bd = p.bedingungen, k1 = v => num(zf(v), 1).replace(",0", "");
+  const zeit = iso => new Date(iso).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" });
+  const d = pdfDokument("Ballonflugbuch · Fahrtplanung" + (b.ballon ? " " + b.ballon : ""));
+  d.titel("Fahrtplanung", `Erstellt ${zeit(p.erstellt)}${f.startzeit ? " · Fahrt vom " + zeit(f.startzeit) : " · Vorschau, noch keine Fahrt"}`);
+  if (f.startzeit) {
+    d.abschnitt("Fahrt");
+    d.zeile("Pilot", f.pilot || "–");
+    d.zeile("Start", [f.startOrt, Number.isFinite(f.startLat) ? utmText(f.startLat, f.startLng) : ""].filter(Boolean).join(" · ") || "–");
+    d.zeile("Landung", [f.landeOrt, Number.isFinite(f.landeLat) ? utmText(f.landeLat, f.landeLng) : ""].filter(Boolean).join(" · ") || "–");
+    d.zeile("Dauer · Strecke · Landungen", `${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · ${Math.round(+f.landungen) || 1}`);
+    if (f.gas) d.zeile("Gasverbrauch", kg1(f.gas) + " kg");
+  }
+  d.abschnitt("Ballon");
+  d.zeile("Kennzeichen", b.ballon || "–");
+  if (b.ballontyp) d.zeile("Typ", b.ballontyp);
+  d.zeile("Hüllenvolumen", b.volumen ? num(zf(b.volumen)) + " m³" : "–");
+  d.zeile("Leergewicht inkl. Korb, Brenner, Flaschen", b.leergewicht ? k1(b.leergewicht) + " kg" : "–");
+  if (b.maxtemp) d.zeile("Max. Hüllentemperatur", num(zf(b.maxtemp)) + " °C");
+  const fl = p.flaschen || [];
+  if (fl.length) {
+    d.abschnitt("Gasflaschen");
+    d.tabelle(["Flasche", "Gas", "Flasche leer", "Gesamt"], fl.map(x => [x.name || "Flasche", k1(x.gas) + " kg", k1(x.tara) + " kg", k1(zf(x.gas) + zf(x.tara)) + " kg"]), [0.4, 0.2, 0.2, 0.2]);
+    d.zeile("Gas gesamt", k1(fl.reduce((s, x) => s + zf(x.gas), 0)) + " kg", { fett: true });
+  }
+  const zl = p.zuladung || [];
+  if (zl.length) {
+    d.abschnitt("Besatzung und Zuladung");
+    d.tabelle(["Position", "Anzahl", "je Stück", "Summe"], zl.map(x => [x.n || "Position", num(zf(x.a)), k1(x.k) + " kg", k1(zf(x.a) * zf(x.k)) + " kg"]), [0.4, 0.2, 0.2, 0.2]);
+  }
+  if (bd || a) {
+    d.abschnitt("Bedingungen und Auftrieb");
+    if (bd) {
+      d.zeile("Außentemperatur · Starthöhe", `${k1(bd.T)} °C · ${num(bd.h)} m`);
+      d.zeile("QNH · mittlere Hüllentemperatur", `${bd.qnh ? k1(bd.qnh) + " hPa" : "Standard"} · ${num(bd.Ti)} °C`);
+    }
+    if (a) {
+      if (a.p) d.zeile("Luftdruck am Startplatz", num(a.p, 1) + " hPa");
+      d.zeile("Bruttoauftrieb", num(a.brutto) + " kg");
+      d.zeile("Gesamtgewicht (Leergewicht + Gas + Zuladung)", num(a.last) + " kg");
+      d.zeile("Freier Auftrieb", num(a.frei) + " kg", { fett: true, farbe: a.frei >= 0 ? "#1E7B46" : "#B42318" });
+      d.zeile("Nötige Hüllentemperatur", a.tN == null ? "nicht erreichbar" : `${num(a.tN)} °C${a.maxT ? " (max. " + num(a.maxT) + " °C)" : ""}`, { fett: true, farbe: a.tN == null || (a.maxT && a.tN > a.maxT) ? "#B42318" : undefined });
+    }
+  }
+  d.abschnitt("Prüfung vor dem Start");
+  (p.pruefung || []).forEach(x => d.zeile((x.ok ? "✓ " : "✕ ") + x.text, x.detail || "", { farbe: x.ok ? "#1E7B46" : "#B42318" }));
+  PLANMANUELL.forEach(([k, t]) => d.zeile((p.check?.[k] ? "✓ " : "– ") + t, p.check?.[k] ? "erledigt" : "nicht abgehakt", { farbe: p.check?.[k] ? "#1E7B46" : "#6B5B4B" }));
+  if (p.traj) {
+    const t = p.traj;
+    d.abschnitt("Trajektoren");
+    d.zeile("Berechnet für", `${zeit(t.start)} · ${dur(t.dauer * 60)}`);
+    d.zeile("Startpunkt", utmText(t.lat, t.lon));
+    d.tabelle(["Höhe", "Richtung", "Tempo", "Entfernung"], (t.rows || []).map(r => [num(+r.h) + " m", num(+r.richtung) + "°", k1(r.tempo) + " km/h", num(r.dist, 2) + " km"]), [0.25, 0.25, 0.25, 0.25]);
+  }
+  d.abstand(8);
+  d.absatz("Wetter, Trajektorien und Auftrieb sind Orientierungswerte aus Modellrechnungen. Sie ersetzen nicht das Flughandbuch, die Flugwetterberatung oder die Flugvorbereitung.", { grau: true, groesse: 8.5 });
+  const name = `Fahrtplanung-${tagText(new Date(f.startzeit || p.erstellt))}${b.ballon ? "-" + b.ballon.replace(/[^A-Za-z0-9-]/g, "") : ""}.pdf`;
+  dateiAusgeben(d.blob(), name);
+}
+// Datei am Handy über „Teilen“ (Dateien, WhatsApp, Mail …), sonst als Download ausgeben
+async function dateiAusgeben(blob, name) {
+  const file = new File([blob], name, { type: blob.type });
+  if (matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e?.name === "AbortError") return; }
+  }
+  const a = document.createElement("a"), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60e3);
+}
 
 // Zuladung: einzelne Positionen mit Anzahl und Gewicht je Stück
 let zul = [];

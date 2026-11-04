@@ -25,7 +25,7 @@ Digitales, browserbasiertes Flugbuch für Heißluftballonfahrer. Läuft kostenlo
 
 ## Dateien im Hauptverzeichnis
 
-`index.html`, `style.css`, `geo.js` (UTM und Entfernungen, gemeinsam mit der Verfolger-Ansicht), `app.js`, `trajektoren.js`, `sync.js`, `verfolgen.html`, `verfolgen.js`, `datenschutz.html`, `firebase-config.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
+`index.html`, `style.css`, `geo.js` (UTM und Entfernungen, gemeinsam mit der Verfolger-Ansicht), `pdf.js` (PDF der Fahrtplanung, ohne Bibliothek), `app.js`, `trajektoren.js`, `sync.js`, `verfolgen.html`, `verfolgen.js`, `datenschutz.html`, `firebase-config.js`, `sw.js`, `favicon.svg`, `manifest.webmanifest`, `README.md` sowie die Symbole `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
 
 Dazu `fonts/` (Barlow, lokal statt Google Fonts, Lizenz OFL) und `vendor/leaflet/` (Leaflet 1.9.4, lokal statt unpkg). Damit gehen beim Öffnen der App keine IP-Adressen an Google Fonts oder ein CDN.
 

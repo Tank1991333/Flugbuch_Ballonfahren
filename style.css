@@ -168,3 +168,4 @@ body.verfolger #vbox{height:52vh}
 .card.zu>.klapp{margin-bottom:0}.card.zu>.klapp::after{transform:rotate(-90deg)}
 .card.zu>:not(.klapp){display:none!important}
 .filter input,.filter select{flex:1;min-width:0}.filter select{flex:0 0 auto;width:auto}
+.nwert{display:flex;align-items:center;gap:8px}.nbearb{min-height:34px;width:38px;padding:0;flex:0 0 auto}
