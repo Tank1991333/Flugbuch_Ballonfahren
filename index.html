@@ -156,7 +156,8 @@
   <div class="card"><h2>5 · Trajektoren</h2><div id="pTraj"></div><button id="pTrajB" style="width:100%">Trajektoren berechnen</button></div>
   <div class="card"><h2>Checkliste</h2><div id="pCheck"></div>
     <button id="pStart" class="gross blaub" style="width:100%;margin-top:12px">▶ Fahrt starten</button>
-    <p class="note">Ballon, Gasflaschen, Zuladung, Auftrieb und Trajektoren werden zur Fahrt im Flugbuch gespeichert.</p>
+    <button id="pPdf" style="width:100%">Planung als PDF ansehen</button>
+    <p class="note">Ballon, Gasflaschen, Zuladung, Auftrieb, Prüfung und Trajektoren werden beim Start zur Fahrt im Flugbuch gespeichert und sind dort jederzeit als PDF abrufbar.</p>
   </div>
   <p class="note">Orientierungswerte nach der Gasgleichung (ISA-Näherung). Maßgeblich sind Flughandbuch, Beladungsplan und Beurteilung des Piloten.</p>
 </section>
@@ -302,6 +303,7 @@
   <div class="row"><label>Landungen<input id="eLand" type="number" min="1" inputmode="numeric"></label><label>Strecke (km)<input id="eKm" type="number" min="0" step="0.1" inputmode="decimal"></label></div>
   <label>Gasverbrauch (kg)<input id="eGas" type="number" min="0" step="0.5" inputmode="decimal"></label>
   <label>Bemerkungen<textarea id="eBem" rows="3"></textarea></label>
+  <label class="chk" id="ePlanK" hidden><input type="checkbox" id="ePlan"><span>Aktuelle Fahrtplanung anhängen (als PDF abrufbar)</span></label>
   <p id="eFehler" class="warn" hidden></p>
   <div class="row"><button value="x">Abbrechen</button><button id="eOk" value="ok" class="ok">Speichern</button></div>
 </form></dialog>
@@ -371,6 +373,7 @@
 
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="geo.js"></script>
+<script src="pdf.js"></script>
 <script src="trajektoren.js"></script>
 <script src="firebase-config.js"></script>
 <script src="app.js"></script>

@@ -381,7 +381,7 @@ function listeRender() {
       <p class="m">${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km${track ? ` · max. ${Math.round(+f.maxHoehe || 0)} m` : ""} · ${Math.round(+f.landungen) || 1} Landung(en) · ${esc(f.pilot)} · ${esc(f.ballon)}${f.gas ? ` · Gas ${kg1(f.gas)} kg` : ""}</p>
       ${ort ? `<p class="m">Start ${utmText(f.startLat, f.startLng)}<br>Landung ${utmText(f.landeLat, f.landeLng)}</p>` : ""}${planHtml(f.plan)}
       ${f.bemerkung ? `<p>${esc(f.bemerkung)}</p>` : ""}
-      <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
+      <div class="row">${ort ? b("karte", "Karte") : ""}${track ? b("play", "Abspielen") + b("gpx", "GPX") : ""}${f.plan ? b("pdf", "📄 Planung") : ""}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
     }).join("")
     : `<p class="leer">${fluege.length ? "Keine Fahrt passt zur Suche." : "Noch keine Fahrten gespeichert."}</p>`;
   if (treffer.length > listeMax) $("liste").insertAdjacentHTML("beforeend", `<button id="fMehr" style="width:100%">Weitere ${Math.min(50, treffer.length - listeMax)} von ${treffer.length - listeMax} anzeigen</button>`);
@@ -407,6 +407,7 @@ $("liste").onclick = e => {
     if (confirm("Diese Fahrt wirklich löschen?")) { fluege = fluege.filter(x => x !== f); trackLoeschen(f.id); save("geloescht", [...load("geloescht", []), f.id]); save("fluege", fluege); render(); }
   } else if (b.dataset.a === "edit") fahrtDialog(f);
   else if (b.dataset.a === "gpx") gpxExport(f);
+  else if (b.dataset.a === "pdf") planPdf(f);
   else if (b.dataset.a === "play") { zeige("karte"); setTimeout(() => abspielen(f), 150); }
   else { zeige("karte"); setTimeout(() => zeichne([f]), 120); }
 };
@@ -421,6 +422,7 @@ function fahrtDialog(f) {
   $("ePilot").value = f ? f.pilot || "" : stamm.pilot || ""; $("eBallon").value = f ? f.ballon || "" : stamm.ballon || "";
   $("eStart").value = f?.startOrt || ""; $("eLande").value = f?.landeOrt || ""; $("eLand").value = f?.landungen || 1;
   $("eKm").value = f?.strecke || ""; $("eBem").value = f?.bemerkung || ""; $("eGas").value = f?.gas || "";
+  $("ePlanK").hidden = !!f?.plan || !(planErg || planTraj); $("ePlan").checked = false;
   $("eFehler").hidden = true; $("dlg").returnValue = ""; $("dlg").showModal();
 }
 function fahrtZeiten() { // {start, ende} oder Fehlertext
@@ -442,6 +444,7 @@ $("dlg").addEventListener("close", () => {
       Object.assign(f, { datum: z.start.toISOString(), startzeit: z.start.toISOString(), endezeit: z.ende.toISOString(), flugzeit: Math.round((z.ende - z.start) / 6e4) });
     Object.assign(f, { bearbeitet: Date.now(), pilot: $("ePilot").value.trim(), ballon: $("eBallon").value.trim().toUpperCase(), startOrt: $("eStart").value.trim(), landeOrt: $("eLande").value.trim(), landungen: Math.max(1, parseInt($("eLand").value, 10) || 1), strecke: +zf($("eKm").value).toFixed(1), bemerkung: $("eBem").value.trim(), gas: zf($("eGas").value) > 0 ? zf($("eGas").value) : undefined });
     f.avgSpeed = f.flugzeit ? +(f.strecke / (f.flugzeit / 60)).toFixed(1) : 0;
+    if (!$("ePlanK").hidden && $("ePlan").checked) f.plan = planSnapshot();
     if (!bearbeite) { f.ballontyp = (stamm.ausruestung || []).find(x => x.ballon === f.ballon)?.ballontyp || ""; fluege.push(f); }
     save("fluege", fluege); render();
   }
@@ -1058,7 +1061,7 @@ function planSnapshot() {
     flaschen: selFlaschen().map(x => ({ id: x.id, name: x.name, gas: zf(x.fuell), tara: zf(x.tara) })),
     zuladung: zul.filter(x => zf(x.a) * zf(x.k) > 0).map(x => ({ n: x.n, a: zf(x.a), k: zf(x.k) })),
     bedingungen: a?.bed || null, auftrieb: a ? { last: a.last, brutto: a.brutto, nutz: a.nutz, frei: a.frei, tN: a.tN, maxT: a.maxT, p: a.p } : null,
-    check: { ...planCheck }, traj: planTraj };
+    check: { ...planCheck }, pruefung: planPruefen().map(x => ({ text: x.text, ok: x.ok, detail: x.detail })), traj: planTraj };
 }
 function planStarten() {
   const offen = planPruefen().filter(x => !x.ok);
@@ -1090,6 +1093,78 @@ $("gSel").addEventListener("change", e => {
 });
 $("pCheck").addEventListener("change", e => { const k = e.target.dataset.k; if (k) { planCheck[k] = e.target.checked; planSpeichern(); } });
 $("gVerw").onclick = () => zeige("gas"); $("pTrajB").onclick = () => zeige("trajektoren"); $("pStart").onclick = planStarten;
+$("pPdf").onclick = () => planPdf({ plan: planSnapshot() });
+
+// Fahrtplanung als PDF (wird aus den gespeicherten Planungsdaten der Fahrt erzeugt, offline)
+function planPdf(f) {
+  const p = f.plan, b = p.ballon || {}, a = p.auftrieb, bd = p.bedingungen, k1 = v => num(zf(v), 1).replace(",0", "");
+  const zeit = iso => new Date(iso).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" });
+  const d = pdfDokument("Ballonflugbuch · Fahrtplanung" + (b.ballon ? " " + b.ballon : ""));
+  d.titel("Fahrtplanung", `Erstellt ${zeit(p.erstellt)}${f.startzeit ? " · Fahrt vom " + zeit(f.startzeit) : " · Vorschau, noch keine Fahrt"}`);
+  if (f.startzeit) {
+    d.abschnitt("Fahrt");
+    d.zeile("Pilot", f.pilot || "–");
+    d.zeile("Start", [f.startOrt, Number.isFinite(f.startLat) ? utmText(f.startLat, f.startLng) : ""].filter(Boolean).join(" · ") || "–");
+    d.zeile("Landung", [f.landeOrt, Number.isFinite(f.landeLat) ? utmText(f.landeLat, f.landeLng) : ""].filter(Boolean).join(" · ") || "–");
+    d.zeile("Dauer · Strecke · Landungen", `${dur(f.flugzeit || 0)} · ${num(f.strecke, 1)} km · ${Math.round(+f.landungen) || 1}`);
+    if (f.gas) d.zeile("Gasverbrauch", kg1(f.gas) + " kg");
+  }
+  d.abschnitt("Ballon");
+  d.zeile("Kennzeichen", b.ballon || "–");
+  if (b.ballontyp) d.zeile("Typ", b.ballontyp);
+  d.zeile("Hüllenvolumen", b.volumen ? num(zf(b.volumen)) + " m³" : "–");
+  d.zeile("Leergewicht inkl. Korb, Brenner, Flaschen", b.leergewicht ? k1(b.leergewicht) + " kg" : "–");
+  if (b.maxtemp) d.zeile("Max. Hüllentemperatur", num(zf(b.maxtemp)) + " °C");
+  const fl = p.flaschen || [];
+  if (fl.length) {
+    d.abschnitt("Gasflaschen");
+    d.tabelle(["Flasche", "Gas", "Flasche leer", "Gesamt"], fl.map(x => [x.name || "Flasche", k1(x.gas) + " kg", k1(x.tara) + " kg", k1(zf(x.gas) + zf(x.tara)) + " kg"]), [0.4, 0.2, 0.2, 0.2]);
+    d.zeile("Gas gesamt", k1(fl.reduce((s, x) => s + zf(x.gas), 0)) + " kg", { fett: true });
+  }
+  const zl = p.zuladung || [];
+  if (zl.length) {
+    d.abschnitt("Besatzung und Zuladung");
+    d.tabelle(["Position", "Anzahl", "je Stück", "Summe"], zl.map(x => [x.n || "Position", num(zf(x.a)), k1(x.k) + " kg", k1(zf(x.a) * zf(x.k)) + " kg"]), [0.4, 0.2, 0.2, 0.2]);
+  }
+  if (bd || a) {
+    d.abschnitt("Bedingungen und Auftrieb");
+    if (bd) {
+      d.zeile("Außentemperatur · Starthöhe", `${k1(bd.T)} °C · ${num(bd.h)} m`);
+      d.zeile("QNH · mittlere Hüllentemperatur", `${bd.qnh ? k1(bd.qnh) + " hPa" : "Standard"} · ${num(bd.Ti)} °C`);
+    }
+    if (a) {
+      if (a.p) d.zeile("Luftdruck am Startplatz", num(a.p, 1) + " hPa");
+      d.zeile("Bruttoauftrieb", num(a.brutto) + " kg");
+      d.zeile("Gesamtgewicht (Leergewicht + Gas + Zuladung)", num(a.last) + " kg");
+      d.zeile("Freier Auftrieb", num(a.frei) + " kg", { fett: true, farbe: a.frei >= 0 ? "#1E7B46" : "#B42318" });
+      d.zeile("Nötige Hüllentemperatur", a.tN == null ? "nicht erreichbar" : `${num(a.tN)} °C${a.maxT ? " (max. " + num(a.maxT) + " °C)" : ""}`, { fett: true, farbe: a.tN == null || (a.maxT && a.tN > a.maxT) ? "#B42318" : undefined });
+    }
+  }
+  d.abschnitt("Prüfung vor dem Start");
+  (p.pruefung || []).forEach(x => d.zeile((x.ok ? "✓ " : "✕ ") + x.text, x.detail || "", { farbe: x.ok ? "#1E7B46" : "#B42318" }));
+  PLANMANUELL.forEach(([k, t]) => d.zeile((p.check?.[k] ? "✓ " : "– ") + t, p.check?.[k] ? "erledigt" : "nicht abgehakt", { farbe: p.check?.[k] ? "#1E7B46" : "#6B5B4B" }));
+  if (p.traj) {
+    const t = p.traj;
+    d.abschnitt("Trajektoren");
+    d.zeile("Berechnet für", `${zeit(t.start)} · ${dur(t.dauer * 60)}`);
+    d.zeile("Startpunkt", utmText(t.lat, t.lon));
+    d.tabelle(["Höhe", "Richtung", "Tempo", "Entfernung"], (t.rows || []).map(r => [num(+r.h) + " m", num(+r.richtung) + "°", k1(r.tempo) + " km/h", num(r.dist, 2) + " km"]), [0.25, 0.25, 0.25, 0.25]);
+  }
+  d.abstand(8);
+  d.absatz("Wetter, Trajektorien und Auftrieb sind Orientierungswerte aus Modellrechnungen. Sie ersetzen nicht das Flughandbuch, die Flugwetterberatung oder die Flugvorbereitung.", { grau: true, groesse: 8.5 });
+  const name = `Fahrtplanung-${tagText(new Date(f.startzeit || p.erstellt))}${b.ballon ? "-" + b.ballon.replace(/[^A-Za-z0-9-]/g, "") : ""}.pdf`;
+  dateiAusgeben(d.blob(), name);
+}
+// Datei am Handy über „Teilen“ (Dateien, WhatsApp, Mail …), sonst als Download ausgeben
+async function dateiAusgeben(blob, name) {
+  const file = new File([blob], name, { type: blob.type });
+  if (matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e?.name === "AbortError") return; }
+  }
+  const a = document.createElement("a"), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60e3);
+}
 
 // Zuladung: einzelne Positionen mit Anzahl und Gewicht je Stück
 let zul = [];
