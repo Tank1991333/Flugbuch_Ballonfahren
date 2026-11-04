@@ -356,11 +356,14 @@
 </form></dialog>
 
 <dialog id="nDlg"><form method="dialog">
-  <h2>Nachfüllen</h2>
+  <h2 id="nTitel">Nachfüllen</h2>
+  <label id="nFlK" hidden>Flasche<select id="nFl"></select></label>
   <div class="row"><label>Datum<input id="nDatum" type="date"></label><label>Menge (kg)<input id="nKg" type="number" step="0.5" inputmode="decimal"></label></div>
   <label>Preis gesamt (€, optional)<input id="nPreis" type="number" step="0.01" inputmode="decimal"></label>
   <label>Notiz / Lieferant<input id="nNotiz" autocomplete="off"></label>
+  <label class="chk" id="nAnpK" hidden><input type="checkbox" id="nAnp" checked><span>Füllstand der Flasche um die Änderung anpassen</span></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+  <button id="nDel" value="del" class="gef" style="width:100%" hidden>Nachfüllung löschen</button>
 </form></dialog>
 
 <dialog id="endDlg"><form method="dialog">

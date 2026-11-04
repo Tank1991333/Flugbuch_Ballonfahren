@@ -782,7 +782,7 @@ async function abspielen(f) {
 const zf = v => parseFloat(String(v ?? "").replace(",", ".")) || 0;
 const kg1 = v => num(zf(v), 1).replace(",0", "");
 const fFelder = { fName: "name", fKap: "kap", fTara: "tara", fFuell: "fuell", fPruef: "pruefung", fNotiz: "notiz" };
-let fBearb = null, nFlasche = null;
+let fBearb = null, nFlasche = null, nBearb = null, gLogAlle = false;
 const flaschenName = id => (stamm.flaschen || []).find(x => x.id === id)?.name || "Flasche";
 function gasFlFuellen() { // Verbrauch je Flasche der geplanten Fahrt, sonst einfache Eingabe
   const pf = aktiv?.f.plan?.flaschen || [], inp = (id, ph) => `<input class="gk" data-id="${esc(id)}" type="number" min="0" step="0.5" inputmode="decimal"${ph ? ` placeholder="${esc(ph)}"` : ""}>`;
@@ -806,7 +806,8 @@ function gasRender() {
       ${terminZeile(x.pruefung, "Prüfung")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
       <div class="row">${b("fill", "Nachfüllen", "ok")}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
   }).join("") : '<p class="leer">Noch keine Gasflasche eingetragen.</p>';
-  $("gLog").innerHTML = L.length ? L.slice(0, 8).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><b>${nb(`${kg1(e.kg)} kg${zf(e.preis) > 0 ? ` · ${num(zf(e.preis), 2)} €` : ""}`)}</b></div>`).join("") +
+  $("gLog").innerHTML = L.length ? (gLogAlle ? L : L.slice(0, 8)).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><span class="nwert"><b>${nb(`${kg1(e.kg)} kg`)}${zf(e.preis) > 0 ? `<br>${nb(`${num(zf(e.preis), 2)} €`)}` : ""}</b><button class="nbearb" data-id="${esc(e.id)}" aria-label="Nachfüllung bearbeiten">✎</button></span></div>`).join("") +
+    (L.length > 8 ? `<button id="gLogMehr" style="width:100%;margin:6px 0">${gLogAlle ? "Weniger anzeigen" : `Alle ${L.length} Nachfüllungen anzeigen`}</button>` : "") +
     (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${nb(`${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}`)}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
   gSelRender();
 }
@@ -815,12 +816,27 @@ function fDialog(x) {
   Object.entries(fFelder).forEach(([id, k]) => { $(id).value = x?.[k] ?? ""; });
   $("fDlg").returnValue = ""; $("fDlg").showModal();
 }
-function nDialog(x) {
-  nFlasche = x;
-  $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
-  const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
+function nDialog(x, e) { // e = vorhandene Nachfüllung zum Bearbeiten
+  nFlasche = x; nBearb = e || null;
+  $("nTitel").textContent = e ? "Nachfüllung bearbeiten" : "Nachfüllen";
+  $("nFlK").hidden = $("nAnpK").hidden = $("nDel").hidden = !e; $("nAnp").checked = true;
+  if (e) {
+    const F = stamm.flaschen || [];
+    $("nFl").innerHTML = (F.some(y => y.id === e.flasche) ? "" : `<option value="${esc(e.flasche)}">${esc(flaschenName(e.flasche))} (gelöscht)</option>`) + F.map(y => `<option value="${esc(y.id)}"${y.id === e.flasche ? " selected" : ""}>${esc(y.name)}</option>`).join("");
+    $("nDatum").value = e.datum || ""; $("nKg").value = String(zf(e.kg)); $("nPreis").value = e.preis || ""; $("nNotiz").value = e.notiz || "";
+  } else {
+    $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
+    const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
+  }
   $("nDlg").returnValue = ""; $("nDlg").showModal();
 }
+// Füllstand einer Flasche um d kg ändern (zwischen 0 und Fassungsvermögen)
+const fuellAendern = (id, d) => { const y = (stamm.flaschen || []).find(z => z.id === id); if (y && d) y.fuell = String(Math.round(Math.max(0, Math.min(zf(y.kap) || Infinity, zf(y.fuell) + d)) * 10) / 10); };
+$("gLog").onclick = e => {
+  if (e.target.id === "gLogMehr") { gLogAlle = !gLogAlle; return gasRender(); }
+  const id = e.target.closest(".nbearb")?.dataset.id, n = id && (stamm.gasLog || []).find(x => x.id === id);
+  if (n) nDialog((stamm.flaschen || []).find(y => y.id === n.flasche) || null, n);
+};
 $("fNeu").onclick = () => fDialog();
 $("fListe").onclick = e => {
   const bt = e.target.closest("button"), x = bt && (stamm.flaschen || []).find(y => y.id === bt.dataset.id);
@@ -839,7 +855,22 @@ $("fDlg").addEventListener("close", () => {
   fBearb = null; save("stammdaten", stamm); render();
 });
 $("nDlg").addEventListener("close", () => {
-  if ($("nDlg").returnValue !== "ok" || !nFlasche) return;
+  const rv = $("nDlg").returnValue, e = nBearb; nBearb = null;
+  if (e) { // vorhandene Nachfüllung ändern oder löschen; Füllstand wahlweise um die Differenz anpassen
+    const anp = $("nAnp").checked;
+    if (rv === "del") {
+      if (!confirm(`Nachfüllung vom ${new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT")} (${kg1(e.kg)} kg) löschen?`)) return;
+      if (anp) fuellAendern(e.flasche, -zf(e.kg));
+      stamm.gasLog = stamm.gasLog.filter(x => x !== e);
+    } else if (rv === "ok") {
+      const kg = zf($("nKg").value), fl = $("nFl").value || e.flasche;
+      if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
+      if (anp) { if (fl === e.flasche) fuellAendern(fl, kg - zf(e.kg)); else { fuellAendern(e.flasche, -zf(e.kg)); fuellAendern(fl, kg); } }
+      Object.assign(e, { datum: $("nDatum").value || e.datum, flasche: fl, kg, preis: $("nPreis").value.trim(), notiz: $("nNotiz").value.trim(), bearbeitet: Date.now() });
+    } else return;
+    save("stammdaten", stamm); render(); return;
+  }
+  if (rv !== "ok" || !nFlasche) return;
   const kg = zf($("nKg").value), x = nFlasche;
   if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
   x.fuell = String(Math.round(Math.min(zf(x.kap) || Infinity, zf(x.fuell) + kg) * 10) / 10);
