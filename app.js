@@ -1362,7 +1362,7 @@ const NEUIGKEITEN = [
 function neuigkeiten(alle) {
   const seit = load("neuGesehen", ""), liste = alle ? NEUIGKEITEN : NEUIGKEITEN.filter(n => n.id > seit);
   if (!liste.length) return;
-  $("neuInhalt").innerHTML = (alle ? liste : liste.slice(0, 3)).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
+  $("neuInhalt").innerHTML = (alle ? liste : liste.slice(0, 6)).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
   $("neuDlg").showModal();
 }
 $("neuDlg").addEventListener("close", () => save("neuGesehen", NEUIGKEITEN[0].id, true));

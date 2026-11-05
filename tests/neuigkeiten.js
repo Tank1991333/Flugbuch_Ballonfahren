@@ -9,8 +9,8 @@ const { routes, GPS, OHNE_CLOUD } = require("./mocks");
   const p = await ctx(() => { sessionStorage.__neuTest = 1; if (sessionStorage.__da) return; sessionStorage.__da = 1; localStorage.willkommen = "1"; localStorage.stammdaten = JSON.stringify({ pilot: "Anna", ballon: "OE-ZAB" }); localStorage.neuGesehen = JSON.stringify("2026-11-04"); });
   await p.goto("http://localhost:8765/"); await p.waitForTimeout(1500);
   ok(await p.isVisible("#neuDlg"), "Nach dem Update erscheint „Neu in dieser Version“");
-  const t = await p.textContent("#neuInhalt");
-  ok(t.includes("Liter") && !t.includes("Fahrtplanung als PDF"), "Nur die Neuerungen seit der zuletzt gesehenen Version");
+  const t = await p.textContent("#neuInhalt"), erw = await p.evaluate(() => NEUIGKEITEN.filter(n => n.id > "2026-11-04").slice(0, 6).map(n => n.titel));
+  ok(t.includes("Liter") && !t.includes("Fahrtplanung als PDF") && await p.locator("#neuInhalt h3").count() === erw.length, `Alle verpassten Neuerungen seit der zuletzt gesehenen Version (${erw.length} Abschnitte)`);
   await p.screenshot({ path: __dirname + "/neu-dialog.png" });
   await p.click('#neuDlg button[value="ok"]'); await p.waitForTimeout(200);
   ok(!(await p.isVisible("#neuDlg")) && await p.evaluate(() => JSON.parse(localStorage.neuGesehen) === NEUIGKEITEN[0].id), "„Alles klar“ schließt und merkt die Version");
@@ -22,7 +22,7 @@ const { routes, GPS, OHNE_CLOUD } = require("./mocks");
   // Sehr alter Stand: höchstens 3 Abschnitte
   const q = await ctx(() => { sessionStorage.__neuTest = 1; localStorage.willkommen = "1"; localStorage.stammdaten = JSON.stringify({ pilot: "B" }); localStorage.neuGesehen = JSON.stringify("2020-01-01"); });
   await q.goto("http://localhost:8765/"); await q.waitForTimeout(1500);
-  ok(await q.isVisible("#neuDlg") && await q.locator("#neuInhalt h3").count() === Math.min(3, await q.evaluate(() => NEUIGKEITEN.length)), "Alter Stand: alle Neuerungen (höchstens 3 Abschnitte)");
+  ok(await q.isVisible("#neuDlg") && await q.locator("#neuInhalt h3").count() === Math.min(6, await q.evaluate(() => NEUIGKEITEN.length)), "Sehr alter Stand: höchstens 6 Abschnitte");
   // Bestehender Nutzer ohne Merker (vor Einführung dieses Fensters): zeigt die Neuerungen
   const r = await ctx(() => { sessionStorage.__neuTest = 1; localStorage.removeItem("neuGesehen"); localStorage.willkommen = "1"; localStorage.fluege = JSON.stringify([{ id: "a", startzeit: "2026-01-01T06:00:00Z", flugzeit: 60, landungen: 1 }]); });
   await r.goto("http://localhost:8765/"); await r.waitForTimeout(1500);
