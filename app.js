@@ -783,6 +783,27 @@ const zf = v => parseFloat(String(v ?? "").replace(",", ".")) || 0;
 const kg1 = v => num(zf(v), 1).replace(",0", "");
 const fFelder = { fName: "name", fKap: "kap", fTara: "tara", fFuell: "fuell", fPruef: "pruefung", fNotiz: "notiz" };
 let fBearb = null, nFlasche = null, nBearb = null, gLogAlle = false;
+// Gas wird in Litern gekauft, die Flaschen rechnen in kg: Propan flüssig ca. 0,51 kg je Liter
+const DICHTE = 0.51, r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
+const nLiter = e => zf(e.liter) > 0 ? zf(e.liter) : zf(e.kg) / DICHTE; // ältere Einträge haben nur kg
+const nPreisL = e => zf(e.preisL) > 0 ? zf(e.preisL) : zf(e.preis) > 0 && nLiter(e) > 0 ? zf(e.preis) / nLiter(e) : 0;
+const nEinheit = () => $("nEinh").value === "kg" ? "kg" : "l";
+// Eingaben im Dialog -> { kg, liter, preisL, preis } (preis = Gesamtpreis in €, als Text wie bisher)
+function nWerte() {
+  const m = zf($("nMenge").value), liter = r1(nEinheit() === "l" ? m : m / DICHTE), kg = r1(nEinheit() === "kg" ? m : m * DICHTE), pl = zf($("nPreisL").value);
+  return { kg, liter, preisL: pl > 0 ? pl : undefined, preis: pl > 0 ? String(r2(liter * pl)) : "" }; // Gesamtpreis aus den angezeigten Litern
+}
+function nSumme() {
+  const w = nWerte();
+  $("nSumme").textContent = w.kg > 0 ? `= ${nEinheit() === "l" ? kg1(w.kg) + " kg" : kg1(w.liter) + " Liter"}${w.preis ? ` · gesamt ${num(zf(w.preis), 2)} €` : ""}` : "";
+}
+$("nMenge").oninput = $("nPreisL").oninput = nSumme;
+$("nEinh").onchange = () => { // Wert umrechnen, Einheit merken
+  const m = zf($("nMenge").value);
+  if (m > 0) $("nMenge").value = String(r1($("nEinh").value === "kg" ? m * DICHTE : m / DICHTE));
+  try { localStorage.setItem("gasEinheit", JSON.stringify($("nEinh").value)); } catch {}
+  nSumme();
+};
 const flaschenName = id => (stamm.flaschen || []).find(x => x.id === id)?.name || "Flasche";
 function gasFlFuellen() { // Verbrauch je Flasche der geplanten Fahrt, sonst einfache Eingabe
   const pf = aktiv?.f.plan?.flaschen || [], inp = (id, ph) => `<input class="gk" data-id="${esc(id)}" type="number" min="0" step="0.5" inputmode="decimal"${ph ? ` placeholder="${esc(ph)}"` : ""}>`;
@@ -795,7 +816,8 @@ function gasRender() {
   const mit = fluege.filter(f => zf(f.gas) > 0), kgSum = mit.reduce((s, f) => s + zf(f.gas), 0), std = mit.reduce((s, f) => s + (f.flugzeit || 0), 0) / 60;
   const proFahrt = mit.length ? kgSum / mit.length : 0, proH = std > 0 ? kgSum / std : 0;
   const L = [...(stamm.gasLog || [])].sort((a, b) => String(b.datum).localeCompare(String(a.datum)));
-  const kosten = L.reduce((s, e) => s + zf(e.preis), 0), kgPreis = L.filter(e => zf(e.preis) > 0).reduce((s, e) => s + zf(e.kg), 0), eurKg = kgPreis ? kosten / kgPreis : 0;
+  const mitPreis = L.filter(e => zf(e.preis) > 0), kosten = mitPreis.reduce((s, e) => s + zf(e.preis), 0);
+  const kgPreis = mitPreis.reduce((s, e) => s + zf(e.kg), 0), lPreis = mitPreis.reduce((s, e) => s + nLiter(e), 0), eurKg = kgPreis ? kosten / kgPreis : 0, eurL = lPreis ? kosten / lPreis : 0;
   const kp = (a, b, c) => `<div class="kpi"><small>${a}</small><b>${b}</b>${c ? `<small>${c}</small>` : ""}</div>`;
   $("gSumm").innerHTML = kp("Vorrat", `${kg1(vorrat)} kg`, kap ? `von ${kg1(kap)} kg` : "") + kp("Ø je Fahrt", proFahrt ? `${kg1(proFahrt)} kg` : "–", mit.length ? `${mit.length} ${mit.length === 1 ? "Fahrt" : "Fahrten"}` : "noch keine Angabe") +
     kp("Ø je Flugstunde", proH ? `${kg1(proH)} kg` : "–", proH && eurKg ? `ca. ${num(proH * eurKg, 2)} €` : "") + kp("Reicht noch für", proH && vorrat ? `${num(vorrat / proH, 1)} h` : "–", "bei gleichem Verbrauch");
@@ -806,9 +828,9 @@ function gasRender() {
       ${terminZeile(x.pruefung, "Prüfung")}${x.notiz ? `<p class="m">${esc(x.notiz)}</p>` : ""}
       <div class="row">${b("fill", "Nachfüllen", "ok")}${b("edit", "Bearbeiten")}${b("del", "Löschen", "gef")}</div></article>`;
   }).join("") : '<p class="leer">Noch keine Gasflasche eingetragen.</p>';
-  $("gLog").innerHTML = L.length ? (gLogAlle ? L : L.slice(0, 8)).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}</span><span class="nwert"><b>${nb(`${kg1(e.kg)} kg`)}${zf(e.preis) > 0 ? `<br>${nb(`${num(zf(e.preis), 2)} €`)}` : ""}</b><button class="nbearb" data-id="${esc(e.id)}" aria-label="Nachfüllung bearbeiten">✎</button></span></div>`).join("") +
+  $("gLog").innerHTML = L.length ? (gLogAlle ? L : L.slice(0, 8)).map(e => `<div class="zeile"><span>${esc(new Date(e.datum + "T00:00:00").toLocaleDateString("de-AT"))} · ${esc(flaschenName(e.flasche))}${e.notiz ? " · " + esc(e.notiz) : ""}<br><small class="note">${nb(`${kg1(e.kg)} kg`)}${nPreisL(e) ? ` · ${nb(`${num(nPreisL(e), 3)} €/l`)}` : ""}</small></span><span class="nwert"><b>${nb(`${kg1(nLiter(e))} l`)}${zf(e.preis) > 0 ? `<br>${nb(`${num(zf(e.preis), 2)} €`)}` : ""}</b><button class="nbearb" data-id="${esc(e.id)}" aria-label="Nachfüllung bearbeiten">✎</button></span></div>`).join("") +
     (L.length > 8 ? `<button id="gLogMehr" style="width:100%;margin:6px 0">${gLogAlle ? "Weniger anzeigen" : `Alle ${L.length} Nachfüllungen anzeigen`}</button>` : "") +
-    (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${nb(`${num(kosten, 2)} €${eurKg ? ` · Ø ${num(eurKg, 2)} €/kg` : ""}`)}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
+    (kosten ? `<div class="zeile"><span>Kosten gesamt</span><b>${nb(`${num(kosten, 2)} €`)}${eurL ? `<br>${nb(`Ø ${num(eurL, 3)} €/l`)}` : ""}</b></div>` : "") : '<p class="note">Noch keine Nachfüllung eingetragen.</p>';
   gSelRender();
 }
 function fDialog(x) {
@@ -818,17 +840,19 @@ function fDialog(x) {
 }
 function nDialog(x, e) { // e = vorhandene Nachfüllung zum Bearbeiten
   nFlasche = x; nBearb = e || null;
+  $("nEinh").value = load("gasEinheit", "l") === "kg" ? "kg" : "l";
   $("nTitel").textContent = e ? "Nachfüllung bearbeiten" : "Nachfüllen";
   $("nFlK").hidden = $("nAnpK").hidden = $("nDel").hidden = !e; $("nAnp").checked = true;
   if (e) {
     const F = stamm.flaschen || [];
     $("nFl").innerHTML = (F.some(y => y.id === e.flasche) ? "" : `<option value="${esc(e.flasche)}">${esc(flaschenName(e.flasche))} (gelöscht)</option>`) + F.map(y => `<option value="${esc(y.id)}"${y.id === e.flasche ? " selected" : ""}>${esc(y.name)}</option>`).join("");
-    $("nDatum").value = e.datum || ""; $("nKg").value = String(zf(e.kg)); $("nPreis").value = e.preis || ""; $("nNotiz").value = e.notiz || "";
+    $("nDatum").value = e.datum || ""; $("nMenge").value = String(r1(nEinheit() === "l" ? nLiter(e) : zf(e.kg))); $("nPreisL").value = nPreisL(e) ? String(Math.round(nPreisL(e) * 1000) / 1000) : ""; $("nNotiz").value = e.notiz || "";
   } else {
-    $("nKg").value = String(Math.max(0, Math.round((zf(x.kap) - zf(x.fuell)) * 10) / 10)); $("nPreis").value = ""; $("nNotiz").value = "";
+    const frei = Math.max(0, zf(x.kap) - zf(x.fuell)), letzt = [...(stamm.gasLog || [])].sort((p, q) => String(q.datum).localeCompare(String(p.datum))).find(n => nPreisL(n) > 0);
+    $("nMenge").value = String(r1(nEinheit() === "l" ? frei / DICHTE : frei)); $("nPreisL").value = letzt ? String(Math.round(nPreisL(letzt) * 1000) / 1000) : ""; $("nNotiz").value = letzt?.notiz || ""; // letzter Preis/Lieferant als Vorschlag
     const h = new Date(); $("nDatum").value = `${h.getFullYear()}-${p2(h.getMonth() + 1)}-${p2(h.getDate())}`; // lokales Datum, nicht UTC
   }
-  $("nDlg").returnValue = ""; $("nDlg").showModal();
+  nSumme(); $("nDlg").returnValue = ""; $("nDlg").showModal();
 }
 // Füllstand einer Flasche um d kg ändern (zwischen 0 und Fassungsvermögen)
 const fuellAendern = (id, d) => { const y = (stamm.flaschen || []).find(z => z.id === id); if (y && d) y.fuell = String(Math.round(Math.max(0, Math.min(zf(y.kap) || Infinity, zf(y.fuell) + d)) * 10) / 10); };
@@ -863,18 +887,20 @@ $("nDlg").addEventListener("close", () => {
       if (anp) fuellAendern(e.flasche, -zf(e.kg));
       stamm.gasLog = stamm.gasLog.filter(x => x !== e);
     } else if (rv === "ok") {
-      const kg = zf($("nKg").value), fl = $("nFl").value || e.flasche;
-      if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
+      const w = nWerte(), kg = w.kg, fl = $("nFl").value || e.flasche;
+      if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge eintragen.");
       if (anp) { if (fl === e.flasche) fuellAendern(fl, kg - zf(e.kg)); else { fuellAendern(e.flasche, -zf(e.kg)); fuellAendern(fl, kg); } }
-      Object.assign(e, { datum: $("nDatum").value || e.datum, flasche: fl, kg, preis: $("nPreis").value.trim(), notiz: $("nNotiz").value.trim(), bearbeitet: Date.now() });
+      Object.assign(e, { datum: $("nDatum").value || e.datum, flasche: fl, ...w, notiz: $("nNotiz").value.trim(), bearbeitet: Date.now() });
+      if (!w.preisL) delete e.preisL;
     } else return;
     save("stammdaten", stamm); render(); return;
   }
   if (rv !== "ok" || !nFlasche) return;
-  const kg = zf($("nKg").value), x = nFlasche;
-  if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge in kg eintragen.");
+  const w = nWerte(), kg = w.kg, x = nFlasche;
+  if (!(kg > 0)) return alert("Bitte die nachgefüllte Menge eintragen.");
   x.fuell = String(Math.round(Math.min(zf(x.kap) || Infinity, zf(x.fuell) + kg) * 10) / 10);
-  (stamm.gasLog ||= []).push({ id: nid(), datum: $("nDatum").value || new Date().toISOString().slice(0, 10), flasche: x.id, kg, preis: $("nPreis").value.trim(), notiz: $("nNotiz").value.trim() });
+  (stamm.gasLog ||= []).push({ id: nid(), datum: $("nDatum").value || new Date().toISOString().slice(0, 10), flasche: x.id, ...w, notiz: $("nNotiz").value.trim() });
+  if (!w.preisL) delete stamm.gasLog.at(-1).preisL;
   nFlasche = null; save("stammdaten", stamm); render();
 });
 

@@ -31,7 +31,7 @@ const OUT = __dirname + "/shots/";
     await p.fill("#fName", "Flasche A"); await p.fill("#fKap", "40"); await p.fill("#fTara", "28"); await p.fill("#fFuell", "30"); await p.fill("#fPruef", "2026-11-05");
     await p.click("#fDlg button[value=ok]"); await p.waitForTimeout(200);
     ok((await p.textContent("#fListe")).includes("Flasche A"), "Gasflasche angelegt");
-    await p.click('#fListe button[data-a="fill"]'); await p.fill("#nPreis", "19.5"); await p.click("#nDlg button[value=ok]"); await p.waitForTimeout(200);
+    await p.click('#fListe button[data-a="fill"]'); await p.fill("#nPreisL", "0.95"); await p.click("#nDlg button[value=ok]"); await p.waitForTimeout(200);
     const fl = await p.evaluate(() => JSON.parse(localStorage.stammdaten).flaschen[0]);
     ok(fl.fuell === "40", "Nachfüllen auf 40 kg (ist: " + fl.fuell + ")");
     ok((await p.textContent("#gLog")).includes("€"), "Nachfüllung mit Preis im Verlauf");
