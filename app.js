@@ -1345,6 +1345,8 @@ willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length
 
 // „Neu in dieser Version“: einmal nach einem Update anzeigen. Neueste Version zuerst; bei jeder Neuerung oben einen Eintrag ergänzen.
 const NEUIGKEITEN = [
+  { id: "2026-11-07", titel: "Fehlerbehebung", punkte: [
+    "Cockpit auf kleinen Handys: Die Knöpfe unten (Landung, Markierung, Aufzeichnung) passen wieder auf den Bildschirm."] },
   { id: "2026-11-06", titel: "Datenschutz", punkte: [
     "Die Datenschutzerklärung nennt jetzt den Betreiber mit Kontakt und erklärt genauer, wie der Verfolger-Link geschützt ist (Einstellungen → Datenschutz & Info)."] },
   { id: "2026-11-05", titel: "November 2026", punkte: [
@@ -1358,7 +1360,7 @@ const NEUIGKEITEN = [
 function neuigkeiten(alle) {
   const seit = load("neuGesehen", ""), liste = alle ? NEUIGKEITEN : NEUIGKEITEN.filter(n => n.id > seit);
   if (!liste.length) return;
-  $("neuInhalt").innerHTML = liste.slice(0, 3).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
+  $("neuInhalt").innerHTML = (alle ? liste : liste.slice(0, 3)).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
   $("neuDlg").showModal();
 }
 $("neuDlg").addEventListener("close", () => save("neuGesehen", NEUIGKEITEN[0].id, true));
