@@ -273,6 +273,7 @@
     <p class="note"><b>Nutzung:</b> Private, kostenlose App ohne Gewähr. Ersetzt nicht das amtliche Flugbuch, Flughandbuch, Flugwetterberatung oder Flugvorbereitung; Wetter, Trajektorien und Auftrieb sind Orientierungswerte.</p>
     <p class="note"><b>Löschen:</b> „Konto löschen“ (unter Konto) entfernt Konto und Cloud-Daten. Die Daten auf diesem Gerät löschst du hier.</p>
     <div class="row"><button id="lokalDel" class="gef">Daten auf diesem Gerät löschen</button><button id="wZeigen">Erste Schritte</button></div>
+    <button id="neuZeigen" style="width:100%">Was ist neu?</button>
     <p class="note"><a href="datenschutz.html">Datenschutzerklärung &amp; Impressum</a> · Version <span id="version">–</span></p>
   </div>
 </section>
@@ -355,11 +356,19 @@
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
 </form></dialog>
 
+<dialog id="neuDlg" aria-labelledby="neuT"><form method="dialog">
+  <h2 id="neuT">Neu in dieser Version</h2>
+  <div id="neuInhalt" class="neuInhalt"></div>
+  <button value="ok" class="ok" style="width:100%">Alles klar</button>
+</form></dialog>
+
 <dialog id="nDlg"><form method="dialog">
   <h2 id="nTitel">Nachfüllen</h2>
   <label id="nFlK" hidden>Flasche<select id="nFl"></select></label>
-  <div class="row"><label>Datum<input id="nDatum" type="date"></label><label>Menge (kg)<input id="nKg" type="number" step="0.5" inputmode="decimal"></label></div>
-  <label>Preis gesamt (€, optional)<input id="nPreis" type="number" step="0.01" inputmode="decimal"></label>
+  <label>Datum<input id="nDatum" type="date"></label>
+  <div class="row"><label>Menge<input id="nMenge" type="number" min="0" step="0.1" inputmode="decimal"></label><label>Einheit<select id="nEinh"><option value="l">Liter</option><option value="kg">kg</option></select></label></div>
+  <label>Preis pro Liter (€, optional)<input id="nPreisL" type="number" min="0" step="0.001" inputmode="decimal" placeholder="z. B. 0,85"></label>
+  <p id="nSumme" class="note" role="status"></p>
   <label>Notiz / Lieferant<input id="nNotiz" autocomplete="off"></label>
   <label class="chk" id="nAnpK" hidden><input type="checkbox" id="nAnp" checked><span>Füllstand der Flasche um die Änderung anpassen</span></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>

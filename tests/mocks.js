@@ -12,6 +12,8 @@ function meteo(url) {
   return { elevation: 312, hourly };
 }
 async function routes(ctx, log) {
+  // „Neu in dieser Version“ in den normalen Tests nicht anzeigen (eigene Prüfung in neuigkeiten.js)
+  await ctx.addInitScript(() => { if (!sessionStorage.__neuTest && !localStorage.neuGesehen) localStorage.neuGesehen = JSON.stringify("9999"); });
   await ctx.route(/^https?:\/\/(?!localhost)/, async r => {
     const url = r.request().url(), h = new URL(url).hostname;
     const j = o => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(o) });
