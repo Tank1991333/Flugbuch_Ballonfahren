@@ -1129,7 +1129,7 @@ function planStarten() {
   zeige("fahrt");
   start();
 }
-function planTrajSpeichern(t) { planTraj = t; planSpeichern(); planAktualisieren(); }
+function planTrajSpeichern(t) { planTraj = t; save("planTraj", t, true); planSpeichern(); planAktualisieren(); } // bleibt auch nach einem Neustart der App erhalten
 function planHtml(p) {
   if (!p) return "";
   const z = (a, b) => `<div class="zeile"><span>${a}</span><b>${b}</b></div>`, a = p.auftrieb, b = p.ballon || {}, bd = p.bedingungen, k1 = v => num(zf(v), 1).replace(",0", "");
@@ -1345,6 +1345,8 @@ willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length
 
 // „Neu in dieser Version“: einmal nach einem Update anzeigen. Neueste Version zuerst; bei jeder Neuerung oben einen Eintrag ergänzen.
 const NEUIGKEITEN = [
+  { id: "2026-11-08", titel: "Fehlerbehebung", punkte: [
+    "Fahrtplanung: Berechnete Trajektorien bleiben jetzt erhalten, auch wenn die App zwischendurch geschlossen wird. Sie kommen dann wie geplant zur Fahrt und ins Planungs-PDF."] },
   { id: "2026-11-07", titel: "Fehlerbehebung", punkte: [
     "Cockpit auf kleinen Handys: Die Knöpfe unten (Landung, Markierung, Aufzeichnung) passen wieder auf den Bildschirm."] },
   { id: "2026-11-06", titel: "Datenschutz", punkte: [
@@ -1360,7 +1362,7 @@ const NEUIGKEITEN = [
 function neuigkeiten(alle) {
   const seit = load("neuGesehen", ""), liste = alle ? NEUIGKEITEN : NEUIGKEITEN.filter(n => n.id > seit);
   if (!liste.length) return;
-  $("neuInhalt").innerHTML = (alle ? liste : liste.slice(0, 3)).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
+  $("neuInhalt").innerHTML = (alle ? liste : liste.slice(0, 6)).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
   $("neuDlg").showModal();
 }
 $("neuDlg").addEventListener("close", () => save("neuGesehen", NEUIGKEITEN[0].id, true));
