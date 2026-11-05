@@ -5,7 +5,7 @@
 const http = require("http"), fs = require("fs"), path = require("path"), { spawn } = require("child_process");
 const ROOT = path.resolve(__dirname, ".."), PORT = 8765;
 const TYPEN = { ".html": "text/html; charset=utf-8", ".js": "application/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2" };
-const REIHEN = ["ablauf", "backup", "fw", "idb", "mailtag", "neu", "profil", "speicher", "abgleich", "tor", "wake", "daten", "verfolger", "datenschutz", "planpdf", "nachfuellen", "neuigkeiten", "rundgang", "csp"];
+const REIHEN = ["ablauf", "backup", "fw", "idb", "mailtag", "neu", "profil", "speicher", "abgleich", "tor", "wake", "daten", "verfolger", "datenschutz", "planpdf", "nachfuellen", "neuigkeiten", "rundgang", "funktionen", "csp"];
 
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname);

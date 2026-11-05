@@ -95,7 +95,8 @@ const spur = (n, lat0) => Array.from({ length: n }, (_, k) => ({ lat: lat0 + k *
   await R.evaluate(() => zeige("karte")); await R.waitForTimeout(700);
   ok(await R.evaluate(() => { let n = 0; ebene.eachLayer(l => { if (l instanceof L.Polyline && l.options.opacity !== 0 && l.options.color !== "#000") n++; }); return n; }) === 1, "Ohne IndexedDB: Karte zeigt Spur");
   // ---- 5. Lokal löschen leert IndexedDB (ohne Cloud, sonst kommen die Daten per Abgleich zurück) ----
-  await R.evaluate(() => zeige("einstellungen")); await R.click("#lokalDel"); await R.waitForTimeout(1200);
+  await R.evaluate(() => zeige("einstellungen")); await Promise.all([R.waitForNavigation({ timeout: 15000 }).catch(() => {}), R.click("#lokalDel")]);
+  await R.waitForFunction(() => typeof fluege !== "undefined", null, { timeout: 15000 }).catch(() => {}); // auf den Neustart warten, nicht auf eine feste Zeit
   ok(await R.evaluate(() => fluege.length) === 0, "Daten auf diesem Gerät löschen (Rückfall-Gerät)");
   await b.close(); console.log(log.join("\n"));
 })();
