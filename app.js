@@ -1345,6 +1345,8 @@ willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length
 
 // „Neu in dieser Version“: einmal nach einem Update anzeigen. Neueste Version zuerst; bei jeder Neuerung oben einen Eintrag ergänzen.
 const NEUIGKEITEN = [
+  { id: "2026-11-06", titel: "Datenschutz", punkte: [
+    "Die Datenschutzerklärung nennt jetzt den Betreiber mit Kontakt und erklärt genauer, wie der Verfolger-Link geschützt ist (Einstellungen → Datenschutz & Info)."] },
   { id: "2026-11-05", titel: "November 2026", punkte: [
     "Gas in Litern: Beim Nachfüllen Menge in Liter (oder kg) und Preis pro Liter eingeben. Die App rechnet kg und Gesamtpreis aus und schlägt den letzten Literpreis vor.",
     "Dieses Fenster zeigt nach einem Update kurz, was neu ist. Wieder aufrufen: Einstellungen → Datenschutz & Info → Was ist neu?"] },
