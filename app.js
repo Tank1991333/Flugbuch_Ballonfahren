@@ -1345,6 +1345,8 @@ willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length
 
 // „Neu in dieser Version“: einmal nach einem Update anzeigen. Neueste Version zuerst; bei jeder Neuerung oben einen Eintrag ergänzen.
 const NEUIGKEITEN = [
+  { id: "2026-11-07", titel: "Fehlerbehebung", punkte: [
+    "Cockpit auf kleinen Handys: Die Knöpfe unten (Landung, Markierung, Aufzeichnung) passen wieder auf den Bildschirm."] },
   { id: "2026-11-06", titel: "Datenschutz", punkte: [
     "Die Datenschutzerklärung nennt jetzt den Betreiber mit Kontakt und erklärt genauer, wie der Verfolger-Link geschützt ist (Einstellungen → Datenschutz & Info)."] },
   { id: "2026-11-05", titel: "November 2026", punkte: [

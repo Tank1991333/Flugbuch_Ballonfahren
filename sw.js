@@ -1,5 +1,5 @@
 "use strict";
-const V = "bfb-v60", SHELL = ["./", "index.html", "style.css", "app.js", "trajektoren.js", "geo.js", "pdf.js", "firebase-config.js", "sync.js", "manifest.webmanifest", "favicon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "verfolgen.html", "verfolgen.js", "datenschutz.html",
+const V = "bfb-v61", SHELL = ["./", "index.html", "style.css", "app.js", "trajektoren.js", "geo.js", "pdf.js", "firebase-config.js", "sync.js", "manifest.webmanifest", "favicon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "verfolgen.html", "verfolgen.js", "datenschutz.html",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css", "vendor/leaflet/images/layers.png", "vendor/leaflet/images/layers-2x.png", "vendor/leaflet/images/marker-icon.png", "vendor/leaflet/images/marker-icon-2x.png", "vendor/leaflet/images/marker-shadow.png",
   "fonts/barlow-latin-400-normal.woff2", "fonts/barlow-latin-500-normal.woff2", "fonts/barlow-latin-600-normal.woff2", "fonts/barlow-semi-condensed-latin-600-normal.woff2", "fonts/barlow-semi-condensed-latin-700-normal.woff2"];
 self.addEventListener("install", e => e.waitUntil(caches.open(V).then(c => Promise.allSettled(SHELL.map(u => c.add(u)))).then(() => self.skipWaiting())));
