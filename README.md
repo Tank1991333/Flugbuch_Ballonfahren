@@ -33,7 +33,7 @@ Die Prüf-Workflows liegen in `.github/workflows/` (`validate.yml`: Syntax, Date
 
 **Neuerungen:** Bei jeder Neuerung in `app.js` oben in `NEUIGKEITEN` einen Eintrag ergänzen (ID = Datum, neueste zuerst). Bestehende Nutzer sehen ihn einmal nach dem Update.
 
-**Impressum/Datenschutz:** In `datenschutz.html` Name und Kontakt des Betreibers eintragen (Platzhalter `[Name]`, `[E-Mail-Adresse]`).
+**Impressum/Datenschutz:** Betreiber und Kontakt stehen in `datenschutz.html`.
 
 ## Dienste (alle kostenlos, ohne API-Key)
 
