@@ -169,3 +169,4 @@ body.verfolger #vbox{height:52vh}
 .card.zu>:not(.klapp){display:none!important}
 .filter input,.filter select{flex:1;min-width:0}.filter select{flex:0 0 auto;width:auto}
 .nwert{display:flex;align-items:center;gap:8px}.nbearb{min-height:34px;width:38px;padding:0;flex:0 0 auto}
+.neuInhalt h3{margin:12px 0 4px}.neuInhalt ul{margin:0 0 8px;padding-left:20px}.neuInhalt li{margin:6px 0;line-height:1.4}

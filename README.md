@@ -31,6 +31,8 @@ Dazu `fonts/` (Barlow, lokal statt Google Fonts, Lizenz OFL) und `vendor/leaflet
 
 Die Prüf-Workflows liegen in `.github/workflows/` (`validate.yml`: Syntax, Dateien, CSP; `tests.yml`: Browser-Tests). `tests/`, `package.json` und `.github/` werden nicht mit ausgeliefert (`.vercelignore`).
 
+**Neuerungen:** Bei jeder Neuerung in `app.js` oben in `NEUIGKEITEN` einen Eintrag ergänzen (ID = Datum, neueste zuerst). Bestehende Nutzer sehen ihn einmal nach dem Update.
+
 **Impressum/Datenschutz:** In `datenschutz.html` Name und Kontakt des Betreibers eintragen (Platzhalter `[Name]`, `[E-Mail-Adresse]`).
 
 ## Dienste (alle kostenlos, ohne API-Key)

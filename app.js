@@ -1343,6 +1343,32 @@ $("wOk").onclick = () => { localStorage.setItem("willkommen", "1"); willkommen(f
 $("wZeigen").onclick = () => { zeige("dashboard"); willkommen(true); };
 willkommen(!localStorage.getItem("willkommen") && !stamm.pilot && !fluege.length); // nur bei neuen Nutzern
 
+// „Neu in dieser Version“: einmal nach einem Update anzeigen. Neueste Version zuerst; bei jeder Neuerung oben einen Eintrag ergänzen.
+const NEUIGKEITEN = [
+  { id: "2026-11-05", titel: "November 2026", punkte: [
+    "Gas in Litern: Beim Nachfüllen Menge in Liter (oder kg) und Preis pro Liter eingeben. Die App rechnet kg und Gesamtpreis aus und schlägt den letzten Literpreis vor.",
+    "Dieses Fenster zeigt nach einem Update kurz, was neu ist. Wieder aufrufen: Einstellungen → Datenschutz & Info → Was ist neu?"] },
+  { id: "2026-11-04", titel: "Anfang November 2026", punkte: [
+    "Fahrtplanung als PDF: Im Flugbuch bei Fahrten mit Planung auf „📄 Planung“ tippen. In der Planung gibt es eine Vorschau.",
+    "Nachfüllungen nachträglich ändern oder löschen: im Gas-Verlauf auf ✎ tippen.",
+    "Flugbuch mit Suche, Jahresfilter und Summen; Einstellungen lassen sich einklappen."] }
+];
+function neuigkeiten(alle) {
+  const seit = load("neuGesehen", ""), liste = alle ? NEUIGKEITEN : NEUIGKEITEN.filter(n => n.id > seit);
+  if (!liste.length) return;
+  $("neuInhalt").innerHTML = liste.slice(0, 3).map(n => `<h3>${esc(n.titel)}</h3><ul>${n.punkte.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`).join("");
+  $("neuDlg").showModal();
+}
+$("neuDlg").addEventListener("close", () => save("neuGesehen", NEUIGKEITEN[0].id, true));
+$("neuZeigen").onclick = () => neuigkeiten(true);
+(function neuBeimStart() {
+  if (!localStorage.getItem("neuGesehen") && !stamm.pilot && !fluege.length) return save("neuGesehen", NEUIGKEITEN[0].id, true); // neue Nutzer: nichts zeigen
+  if (load("neuGesehen", "") >= NEUIGKEITEN[0].id) return;
+  // erst wenn die App sichtbar ist (nicht hinter der Anmeldung) und kein anderer Dialog offen ist
+  const warten = () => document.body.classList.contains("gesperrt") || document.querySelector("dialog[open]") ? setTimeout(warten, 1000) : neuigkeiten(false);
+  setTimeout(warten, 800);
+})();
+
 // Alle Daten auf diesem Gerät löschen (Cloud-Daten bleiben erhalten)
 async function lokalLoeschen() {
   await tracksLeeren();

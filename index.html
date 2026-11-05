@@ -273,6 +273,7 @@
     <p class="note"><b>Nutzung:</b> Private, kostenlose App ohne Gewähr. Ersetzt nicht das amtliche Flugbuch, Flughandbuch, Flugwetterberatung oder Flugvorbereitung; Wetter, Trajektorien und Auftrieb sind Orientierungswerte.</p>
     <p class="note"><b>Löschen:</b> „Konto löschen“ (unter Konto) entfernt Konto und Cloud-Daten. Die Daten auf diesem Gerät löschst du hier.</p>
     <div class="row"><button id="lokalDel" class="gef">Daten auf diesem Gerät löschen</button><button id="wZeigen">Erste Schritte</button></div>
+    <button id="neuZeigen" style="width:100%">Was ist neu?</button>
     <p class="note"><a href="datenschutz.html">Datenschutzerklärung &amp; Impressum</a> · Version <span id="version">–</span></p>
   </div>
 </section>
@@ -353,6 +354,12 @@
   <label>Nächste Prüfung<input id="fPruef" type="date"></label>
   <label>Notiz<textarea id="fNotiz" rows="2"></textarea></label>
   <div class="row"><button value="x">Abbrechen</button><button value="ok" class="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="neuDlg" aria-labelledby="neuT"><form method="dialog">
+  <h2 id="neuT">Neu in dieser Version</h2>
+  <div id="neuInhalt" class="neuInhalt"></div>
+  <button value="ok" class="ok" style="width:100%">Alles klar</button>
 </form></dialog>
 
 <dialog id="nDlg"><form method="dialog">
